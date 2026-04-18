@@ -3,12 +3,15 @@
     "js/ts.tsdk.promptToUseWorkspaceVersion": true,
     "editor.tabSize": 4,
     "editor.defaultFormatter": "oxc.oxc-vscode",
-    "oxc.fmt.configPath": "oxfmt.config.ts",
+    "oxc.fmt.configPath": "oxfmt.config.mts",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
         "source.fixAll.oxc": "always"
     },
     "[xml]": {
+        "editor.defaultFormatter": "redhat.vscode-xml"
+    },
+    "[markdown]": {
         "editor.defaultFormatter": "redhat.vscode-xml"
     },
     "files.readonlyInclude": {
