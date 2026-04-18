@@ -3,35 +3,33 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { toastPromise } = vi.hoisted(() => ({
+    toastPromise: vi.fn((promise: Promise<unknown>) => promise),
+}));
+
+vi.mock("sonner", () => ({
+    toast: {
+        promise: toastPromise,
+    },
+}));
 
 import { SettingsPage } from "@/features/settings/settings-page";
 import { createQueryClient } from "@/lib/query/create-query-client";
 import type { DayFlowApi } from "@/preload/create-day-flow-api";
-
-vi.mock("@tanstack/react-router", () => ({
-    Link: ({
-        children,
-        className,
-        to,
-    }: {
-        children: ReactNode;
-        className?: string;
-        to: string;
-    }) => (
-        <a className={className} href={to}>
-            {children}
-        </a>
-    ),
-}));
+import { resetAppShellStore } from "@/stores/app-shell-store";
 
 describe("SettingsPage", () => {
     beforeEach(() => {
         vi.restoreAllMocks();
+        resetAppShellStore();
+        toastPromise.mockClear();
     });
 
-    it("loads preferences, submits updates, and invalidates the settings query", async () => {
+    it("loads preferences, submits updates with toast feedback, and invalidates the settings query", async () => {
         const getHealth = vi.fn().mockResolvedValue({
             databasePath: "/tmp/day-flow.sqlite",
             databaseReady: true,
@@ -53,13 +51,14 @@ describe("SettingsPage", () => {
                 updatedAt: "2026-04-18T00:15:00.000Z",
                 weekStartsOn: 1,
             });
-        const updatePreferences = vi.fn().mockResolvedValue({
-            createdAt: "2026-04-18T00:00:00.000Z",
-            dayStartsAt: "07:45",
-            defaultCalendarView: "day",
-            updatedAt: "2026-04-18T00:15:00.000Z",
-            weekStartsOn: 1,
-        });
+
+        let resolveUpdate: ((value: unknown) => void) | null = null;
+        const updatePreferences = vi.fn().mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    resolveUpdate = resolve;
+                }),
+        );
 
         window.dayFlowApi = {
             app: { getHealth },
@@ -69,7 +68,7 @@ describe("SettingsPage", () => {
             },
         } satisfies DayFlowApi;
 
-        renderWithQueryClient(<SettingsPage />);
+        renderWithProviders(<SettingsPage />);
 
         const timeInput = (await screen.findByLabelText("Day starts at")) as HTMLInputElement;
 
@@ -86,6 +85,25 @@ describe("SettingsPage", () => {
                 defaultCalendarView: "month",
                 weekStartsOn: 0,
             });
+        });
+
+        await waitFor(() => {
+            expect(toastPromise).toHaveBeenCalledTimes(1);
+        });
+
+        await waitFor(() => {
+            expect(screen.getByRole("button", { name: "Save preferences" })).toHaveProperty(
+                "disabled",
+                true,
+            );
+        });
+
+        resolveUpdate?.({
+            createdAt: "2026-04-18T00:00:00.000Z",
+            dayStartsAt: "07:45",
+            defaultCalendarView: "day",
+            updatedAt: "2026-04-18T00:15:00.000Z",
+            weekStartsOn: 1,
         });
 
         await waitFor(() => {
@@ -109,14 +127,20 @@ describe("SettingsPage", () => {
             },
         } satisfies DayFlowApi;
 
-        renderWithQueryClient(<SettingsPage />);
+        renderWithProviders(<SettingsPage />);
 
-        expect((await screen.findByRole("alert")).textContent).toContain("Database unavailable.");
+        expect((await screen.findByText("Database unavailable.")).textContent).toContain(
+            "Database unavailable.",
+        );
     });
 });
 
-function renderWithQueryClient(component: ReactNode) {
+function renderWithProviders(component: ReactNode) {
     const queryClient = createQueryClient();
 
-    return render(<QueryClientProvider client={queryClient}>{component}</QueryClientProvider>);
+    return render(
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>
+        </ThemeProvider>,
+    );
 }

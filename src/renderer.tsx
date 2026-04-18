@@ -7,10 +7,12 @@ import {
     createRouter,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { ThemeProvider } from "next-themes";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import "@/index.css";
+import { Toaster } from "@/components/ui/sonner";
 import { createQueryClient } from "@/lib/query/create-query-client";
 import { routeTree } from "@/routeTree.gen";
 
@@ -36,10 +38,19 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
     <StrictMode>
-        <QueryClientProvider client={queryClient}>
-            <RouterProvider router={router} />
-            {import.meta.env.DEV ? <TanStackRouterDevtools router={router} /> : null}
-            {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
-        </QueryClientProvider>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            disableTransitionOnChange
+            enableSystem
+            storageKey="day-flow-theme"
+        >
+            <QueryClientProvider client={queryClient}>
+                <RouterProvider router={router} />
+                <Toaster position="top-right" richColors />
+                {import.meta.env.DEV ? <TanStackRouterDevtools router={router} /> : null}
+                {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
+            </QueryClientProvider>
+        </ThemeProvider>
     </StrictMode>,
 );

@@ -122,9 +122,32 @@
         @apply border-border outline-ring/50;
     }
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground min-h-screen antialiased;
+        background-image:
+            radial-gradient(
+                circle at top,
+                color-mix(in oklch, var(--primary) 14%, transparent) 0%,
+                transparent 38%
+            ),
+            linear-gradient(
+                180deg,
+                color-mix(in oklch, var(--muted) 70%, transparent) 0%,
+                transparent 24%
+            );
+        text-wrap: pretty;
     }
     html {
         @apply font-sans;
+
+        scrollbar-color: color-mix(in srgb, var(--color-foreground), var(--color-background) 75%)
+            color-mix(in srgb, var(--color-background), var(--color-foreground) 5%);
+
+        scrollbar-width: thin;
+    }
+    ::selection {
+        background: color-mix(in oklch, var(--primary) 24%, transparent);
+    }
+    #app {
+        @apply min-h-screen;
     }
 }
