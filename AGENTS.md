@@ -23,6 +23,15 @@ If a tradeoff is required, choose correctness and robustness over short-term con
 
 Long term maintainability is a core priority. Duplicate logic across multiple files is a code smell and should be avoided. Don't be afraid to change existing code. Don't take shortcuts by just adding local logic to solve a problem.
 
+## shadcn/ui Components
+
+- Prefer using `shadcn/ui` components for common UI patterns instead of building them from scratch
+- First check existing components in `src/components/ui`
+- Reuse already added components whenever possible
+- If a required `shadcn/ui` component is not available, it can be added and then used
+- Keep usage consistent with the existing project patterns and styling
+- Avoid duplicating components that already exist in the project
+
 ## Commit Guide Reference
 
 - Detailed commit guidelines are available at: `docs/agents-commit.md`
