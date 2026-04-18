@@ -26,7 +26,7 @@ const calendarViewLabels: Record<CalendarView, string> = {
     week: "Week",
 };
 
-export function HomePage() {
+function HomePage() {
     const navigate = useNavigate();
     const { openQuickAdd } = useAppShellActions();
     const { activeCalendarView, setActiveCalendarView } = useAppShellStore(
@@ -40,13 +40,13 @@ export function HomePage() {
         <section className="flex flex-col gap-6">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                 <div className="flex max-w-3xl flex-col gap-3">
-                    <p className="text-muted-foreground text-sm">{todaySummary.eyebrow}</p>
+                    <p className="text-sm text-muted-foreground">{todaySummary.eyebrow}</p>
                     <div className="flex flex-col gap-2">
                         <h2 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
                             Today
                         </h2>
                         <p className="max-w-2xl text-base leading-7">{todaySummary.headline}</p>
-                        <p className="text-muted-foreground max-w-2xl text-sm leading-6">
+                        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
                             {todaySummary.summary}
                         </p>
                     </div>
@@ -99,7 +99,7 @@ export function HomePage() {
                         {todayEvents.map((event) => (
                             <button
                                 key={event.id}
-                                className="bg-background hover:bg-muted/60 flex w-full flex-col gap-3 rounded-2xl border p-4 text-left transition-colors"
+                                className="flex w-full flex-col gap-3 rounded-2xl border bg-background p-4 text-left transition-colors hover:bg-muted/60"
                                 type="button"
                                 onClick={() => {
                                     void navigate({ to: "/calendar" });
@@ -108,7 +108,7 @@ export function HomePage() {
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
                                         <p className="font-medium">{event.title}</p>
-                                        <p className="text-muted-foreground mt-1 text-sm">
+                                        <p className="mt-1 text-sm text-muted-foreground">
                                             {event.startTime} - {event.endTime}
                                         </p>
                                     </div>
@@ -132,12 +132,12 @@ export function HomePage() {
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3">
                         {todayTasks.map((task) => (
-                            <div key={task.id} className="bg-background rounded-2xl border p-4">
+                            <div key={task.id} className="rounded-2xl border bg-background p-4">
                                 <div className="flex flex-col gap-3">
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
                                             <p className="font-medium">{task.title}</p>
-                                            <p className="text-muted-foreground mt-1 text-sm">
+                                            <p className="mt-1 text-sm text-muted-foreground">
                                                 Due {task.dueLabel}
                                             </p>
                                         </div>
@@ -168,11 +168,11 @@ export function HomePage() {
                         {todayReminders.map((reminder) => (
                             <div
                                 key={reminder.id}
-                                className="bg-background flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+                                className="flex flex-col gap-3 rounded-2xl border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
                             >
                                 <div>
                                     <p className="font-medium">{reminder.title}</p>
-                                    <p className="text-muted-foreground mt-1 text-sm">
+                                    <p className="mt-1 text-sm text-muted-foreground">
                                         {reminder.timeLabel}
                                     </p>
                                 </div>
@@ -202,7 +202,7 @@ export function HomePage() {
                     <CardContent className="grid gap-3">
                         <Button className="justify-between" onClick={() => openQuickAdd("task")}>
                             Add task
-                            <span className="text-primary-foreground/80 text-xs">
+                            <span className="text-xs text-primary-foreground/80">
                                 {format(new Date(), "p")}
                             </span>
                         </Button>
@@ -212,7 +212,7 @@ export function HomePage() {
                             onClick={() => openQuickAdd("event")}
                         >
                             Add event
-                            <span className="text-muted-foreground text-xs">Schedule next</span>
+                            <span className="text-xs text-muted-foreground">Schedule next</span>
                         </Button>
                         <Button
                             className="justify-between"
@@ -222,7 +222,7 @@ export function HomePage() {
                             }}
                         >
                             Quick note
-                            <span className="text-muted-foreground text-xs">
+                            <span className="text-xs text-muted-foreground">
                                 Open Notion bridge
                             </span>
                         </Button>

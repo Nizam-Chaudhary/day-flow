@@ -19,7 +19,7 @@ const reminderGroups = [
     { key: "completed", title: "Completed" },
 ] as const;
 
-export function RemindersPage() {
+function RemindersPage() {
     const navigate = useNavigate();
     const [pendingAction, setPendingAction] = useState<string | null>(null);
 

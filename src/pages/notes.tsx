@@ -13,7 +13,7 @@ export const Route = createFileRoute("/notes")({
     component: NotesPage,
 });
 
-export function NotesPage() {
+function NotesPage() {
     const [pendingAction, setPendingAction] = useState<string | null>(null);
 
     const handleAction = async (actionId: string, successMessage: string) => {

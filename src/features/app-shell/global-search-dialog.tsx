@@ -14,7 +14,7 @@ import {
     CommandSeparator,
     CommandShortcut,
 } from "@/components/ui/command";
-import { primaryNavItems, quickActionSearchItems } from "@/features/app-shell/mock-data";
+import { quickActionSearchItems, searchNavItems } from "@/features/app-shell/mock-data";
 import { useAppShellStore } from "@/stores/app-shell-store";
 
 export function GlobalSearchDialog({
@@ -44,7 +44,7 @@ export function GlobalSearchDialog({
                 <CommandList>
                     <CommandEmpty>No matching routes or actions.</CommandEmpty>
                     <CommandGroup heading="Navigate">
-                        {primaryNavItems.map((item) => (
+                        {searchNavItems.map((item) => (
                             <CommandItem
                                 key={item.to}
                                 value={`${item.label} ${item.description}`}
@@ -56,7 +56,7 @@ export function GlobalSearchDialog({
                                 <HugeiconsIcon icon={item.icon} strokeWidth={2} />
                                 <div className="flex flex-col gap-0.5">
                                     <span>{item.label}</span>
-                                    <span className="text-muted-foreground text-xs">
+                                    <span className="text-xs text-muted-foreground">
                                         {item.description}
                                     </span>
                                 </div>

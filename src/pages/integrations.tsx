@@ -26,7 +26,7 @@ export const Route = createFileRoute("/integrations")({
     component: IntegrationsPage,
 });
 
-export function IntegrationsPage() {
+function IntegrationsPage() {
     const [pendingProvider, setPendingProvider] = useState<string | null>(null);
 
     const handleProviderAction = async (providerId: string, successMessage: string) => {

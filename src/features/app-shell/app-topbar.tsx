@@ -1,9 +1,4 @@
-import {
-    CalendarSyncIcon,
-    Menu02Icon,
-    Notification03Icon,
-    PlusSignIcon,
-} from "@hugeicons/core-free-icons";
+import { CalendarSyncIcon, Notification03Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { formatDistanceToNow } from "date-fns";
 import { useShallow } from "zustand/react/shallow";
@@ -12,16 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { LoadingSwap } from "@/components/ui/loading-swap";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { NotificationsPopover } from "@/features/app-shell/notifications-popover";
 import { searchMetadata } from "@/features/app-shell/mock-data";
 import { useAppShellStore } from "@/stores/app-shell-store";
 
 export function AppTopbar({
-    onOpenMobileNav,
     onOpenQuickAdd,
     onSyncNow,
 }: {
-    onOpenMobileNav: () => void;
     onOpenQuickAdd: (type?: "event" | "task") => void;
     onSyncNow: () => Promise<void>;
 }) {
@@ -42,17 +36,9 @@ export function AppTopbar({
     );
 
     return (
-        <header className="bg-background/80 sticky top-0 z-40 border-b backdrop-blur-xl">
+        <header className="sticky top-0 z-40 border-b bg-background">
             <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-4 py-3 sm:px-6 lg:px-8">
-                <Button
-                    aria-label="Open navigation"
-                    className="lg:hidden"
-                    size="icon-sm"
-                    variant="outline"
-                    onClick={onOpenMobileNav}
-                >
-                    <HugeiconsIcon icon={Menu02Icon} strokeWidth={2} />
-                </Button>
+                <SidebarTrigger aria-label="Toggle sidebar" className="shrink-0" variant="ghost" />
 
                 <Button
                     aria-label="Open global search"

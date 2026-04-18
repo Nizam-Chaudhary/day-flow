@@ -23,7 +23,7 @@ export const Route = createFileRoute("/tasks")({
 
 type TaskFilter = "completed" | "today" | "upcoming";
 
-export function TasksPage() {
+function TasksPage() {
     const { openQuickAdd } = useAppShellActions();
     const [activeFilter, setActiveFilter] = useState<TaskFilter>("today");
     const [selectedTask, setSelectedTask] = useState<MockTask | null>(null);

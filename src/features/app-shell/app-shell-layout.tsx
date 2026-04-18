@@ -1,15 +1,15 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { Outlet } from "@tanstack/react-router";
+import { createContext, type CSSProperties, useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { AppSidebar } from "@/features/app-shell/app-sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppTopbar } from "@/features/app-shell/app-topbar";
 import { GlobalSearchDialog } from "@/features/app-shell/global-search-dialog";
-import { QuickAddDialog } from "@/features/app-shell/quick-add-dialog";
 import { runMockAction } from "@/features/app-shell/mock-actions";
+import { QuickAddDialog } from "@/features/app-shell/quick-add-dialog";
 import { appPreferencesQueryOptions } from "@/features/settings/settings-query-options";
 import { useAppShellStore } from "@/stores/app-shell-store";
 
@@ -39,10 +39,14 @@ export function useAppShellActions(): AppShellActions {
     return useContext(AppShellActionsContext) ?? fallbackActions;
 }
 
+const sidebarStyle = {
+    "--sidebar-width": "15rem",
+    "--sidebar-width-mobile": "16rem",
+} as CSSProperties;
+
 export function AppShellLayout() {
     const preferencesQuery = useQuery(appPreferencesQueryOptions);
     const hasHydratedCalendarView = useRef(false);
-    const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
     const [quickAddType, setQuickAddType] = useState<QuickAddType>("task");
     const {
         isSyncInFlight,
@@ -126,27 +130,11 @@ export function AppShellLayout() {
                 syncNow,
             }}
         >
-            <div className="min-h-screen">
-                <div className="pointer-events-none fixed inset-0 overflow-hidden">
-                    <div className="absolute inset-x-0 top-[-14rem] h-[28rem] bg-[radial-gradient(circle_at_top,_color-mix(in_oklch,var(--primary)_16%,transparent),transparent_62%)]" />
-                    <div className="absolute inset-y-0 right-[-8rem] w-[24rem] bg-[radial-gradient(circle_at_center,_color-mix(in_oklch,var(--muted-foreground)_10%,transparent),transparent_68%)]" />
-                </div>
-
-                <div className="relative flex min-h-screen">
-                    <aside className="bg-sidebar/80 hidden w-72 shrink-0 border-r px-5 py-6 backdrop-blur-xl lg:flex">
-                        <div className="sticky top-6 h-[calc(100vh-3rem)] w-full">
-                            <AppSidebar />
-                        </div>
-                    </aside>
-
-                    <div className="relative flex min-h-screen min-w-0 flex-1 flex-col">
-                        <AppTopbar
-                            onOpenMobileNav={() => {
-                                setIsMobileNavOpen(true);
-                            }}
-                            onOpenQuickAdd={openQuickAdd}
-                            onSyncNow={syncNow}
-                        />
+            <SidebarProvider defaultOpen style={sidebarStyle}>
+                <AppSidebar />
+                <SidebarInset>
+                    <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+                        <AppTopbar onOpenQuickAdd={openQuickAdd} onSyncNow={syncNow} />
 
                         <main className="flex-1 px-4 pb-8 pt-6 sm:px-6 lg:px-8 lg:pt-8">
                             <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -154,27 +142,10 @@ export function AppShellLayout() {
                             </div>
                         </main>
                     </div>
-                </div>
-
-                <Sheet open={isMobileNavOpen} onOpenChange={setIsMobileNavOpen}>
-                    <SheetContent className="w-full sm:max-w-sm" side="left">
-                        <SheetHeader>
-                            <SheetTitle>Navigation</SheetTitle>
-                        </SheetHeader>
-                        <div className="px-6 pb-6">
-                            <AppSidebar
-                                mode="mobile"
-                                onNavigate={() => {
-                                    setIsMobileNavOpen(false);
-                                }}
-                            />
-                        </div>
-                    </SheetContent>
-                </Sheet>
-
+                </SidebarInset>
                 <GlobalSearchDialog onOpenQuickAdd={openQuickAdd} onSyncNow={syncNow} />
                 <QuickAddDialog initialType={quickAddType} />
-            </div>
+            </SidebarProvider>
         </AppShellActionsContext.Provider>
     );
 }

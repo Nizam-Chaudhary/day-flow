@@ -124,17 +124,6 @@
     }
     body {
         @apply min-h-screen antialiased bg-background text-foreground;
-        background-image:
-            radial-gradient(
-                circle at top,
-                color-mix(in oklch, var(--primary) 14%, transparent) 0%,
-                transparent 38%
-            ),
-            linear-gradient(
-                180deg,
-                color-mix(in oklch, var(--muted) 70%, transparent) 0%,
-                transparent 24%
-            );
         text-wrap: pretty;
     }
     html {

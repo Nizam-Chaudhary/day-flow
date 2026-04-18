@@ -21,11 +21,26 @@ const todayDate = new Date("2026-04-18T09:00:00");
 const todayIso = format(todayDate, "yyyy-MM-dd");
 const weekStart = startOfWeek(anchorDate, { weekStartsOn: 1 });
 
+export type ShellNavTo =
+    | "/"
+    | "/calendar"
+    | "/tasks"
+    | "/reminders"
+    | "/notes"
+    | "/integrations"
+    | "/settings";
+
+export interface ShellNavSubItem {
+    label: string;
+    to: ShellNavTo;
+}
+
 export interface ShellNavItem {
     description: string;
     icon: object;
+    items?: ShellNavSubItem[];
     label: string;
-    to: "/" | "/calendar" | "/tasks" | "/reminders" | "/notes" | "/integrations" | "/settings";
+    to: ShellNavTo;
 }
 
 export interface MockEvent {
@@ -98,12 +113,11 @@ export interface MockFieldMapping {
 }
 
 export const shellBrand = {
-    blurb: "Local-first planning for the day in front of you.",
     icon: DashboardSquare02Icon,
     name: "Day Flow",
 };
 
-export const primaryNavItems = [
+export const mainNavItems = [
     {
         description: "Daily command center",
         icon: Home01Icon,
@@ -140,6 +154,9 @@ export const primaryNavItems = [
         label: "Integrations",
         to: "/integrations",
     },
+] satisfies ShellNavItem[];
+
+export const footerNavItems = [
     {
         description: "Preferences and diagnostics",
         icon: Settings01Icon,
@@ -148,18 +165,7 @@ export const primaryNavItems = [
     },
 ] satisfies ShellNavItem[];
 
-export const shellCommandHints = [
-    {
-        id: "search",
-        key: "Ctrl/⌘ + K",
-        label: "Search routes and actions",
-    },
-    {
-        id: "quick-add",
-        key: "+",
-        label: "Capture a task or event",
-    },
-];
+export const searchNavItems = [...mainNavItems, ...footerNavItems] satisfies ShellNavItem[];
 
 export const shellNotifications = [
     {

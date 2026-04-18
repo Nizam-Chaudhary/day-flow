@@ -32,7 +32,7 @@ const calendarModeLabels: Record<CalendarMode, string> = {
     week: "Week",
 };
 
-export function CalendarPage() {
+function CalendarPage() {
     const { openQuickAdd } = useAppShellActions();
     const [isAgendaView, setIsAgendaView] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<MockEvent | null>(null);
