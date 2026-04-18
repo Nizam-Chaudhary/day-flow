@@ -1,0 +1,14 @@
+{
+    "recommendations": [
+        "oxc.oxc-vscode",
+        "streetsidesoftware.code-spell-checker",
+        "vincaslt.highlight-matching-tag",
+        "htmlhint.vscode-htmlhint",
+        "christian-kohler.path-intellisense",
+        "yoavbls.pretty-ts-errors",
+        "bradlc.vscode-tailwindcss",
+        "johnsoncodehk.vscode-tsconfig-helper",
+        "redhat.vscode-yaml",
+        "redhat.vscode-xml"
+    ]
+}
