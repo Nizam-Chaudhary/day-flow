@@ -114,10 +114,10 @@ The app should be built so new integrations, notification channels, and future c
 - Unified calendar view inside the app.
 - Create, edit, and manage events locally.
 - Connect and sync with major calendar providers:
-  - Google Calendar
-  - Apple Calendar / iCloud calendar where feasible
-  - Outlook / Microsoft calendar
-  - Other major providers through standards-based support if practical
+    - Google Calendar
+    - Apple Calendar / iCloud calendar where feasible
+    - Outlook / Microsoft calendar
+    - Other major providers through standards-based support if practical
 - Merge provider events into a single view.
 - Support local calendars as a first-class concept.
 
@@ -145,21 +145,21 @@ The app should be built so new integrations, notification channels, and future c
 
 - In-app notifications are the primary notification channel.
 - Notification architecture should be modular enough to support:
-  - Desktop notifications in Electron
-  - Future browser/web notifications
-  - OS-specific behavior
-  - Packaging differences
-  - Slack reminders
+    - Desktop notifications in Electron
+    - Future browser/web notifications
+    - OS-specific behavior
+    - Packaging differences
+    - Slack reminders
 - Snooze and dismiss workflows should be considered in future iterations.
 
 ### 8.6 Sync and Portability
 
 - Local-first by default.
 - Optional authenticated sync in future for:
-  - Connected integrations
-  - Calendar connections
-  - Settings
-  - User preferences
+    - Connected integrations
+    - Calendar connections
+    - Settings
+    - User preferences
 - Export/import mechanism for transferring integrations and app setup to another device.
 
 ## 9. Functional Requirements

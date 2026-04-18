@@ -22,3 +22,10 @@ If a tradeoff is required, choose correctness and robustness over short-term con
 ## Maintainability
 
 Long term maintainability is a core priority. Duplicate logic across multiple files is a code smell and should be avoided. Don't be afraid to change existing code. Don't take shortcuts by just adding local logic to solve a problem.
+
+## Commit Guide Reference
+
+- Detailed commit guidelines are available at: `docs/agents-commit.md`
+- This repo uses `commitlint` for linting commit messages
+- Check this file if you need examples or clarification on commit messages
+- Prefer following it when unsure about commit format or types

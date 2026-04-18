@@ -6,6 +6,7 @@ out
 dist
 server
 *.tgz
+.vite
 
 # code coverage
 coverage

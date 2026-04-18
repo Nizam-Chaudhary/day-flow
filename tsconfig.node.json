@@ -1,0 +1,25 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "composite": true,
+        "strict": true,
+        "noEmit": true,
+        "target": "ES2023",
+        "lib": ["ES2023"],
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "types": ["node"],
+        "isolatedModules": true,
+        "moduleDetection": "force",
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "tsBuildInfoFile": "./node_modules/.cache/tsconfig.node.tsbuildinfo"
+    },
+    "include": [
+        "forge.config.ts",
+        "vite.*.config.ts",
+        "src/main.ts",
+        "src/preload.ts",
+        "src/**/*.d.ts"
+    ]
+}
