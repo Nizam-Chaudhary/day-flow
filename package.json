@@ -15,13 +15,12 @@
         "package": "electron-forge package",
         "make": "electron-forge make",
         "publish": "electron-forge publish",
+        "clean": "rimraf node_modules .vite .tanstack",
         "db:generate": "drizzle-kit generate",
         "db:studio": "drizzle-kit studio",
-        "typecheck": "tsc -b",
         "test": "vitest run --passWithNoTests",
         "format": "oxfmt .",
-        "lint": "oxlint .",
-        "lint:fix": "oxlint . --fix --fix-suggestions",
+        "lint": "oxlint . --fix --fix-suggestions",
         "prepare": "husky"
     },
     "dependencies": {

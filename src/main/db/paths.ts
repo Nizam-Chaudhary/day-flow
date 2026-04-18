@@ -1,5 +1,5 @@
-import { app } from "electron";
-import { join } from "node:path";
+import { app } from 'electron';
+import { join } from 'node:path';
 
 export interface DatabasePathContext {
     appPath: string;
@@ -9,15 +9,15 @@ export interface DatabasePathContext {
 }
 
 export function resolveDatabasePath(userDataPath: string): string {
-    return join(userDataPath, "day-flow.sqlite");
+    return join(userDataPath, 'day-flow.sqlite');
 }
 
 export function resolveMigrationsPath({
     appPath,
     isPackaged,
     resourcesPath,
-}: Pick<DatabasePathContext, "appPath" | "isPackaged" | "resourcesPath">): string {
-    return isPackaged ? join(resourcesPath, "drizzle") : join(appPath, "drizzle");
+}: Pick<DatabasePathContext, 'appPath' | 'isPackaged' | 'resourcesPath'>): string {
+    return isPackaged ? join(resourcesPath, 'drizzle') : join(appPath, 'drizzle');
 }
 
 export function getDatabasePathContext(): DatabasePathContext {
@@ -25,7 +25,7 @@ export function getDatabasePathContext(): DatabasePathContext {
         appPath: app.getAppPath(),
         isPackaged: app.isPackaged,
         resourcesPath: process.resourcesPath,
-        userDataPath: app.getPath("userData"),
+        userDataPath: app.getPath('userData'),
     };
 }
 

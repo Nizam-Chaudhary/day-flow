@@ -1,10 +1,10 @@
-import Database from "better-sqlite3";
-import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import Database from 'better-sqlite3';
+import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 
-import { getDatabasePath } from "@/main/db/paths";
-import * as schema from "@/main/db/schema";
+import { getDatabasePath } from '@/main/db/paths';
+import * as schema from '@/main/db/schema';
 
 export type DayFlowDatabase = BetterSQLite3Database<typeof schema>;
 
@@ -27,9 +27,9 @@ export function createDatabaseClient({
 
     const sqlite = new Database(databasePath);
 
-    sqlite.pragma("foreign_keys = ON");
-    sqlite.pragma("journal_mode = WAL");
-    sqlite.pragma("busy_timeout = 5000");
+    sqlite.pragma('foreign_keys = ON');
+    sqlite.pragma('journal_mode = WAL');
+    sqlite.pragma('busy_timeout = 5000');
 
     return {
         databasePath,

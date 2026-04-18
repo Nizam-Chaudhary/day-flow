@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { useShallow } from "zustand/react/shallow";
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -10,16 +10,16 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
     Field,
     FieldContent,
     FieldDescription,
     FieldGroup,
     FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { LoadingSwap } from "@/components/ui/loading-swap";
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { LoadingSwap } from '@/components/ui/loading-swap';
 import {
     Select,
     SelectContent,
@@ -27,14 +27,14 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { runMockAction } from "@/features/app-shell/mock-actions";
-import { useAppShellStore } from "@/stores/app-shell-store";
+} from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { runMockAction } from '@/features/app-shell/mock-actions';
+import { useAppShellStore } from '@/stores/app-shell-store';
 
-type QuickAddType = "event" | "task";
+type QuickAddType = 'event' | 'task';
 
-export function QuickAddDialog({ initialType = "task" }: { initialType?: QuickAddType }) {
+export function QuickAddDialog({ initialType = 'task' }: { initialType?: QuickAddType }) {
     const { isQuickAddOpen, selectedDate, setQuickAddOpen } = useAppShellStore(
         useShallow((state) => ({
             isQuickAddOpen: state.isQuickAddOpen,
@@ -43,11 +43,11 @@ export function QuickAddDialog({ initialType = "task" }: { initialType?: QuickAd
         })),
     );
     const [isSaving, setIsSaving] = useState(false);
-    const [title, setTitle] = useState("");
+    const [title, setTitle] = useState('');
     const [type, setType] = useState<QuickAddType>(initialType);
     const [date, setDate] = useState(selectedDate);
-    const [time, setTime] = useState("09:00");
-    const [reminder, setReminder] = useState("15 minutes before");
+    const [time, setTime] = useState('09:00');
+    const [reminder, setReminder] = useState('15 minutes before');
 
     useEffect(() => {
         if (isQuickAddOpen) {
@@ -57,11 +57,11 @@ export function QuickAddDialog({ initialType = "task" }: { initialType?: QuickAd
     }, [initialType, isQuickAddOpen, selectedDate]);
 
     const resetForm = () => {
-        setTitle("");
+        setTitle('');
         setType(initialType);
         setDate(selectedDate);
-        setTime("09:00");
-        setReminder("15 minutes before");
+        setTime('09:00');
+        setReminder('15 minutes before');
     };
 
     const handleOpenChange = (open: boolean) => {
@@ -80,12 +80,12 @@ export function QuickAddDialog({ initialType = "task" }: { initialType?: QuickAd
         setIsSaving(true);
 
         const promise = runMockAction(
-            type === "task" ? "Prototype task captured." : "Prototype event captured.",
+            type === 'task' ? 'Prototype task captured.' : 'Prototype event captured.',
         );
 
         void toast.promise(promise, {
-            error: "Quick add failed.",
-            loading: "Saving quick add...",
+            error: 'Quick add failed.',
+            loading: 'Saving quick add...',
             success: (message) => {
                 handleOpenChange(false);
                 return message;
@@ -101,7 +101,7 @@ export function QuickAddDialog({ initialType = "task" }: { initialType?: QuickAd
 
     return (
         <Dialog open={isQuickAddOpen} onOpenChange={handleOpenChange}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className='sm:max-w-lg'>
                 <DialogHeader>
                     <DialogTitle>Quick add</DialogTitle>
                     <DialogDescription>
@@ -113,14 +113,13 @@ export function QuickAddDialog({ initialType = "task" }: { initialType?: QuickAd
                     onSubmit={(event) => {
                         event.preventDefault();
                         void handleSave();
-                    }}
-                >
+                    }}>
                     <FieldGroup>
                         <Field>
-                            <FieldLabel htmlFor="quick-add-title">Title</FieldLabel>
+                            <FieldLabel htmlFor='quick-add-title'>Title</FieldLabel>
                             <FieldContent>
                                 <Input
-                                    id="quick-add-title"
+                                    id='quick-add-title'
                                     value={title}
                                     onChange={(event) => {
                                         setTitle(event.currentTarget.value);
@@ -133,32 +132,31 @@ export function QuickAddDialog({ initialType = "task" }: { initialType?: QuickAd
                         </Field>
 
                         <Field>
-                            <FieldLabel htmlFor="quick-add-type">Type</FieldLabel>
+                            <FieldLabel htmlFor='quick-add-type'>Type</FieldLabel>
                             <FieldContent>
                                 <ToggleGroup
-                                    aria-label="Quick add type"
-                                    id="quick-add-type"
+                                    aria-label='Quick add type'
+                                    id='quick-add-type'
                                     value={type}
                                     onValueChange={(value) => {
-                                        if (value === "task" || value === "event") {
+                                        if (value === 'task' || value === 'event') {
                                             setType(value);
                                         }
                                     }}
-                                    variant="outline"
-                                >
-                                    <ToggleGroupItem value="task">Task</ToggleGroupItem>
-                                    <ToggleGroupItem value="event">Event</ToggleGroupItem>
+                                    variant='outline'>
+                                    <ToggleGroupItem value='task'>Task</ToggleGroupItem>
+                                    <ToggleGroupItem value='event'>Event</ToggleGroupItem>
                                 </ToggleGroup>
                             </FieldContent>
                         </Field>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className='grid gap-4 sm:grid-cols-2'>
                             <Field>
-                                <FieldLabel htmlFor="quick-add-date">Date</FieldLabel>
+                                <FieldLabel htmlFor='quick-add-date'>Date</FieldLabel>
                                 <FieldContent>
                                     <Input
-                                        id="quick-add-date"
-                                        type="date"
+                                        id='quick-add-date'
+                                        type='date'
                                         value={date}
                                         onChange={(event) => {
                                             setDate(event.currentTarget.value);
@@ -168,11 +166,11 @@ export function QuickAddDialog({ initialType = "task" }: { initialType?: QuickAd
                             </Field>
 
                             <Field>
-                                <FieldLabel htmlFor="quick-add-time">Time</FieldLabel>
+                                <FieldLabel htmlFor='quick-add-time'>Time</FieldLabel>
                                 <FieldContent>
                                     <Input
-                                        id="quick-add-time"
-                                        type="time"
+                                        id='quick-add-time'
+                                        type='time'
                                         value={time}
                                         onChange={(event) => {
                                             setTime(event.currentTarget.value);
@@ -183,27 +181,26 @@ export function QuickAddDialog({ initialType = "task" }: { initialType?: QuickAd
                         </div>
 
                         <Field>
-                            <FieldLabel htmlFor="quick-add-reminder">Reminder</FieldLabel>
+                            <FieldLabel htmlFor='quick-add-reminder'>Reminder</FieldLabel>
                             <FieldContent>
                                 <Select
                                     value={reminder}
                                     onValueChange={(value) => {
                                         setReminder(value);
-                                    }}
-                                >
-                                    <SelectTrigger className="w-full" id="quick-add-reminder">
+                                    }}>
+                                    <SelectTrigger className='w-full' id='quick-add-reminder'>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="None">None</SelectItem>
-                                            <SelectItem value="At start time">
+                                            <SelectItem value='None'>None</SelectItem>
+                                            <SelectItem value='At start time'>
                                                 At start time
                                             </SelectItem>
-                                            <SelectItem value="15 minutes before">
+                                            <SelectItem value='15 minutes before'>
                                                 15 minutes before
                                             </SelectItem>
-                                            <SelectItem value="30 minutes before">
+                                            <SelectItem value='30 minutes before'>
                                                 30 minutes before
                                             </SelectItem>
                                         </SelectGroup>
@@ -216,19 +213,17 @@ export function QuickAddDialog({ initialType = "task" }: { initialType?: QuickAd
 
                 <DialogFooter>
                     <Button
-                        type="button"
-                        variant="outline"
+                        type='button'
+                        variant='outline'
                         onClick={() => {
                             handleOpenChange(false);
-                        }}
-                    >
+                        }}>
                         Cancel
                     </Button>
                     <Button
-                        aria-label="Save quick add"
+                        aria-label='Save quick add'
                         disabled={isSaving || !title.trim()}
-                        onClick={() => void handleSave()}
-                    >
+                        onClick={() => void handleSave()}>
                         <LoadingSwap isLoading={isSaving}>
                             <span>Save</span>
                         </LoadingSwap>

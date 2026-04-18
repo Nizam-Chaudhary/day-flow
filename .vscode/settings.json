@@ -3,7 +3,7 @@
     "js/ts.tsdk.promptToUseWorkspaceVersion": true,
     "editor.tabSize": 4,
     "editor.defaultFormatter": "oxc.oxc-vscode",
-    "oxc.fmt.configPath": "oxfmt.config.mts",
+    "oxc.fmt.configPath": ".oxfmtrc.json",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
         "source.fixAll.oxc": "always"

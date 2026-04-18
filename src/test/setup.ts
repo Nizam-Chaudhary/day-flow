@@ -1,9 +1,9 @@
-import { cleanup } from "@testing-library/react";
-import { afterEach } from "vitest";
+import { cleanup } from '@testing-library/react';
+import { afterEach } from 'vitest';
 
-if (typeof window !== "undefined") {
+if (typeof window !== 'undefined') {
     if (!window.matchMedia) {
-        Object.defineProperty(window, "matchMedia", {
+        Object.defineProperty(window, 'matchMedia', {
             configurable: true,
             value: (query: string) => ({
                 addEventListener: () => {},
@@ -18,13 +18,13 @@ if (typeof window !== "undefined") {
         });
     }
 
-    Object.defineProperty(window, "scrollTo", {
+    Object.defineProperty(window, 'scrollTo', {
         configurable: true,
         value: () => {},
     });
 
     if (!HTMLElement.prototype.scrollIntoView) {
-        Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+        Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
             configurable: true,
             value: () => {},
         });
@@ -39,11 +39,11 @@ if (typeof window !== "undefined") {
             unobserve() {}
         }
 
-        Object.defineProperty(window, "ResizeObserver", {
+        Object.defineProperty(window, 'ResizeObserver', {
             configurable: true,
             value: MockResizeObserver,
         });
-        Object.defineProperty(globalThis, "ResizeObserver", {
+        Object.defineProperty(globalThis, 'ResizeObserver', {
             configurable: true,
             value: MockResizeObserver,
         });

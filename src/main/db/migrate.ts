@@ -1,8 +1,9 @@
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 
-import { getDatabaseClient, type DatabaseClient } from "@/main/db/client";
-import { getDatabasePath, getMigrationsPath } from "@/main/db/paths";
-import type { AppHealth } from "@/shared/contracts/health";
+import type { AppHealth } from '@/shared/contracts/health';
+
+import { getDatabaseClient, type DatabaseClient } from '@/main/db/client';
+import { getDatabasePath, getMigrationsPath } from '@/main/db/paths';
 
 interface MigrationState {
     databasePath?: string;

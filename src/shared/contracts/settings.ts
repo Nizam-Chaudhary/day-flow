@@ -1,6 +1,6 @@
-import { isMatch } from "date-fns";
+import { isMatch } from 'date-fns';
 
-export const CALENDAR_VIEWS = ["day", "week", "month"] as const;
+export const CALENDAR_VIEWS = ['day', 'week', 'month'] as const;
 export const WEEK_STARTS_ON_VALUES = [0, 1] as const;
 
 export type CalendarView = (typeof CALENDAR_VIEWS)[number];
@@ -21,13 +21,13 @@ export interface UpdateAppPreferencesInput {
 }
 
 export const DEFAULT_APP_PREFERENCES_INPUT = {
-    defaultCalendarView: "week",
+    defaultCalendarView: 'week',
     weekStartsOn: 1,
-    dayStartsAt: "08:00",
+    dayStartsAt: '08:00',
 } as const satisfies UpdateAppPreferencesInput;
 
 export function isCalendarView(value: unknown): value is CalendarView {
-    return typeof value === "string" && CALENDAR_VIEWS.includes(value as CalendarView);
+    return typeof value === 'string' && CALENDAR_VIEWS.includes(value as CalendarView);
 }
 
 export function isWeekStartsOn(value: unknown): value is WeekStartsOn {
@@ -35,5 +35,5 @@ export function isWeekStartsOn(value: unknown): value is WeekStartsOn {
 }
 
 export function isTimeOfDay(value: unknown): value is string {
-    return typeof value === "string" && isMatch(value, "HH:mm");
+    return typeof value === 'string' && isMatch(value, 'HH:mm');
 }

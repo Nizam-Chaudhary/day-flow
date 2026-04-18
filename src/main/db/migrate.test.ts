@@ -1,13 +1,12 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
 
-import { afterEach, describe, expect, it } from "vitest";
+import { createDatabaseClient } from '@/main/db/client';
+import { runDatabaseMigrations } from '@/main/db/migrate';
 
-import { createDatabaseClient } from "@/main/db/client";
-import { runDatabaseMigrations } from "@/main/db/migrate";
-
-const migrationsFolder = join(process.cwd(), "drizzle");
+const migrationsFolder = join(process.cwd(), 'drizzle');
 const cleanupPaths = new Set<string>();
 
 afterEach(() => {
@@ -18,10 +17,10 @@ afterEach(() => {
     cleanupPaths.clear();
 });
 
-describe("runDatabaseMigrations", () => {
-    it("is idempotent across repeated starts", () => {
-        const tempDirectory = mkdtempSync(join(tmpdir(), "day-flow-migrate-"));
-        const databasePath = join(tempDirectory, "app.sqlite");
+describe('runDatabaseMigrations', () => {
+    it('is idempotent across repeated starts', () => {
+        const tempDirectory = mkdtempSync(join(tmpdir(), 'day-flow-migrate-'));
+        const databasePath = join(tempDirectory, 'app.sqlite');
 
         cleanupPaths.add(tempDirectory);
 

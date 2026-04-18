@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
-import type { AppHealth } from "@/shared/contracts/health";
-import type { AppPreferences, UpdateAppPreferencesInput } from "@/shared/contracts/settings";
+import type { AppHealth } from '@/shared/contracts/health';
+import type { AppPreferences, UpdateAppPreferencesInput } from '@/shared/contracts/settings';
 
 interface ElectronAppInfo {
     platform: NodeJS.Platform;

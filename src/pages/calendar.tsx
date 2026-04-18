@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useShallow } from "zustand/react/shallow";
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Sheet,
     SheetContent,
@@ -12,24 +12,24 @@ import {
     SheetFooter,
     SheetHeader,
     SheetTitle,
-} from "@/components/ui/sheet";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useAppShellActions } from "@/features/app-shell/app-shell-layout";
-import { calendarColumns, mockEvents, type MockEvent } from "@/features/app-shell/mock-data";
-import { CALENDAR_VIEWS, type CalendarView } from "@/shared/contracts/settings";
-import { useAppShellStore } from "@/stores/app-shell-store";
+} from '@/components/ui/sheet';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useAppShellActions } from '@/features/app-shell/app-shell-layout';
+import { calendarColumns, mockEvents, type MockEvent } from '@/features/app-shell/mock-data';
+import { CALENDAR_VIEWS, type CalendarView } from '@/shared/contracts/settings';
+import { useAppShellStore } from '@/stores/app-shell-store';
 
-export const Route = createFileRoute("/calendar")({
+export const Route = createFileRoute('/calendar')({
     component: CalendarPage,
 });
 
-type CalendarMode = CalendarView | "agenda";
+type CalendarMode = CalendarView | 'agenda';
 
 const calendarModeLabels: Record<CalendarMode, string> = {
-    agenda: "Agenda",
-    day: "Day",
-    month: "Month",
-    week: "Week",
+    agenda: 'Agenda',
+    day: 'Day',
+    month: 'Month',
+    week: 'Week',
 };
 
 function CalendarPage() {
@@ -43,28 +43,28 @@ function CalendarPage() {
         })),
     );
 
-    const activeMode: CalendarMode = isAgendaView ? "agenda" : activeCalendarView;
+    const activeMode: CalendarMode = isAgendaView ? 'agenda' : activeCalendarView;
 
     return (
-        <section className="flex flex-col gap-6">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-                <div className="flex max-w-3xl flex-col gap-2">
-                    <p className="text-muted-foreground text-sm">Unified scheduling workspace</p>
-                    <h2 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+        <section className='flex flex-col gap-6'>
+            <div className='flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between'>
+                <div className='flex max-w-3xl flex-col gap-2'>
+                    <p className='text-sm text-muted-foreground'>Unified scheduling workspace</p>
+                    <h2 className='font-heading text-3xl font-semibold tracking-tight sm:text-4xl'>
                         Calendar
                     </h2>
-                    <p className="text-muted-foreground max-w-2xl text-sm leading-6">
+                    <p className='max-w-2xl text-sm leading-6 text-muted-foreground'>
                         View day, week, month, or agenda layouts without changing the underlying
                         shell contracts.
                     </p>
                 </div>
 
-                <div className="flex flex-col gap-3 xl:items-end">
+                <div className='flex flex-col gap-3 xl:items-end'>
                     <ToggleGroup
-                        aria-label="Calendar view"
+                        aria-label='Calendar view'
                         value={activeMode}
                         onValueChange={(value) => {
-                            if (value === "agenda") {
+                            if (value === 'agenda') {
                                 setIsAgendaView(true);
                                 return;
                             }
@@ -74,20 +74,19 @@ function CalendarPage() {
                                 setActiveCalendarView(value as CalendarView);
                             }
                         }}
-                        variant="outline"
-                    >
-                        {(["day", "week", "month", "agenda"] as const).map((value) => (
+                        variant='outline'>
+                        {(['day', 'week', 'month', 'agenda'] as const).map((value) => (
                             <ToggleGroupItem key={value} value={value}>
                                 {calendarModeLabels[value]}
                             </ToggleGroupItem>
                         ))}
                     </ToggleGroup>
 
-                    <Button onClick={() => openQuickAdd("event")}>Add event</Button>
+                    <Button onClick={() => openQuickAdd('event')}>Add event</Button>
                 </div>
             </div>
 
-            <Card className="overflow-hidden">
+            <Card className='overflow-hidden'>
                 <CardHeader>
                     <CardTitle>Planner surface</CardTitle>
                     <CardDescription>
@@ -96,35 +95,34 @@ function CalendarPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {activeMode === "agenda" ? (
-                        <div className="flex flex-col gap-3">
+                    {activeMode === 'agenda' ? (
+                        <div className='flex flex-col gap-3'>
                             {mockEvents.map((event) => (
                                 <button
                                     key={event.id}
                                     aria-label={`Open event ${event.title}`}
-                                    className="bg-background hover:bg-muted/60 flex w-full flex-col gap-3 rounded-2xl border p-4 text-left transition-colors"
-                                    type="button"
+                                    className='flex w-full flex-col gap-3 rounded-2xl border bg-background p-4 text-left transition-colors hover:bg-muted/60'
+                                    type='button'
                                     onClick={() => {
                                         setSelectedEvent(event);
-                                    }}
-                                >
-                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    }}>
+                                    <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
                                         <div>
-                                            <p className="font-medium">{event.title}</p>
-                                            <p className="text-muted-foreground mt-1 text-sm">
+                                            <p className='font-medium'>{event.title}</p>
+                                            <p className='mt-1 text-sm text-muted-foreground'>
                                                 {event.date} · {event.startTime} - {event.endTime}
                                             </p>
                                         </div>
-                                        <Badge variant="secondary">{event.source}</Badge>
+                                        <Badge variant='secondary'>{event.source}</Badge>
                                     </div>
-                                    <p className="text-muted-foreground text-sm leading-6">
+                                    <p className='text-sm leading-6 text-muted-foreground'>
                                         {event.description}
                                     </p>
                                 </button>
                             ))}
                         </div>
-                    ) : activeMode === "month" ? (
-                        <div className="grid gap-3 md:grid-cols-7">
+                    ) : activeMode === 'month' ? (
+                        <div className='grid gap-3 md:grid-cols-7'>
                             {calendarColumns.map((column) => {
                                 const events = mockEvents.filter(
                                     (event) => event.date === column.date,
@@ -133,34 +131,32 @@ function CalendarPage() {
                                 return (
                                     <div
                                         key={column.id}
-                                        className="bg-background flex min-h-44 flex-col gap-3 rounded-2xl border p-3"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <p className="font-medium">{column.dayLabel}</p>
-                                            <Badge variant="outline">{column.numericDate}</Badge>
+                                        className='flex min-h-44 flex-col gap-3 rounded-2xl border bg-background p-3'>
+                                        <div className='flex items-center justify-between'>
+                                            <p className='font-medium'>{column.dayLabel}</p>
+                                            <Badge variant='outline'>{column.numericDate}</Badge>
                                         </div>
-                                        <div className="flex flex-col gap-2">
+                                        <div className='flex flex-col gap-2'>
                                             {events.length > 0 ? (
                                                 events.map((event) => (
                                                     <button
                                                         key={event.id}
                                                         aria-label={`Open event ${event.title}`}
-                                                        className="bg-muted/60 hover:bg-muted rounded-xl px-3 py-2 text-left text-sm transition-colors"
-                                                        type="button"
+                                                        className='rounded-xl bg-muted/60 px-3 py-2 text-left text-sm transition-colors hover:bg-muted'
+                                                        type='button'
                                                         onClick={() => {
                                                             setSelectedEvent(event);
-                                                        }}
-                                                    >
-                                                        <p className="truncate font-medium">
+                                                        }}>
+                                                        <p className='truncate font-medium'>
                                                             {event.title}
                                                         </p>
-                                                        <p className="text-muted-foreground mt-1 text-xs">
+                                                        <p className='mt-1 text-xs text-muted-foreground'>
                                                             {event.startTime}
                                                         </p>
                                                     </button>
                                                 ))
                                             ) : (
-                                                <p className="text-muted-foreground text-sm">
+                                                <p className='text-sm text-muted-foreground'>
                                                     No events
                                                 </p>
                                             )}
@@ -172,10 +168,9 @@ function CalendarPage() {
                     ) : (
                         <div
                             className={`grid gap-4 ${
-                                activeMode === "day" ? "md:grid-cols-1" : "md:grid-cols-7"
-                            }`}
-                        >
-                            {(activeMode === "day"
+                                activeMode === 'day' ? 'md:grid-cols-1' : 'md:grid-cols-7'
+                            }`}>
+                            {(activeMode === 'day'
                                 ? calendarColumns
                                       .filter((column) =>
                                           mockEvents.some((event) => event.date === column.date),
@@ -190,41 +185,39 @@ function CalendarPage() {
                                 return (
                                     <div
                                         key={column.id}
-                                        className="bg-background flex min-h-80 flex-col rounded-2xl border"
-                                    >
-                                        <div className="border-b px-4 py-3">
-                                            <p className="font-medium">{column.dayLabel}</p>
-                                            <p className="text-muted-foreground text-sm">
+                                        className='flex min-h-80 flex-col rounded-2xl border bg-background'>
+                                        <div className='border-b px-4 py-3'>
+                                            <p className='font-medium'>{column.dayLabel}</p>
+                                            <p className='text-sm text-muted-foreground'>
                                                 {column.date}
                                             </p>
                                         </div>
-                                        <div className="flex flex-1 flex-col gap-3 p-4">
+                                        <div className='flex flex-1 flex-col gap-3 p-4'>
                                             {events.length > 0 ? (
                                                 events.map((event) => (
                                                     <button
                                                         key={event.id}
                                                         aria-label={`Open event ${event.title}`}
-                                                        className="bg-primary/8 hover:bg-primary/12 flex flex-col gap-2 rounded-2xl border border-transparent px-3 py-3 text-left transition-colors"
-                                                        type="button"
+                                                        className='flex flex-col gap-2 rounded-2xl border border-transparent bg-primary/8 px-3 py-3 text-left transition-colors hover:bg-primary/12'
+                                                        type='button'
                                                         onClick={() => {
                                                             setSelectedEvent(event);
-                                                        }}
-                                                    >
-                                                        <div className="flex items-center justify-between gap-3">
-                                                            <p className="font-medium">
+                                                        }}>
+                                                        <div className='flex items-center justify-between gap-3'>
+                                                            <p className='font-medium'>
                                                                 {event.title}
                                                             </p>
-                                                            <Badge variant="secondary">
+                                                            <Badge variant='secondary'>
                                                                 {event.source}
                                                             </Badge>
                                                         </div>
-                                                        <p className="text-muted-foreground text-sm">
+                                                        <p className='text-sm text-muted-foreground'>
                                                             {event.startTime} - {event.endTime}
                                                         </p>
                                                     </button>
                                                 ))
                                             ) : (
-                                                <div className="text-muted-foreground flex flex-1 items-center justify-center rounded-2xl border border-dashed text-sm">
+                                                <div className='flex flex-1 items-center justify-center rounded-2xl border border-dashed text-sm text-muted-foreground'>
                                                     No scheduled events
                                                 </div>
                                             )}
@@ -239,48 +232,47 @@ function CalendarPage() {
 
             <Sheet
                 open={selectedEvent !== null}
-                onOpenChange={(open) => !open && setSelectedEvent(null)}
-            >
-                <SheetContent side="right">
+                onOpenChange={(open) => !open && setSelectedEvent(null)}>
+                <SheetContent side='right'>
                     <SheetHeader>
                         <SheetTitle>{selectedEvent?.title}</SheetTitle>
                         <SheetDescription>
-                            {selectedEvent?.date} · {selectedEvent?.startTime} -{" "}
+                            {selectedEvent?.date} · {selectedEvent?.startTime} -{' '}
                             {selectedEvent?.endTime}
                         </SheetDescription>
                     </SheetHeader>
                     {selectedEvent ? (
-                        <div className="flex flex-1 flex-col gap-6 px-6 pb-6">
-                            <div className="grid gap-4">
-                                <DetailRow label="Source" value={selectedEvent.source} />
-                                <DetailRow label="Calendar" value={selectedEvent.calendar} />
-                                <DetailRow label="Location" value={selectedEvent.location} />
+                        <div className='flex flex-1 flex-col gap-6 px-6 pb-6'>
+                            <div className='grid gap-4'>
+                                <DetailRow label='Source' value={selectedEvent.source} />
+                                <DetailRow label='Calendar' value={selectedEvent.calendar} />
+                                <DetailRow label='Location' value={selectedEvent.location} />
                             </div>
-                            <Card size="sm">
+                            <Card size='sm'>
                                 <CardHeader>
-                                    <CardTitle className="text-sm">Linked context</CardTitle>
+                                    <CardTitle className='text-sm'>Linked context</CardTitle>
                                     <CardDescription>
                                         Keep task and note references visible from the event detail
                                         surface.
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent className="grid gap-3">
+                                <CardContent className='grid gap-3'>
                                     <DetailRow
-                                        label="Linked task"
+                                        label='Linked task'
                                         value={selectedEvent.linkedTask}
                                     />
                                     <DetailRow
-                                        label="Notion area"
+                                        label='Notion area'
                                         value={selectedEvent.linkedNote}
                                     />
                                 </CardContent>
                             </Card>
-                            <Card size="sm">
+                            <Card size='sm'>
                                 <CardHeader>
-                                    <CardTitle className="text-sm">Reminder</CardTitle>
+                                    <CardTitle className='text-sm'>Reminder</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <p className="text-muted-foreground text-sm">
+                                    <p className='text-sm text-muted-foreground'>
                                         {selectedEvent.reminder}
                                     </p>
                                 </CardContent>
@@ -288,7 +280,7 @@ function CalendarPage() {
                         </div>
                     ) : null}
                     <SheetFooter>
-                        <Button variant="outline" onClick={() => setSelectedEvent(null)}>
+                        <Button variant='outline' onClick={() => setSelectedEvent(null)}>
                             Close
                         </Button>
                     </SheetFooter>
@@ -300,9 +292,9 @@ function CalendarPage() {
 
 function DetailRow({ label, value }: { label: string; value: string }) {
     return (
-        <div className="bg-background rounded-2xl border px-4 py-3">
-            <p className="text-muted-foreground text-xs uppercase tracking-[0.2em]">{label}</p>
-            <p className="mt-2 text-sm font-medium">{value}</p>
+        <div className='rounded-2xl border bg-background px-4 py-3'>
+            <p className='text-xs tracking-[0.2em] text-muted-foreground uppercase'>{label}</p>
+            <p className='mt-2 text-sm font-medium'>{value}</p>
         </div>
     );
 }

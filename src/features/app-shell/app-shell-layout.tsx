@@ -1,19 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
-import { Outlet } from "@tanstack/react-router";
-import { createContext, type CSSProperties, useContext, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import { useShallow } from "zustand/react/shallow";
+import { useQuery } from '@tanstack/react-query';
+import { Outlet } from '@tanstack/react-router';
+import { createContext, type CSSProperties, useContext, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
 
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppTopbar } from "@/features/app-shell/app-topbar";
-import { GlobalSearchDialog } from "@/features/app-shell/global-search-dialog";
-import { runMockAction } from "@/features/app-shell/mock-actions";
-import { QuickAddDialog } from "@/features/app-shell/quick-add-dialog";
-import { appPreferencesQueryOptions } from "@/features/settings/settings-query-options";
-import { useAppShellStore } from "@/stores/app-shell-store";
+import { AppSidebar } from '@/components/app-sidebar';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { AppTopbar } from '@/features/app-shell/app-topbar';
+import { GlobalSearchDialog } from '@/features/app-shell/global-search-dialog';
+import { runMockAction } from '@/features/app-shell/mock-actions';
+import { QuickAddDialog } from '@/features/app-shell/quick-add-dialog';
+import { appPreferencesQueryOptions } from '@/features/settings/settings-query-options';
+import { useAppShellStore } from '@/stores/app-shell-store';
 
-type QuickAddType = "event" | "task";
+type QuickAddType = 'event' | 'task';
 
 interface AppShellActions {
     openCommandPalette(): void;
@@ -31,7 +31,7 @@ const fallbackActions: AppShellActions = {
         useAppShellStore.getState().setQuickAddOpen(true);
     },
     async syncNow() {
-        await runMockAction("Manual sync finished.");
+        await runMockAction('Manual sync finished.');
     },
 };
 
@@ -40,14 +40,14 @@ export function useAppShellActions(): AppShellActions {
 }
 
 const sidebarStyle = {
-    "--sidebar-width": "15rem",
-    "--sidebar-width-mobile": "16rem",
+    '--sidebar-width': '15rem',
+    '--sidebar-width-mobile': '16rem',
 } as CSSProperties;
 
 export function AppShellLayout() {
     const preferencesQuery = useQuery(appPreferencesQueryOptions);
     const hasHydratedCalendarView = useRef(false);
-    const [quickAddType, setQuickAddType] = useState<QuickAddType>("task");
+    const [quickAddType, setQuickAddType] = useState<QuickAddType>('task');
     const {
         isSyncInFlight,
         setActiveCalendarView,
@@ -77,20 +77,20 @@ export function AppShellLayout() {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
                 event.preventDefault();
                 setCommandPaletteOpen(true);
             }
         };
 
-        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener('keydown', handleKeyDown);
 
         return () => {
-            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener('keydown', handleKeyDown);
         };
     }, [setCommandPaletteOpen]);
 
-    const openQuickAdd = (type: QuickAddType = "task") => {
+    const openQuickAdd = (type: QuickAddType = 'task') => {
         setQuickAddType(type);
         setQuickAddOpen(true);
     };
@@ -102,11 +102,11 @@ export function AppShellLayout() {
 
         setSyncInFlight(true);
 
-        const promise = runMockAction("Everything is in sync.");
+        const promise = runMockAction('Everything is in sync.');
 
         void toast.promise(promise, {
-            error: "Sync failed.",
-            loading: "Syncing providers...",
+            error: 'Sync failed.',
+            loading: 'Syncing providers...',
             success: (message) => {
                 setLastSyncedAt(new Date().toISOString());
                 return message;
@@ -128,16 +128,15 @@ export function AppShellLayout() {
                 },
                 openQuickAdd,
                 syncNow,
-            }}
-        >
+            }}>
             <SidebarProvider defaultOpen style={sidebarStyle}>
                 <AppSidebar />
                 <SidebarInset>
-                    <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+                    <div className='flex min-h-screen min-w-0 flex-1 flex-col'>
                         <AppTopbar onOpenQuickAdd={openQuickAdd} onSyncNow={syncNow} />
 
-                        <main className="flex-1 px-4 pb-8 pt-6 sm:px-6 lg:px-8 lg:pt-8">
-                            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+                        <main className='flex-1 px-4 pt-6 pb-8 sm:px-6 lg:px-8 lg:pt-8'>
+                            <div className='mx-auto flex w-full max-w-7xl flex-col gap-6'>
                                 <Outlet />
                             </div>
                         </main>

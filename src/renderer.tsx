@@ -1,22 +1,22 @@
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from '@tanstack/react-query';
 // import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
     RouterProvider,
     createBrowserHistory,
     createHashHistory,
     createRouter,
-} from "@tanstack/react-router";
+} from '@tanstack/react-router';
 // import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { ThemeProvider } from "next-themes";
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import { ThemeProvider } from 'next-themes';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 
-import "@/index.css";
-import { Toaster } from "@/components/ui/sonner";
-import { createQueryClient } from "@/lib/query/create-query-client";
-import { routeTree } from "@/routeTree.gen";
+import '@/index.css';
+import { Toaster } from '@/components/ui/sonner';
+import { createQueryClient } from '@/lib/query/create-query-client';
+import { routeTree } from '@/routeTree.gen';
 
-const history = window.location.protocol === "file:" ? createHashHistory() : createBrowserHistory();
+const history = window.location.protocol === 'file:' ? createHashHistory() : createBrowserHistory();
 const queryClient = createQueryClient();
 
 const router = createRouter({
@@ -24,30 +24,29 @@ const router = createRouter({
     history,
 });
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
     interface Register {
         router: typeof router;
     }
 }
 
-const rootElement = document.getElementById("app");
+const rootElement = document.getElementById('app');
 
 if (!rootElement) {
-    throw new Error("Missing #app root element");
+    throw new Error('Missing #app root element');
 }
 
 createRoot(rootElement).render(
     <StrictMode>
         <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
+            attribute='class'
+            defaultTheme='system'
             disableTransitionOnChange
             enableSystem
-            storageKey="day-flow-theme"
-        >
+            storageKey='day-flow-theme'>
             <QueryClientProvider client={queryClient}>
                 <RouterProvider router={router} />
-                <Toaster position="top-right" richColors />
+                <Toaster position='top-right' richColors />
                 {/* {import.meta.env.DEV ? <TanStackRouterDevtools router={router} /> : null} */}
                 {/* {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null} */}
             </QueryClientProvider>

@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { updateAppPreferences } from "@/features/settings/settings-api";
-import { queryKeys } from "@/lib/query/query-keys";
+import { updateAppPreferences } from '@/features/settings/settings-api';
+import { queryKeys } from '@/lib/query/query-keys';
 
 export function useUpdateAppPreferences() {
     const queryClient = useQueryClient();

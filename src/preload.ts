@@ -1,6 +1,6 @@
-import { contextBridge } from "electron";
+import { contextBridge } from 'electron';
 
-import { createDayFlowApi } from "@/preload/create-day-flow-api";
+import { createDayFlowApi } from '@/preload/create-day-flow-api';
 
 const electronApp = Object.freeze({
     platform: process.platform,
@@ -11,5 +11,5 @@ const electronApp = Object.freeze({
     }),
 });
 
-contextBridge.exposeInMainWorld("electronApp", electronApp);
-contextBridge.exposeInMainWorld("dayFlowApi", createDayFlowApi());
+contextBridge.exposeInMainWorld('electronApp', electronApp);
+contextBridge.exposeInMainWorld('dayFlowApi', createDayFlowApi());

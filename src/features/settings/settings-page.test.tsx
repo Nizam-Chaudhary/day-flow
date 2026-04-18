@@ -1,54 +1,56 @@
 // @vitest-environment jsdom
 
-import { QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { ThemeProvider } from "next-themes";
-import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from 'react';
+
+import { QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { ThemeProvider } from 'next-themes';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { toastPromise } = vi.hoisted(() => ({
     toastPromise: vi.fn((promise: Promise<unknown>) => promise),
 }));
 
-vi.mock("sonner", () => ({
+vi.mock('sonner', () => ({
     toast: {
         promise: toastPromise,
     },
 }));
 
-import { SettingsPage } from "@/features/settings/settings-page";
-import { createQueryClient } from "@/lib/query/create-query-client";
-import type { DayFlowApi } from "@/preload/create-day-flow-api";
-import { resetAppShellStore } from "@/stores/app-shell-store";
+import type { DayFlowApi } from '@/preload/create-day-flow-api';
 
-describe("SettingsPage", () => {
+import { SettingsPage } from '@/features/settings/settings-page';
+import { createQueryClient } from '@/lib/query/create-query-client';
+import { resetAppShellStore } from '@/stores/app-shell-store';
+
+describe('SettingsPage', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         resetAppShellStore();
         toastPromise.mockClear();
     });
 
-    it("loads preferences, submits updates with toast feedback, and invalidates the settings query", async () => {
+    it('loads preferences, submits updates with toast feedback, and invalidates the settings query', async () => {
         const getHealth = vi.fn().mockResolvedValue({
-            databasePath: "/tmp/day-flow.sqlite",
+            databasePath: '/tmp/day-flow.sqlite',
             databaseReady: true,
-            lastMigrationAt: "2026-04-18T00:00:00.000Z",
+            lastMigrationAt: '2026-04-18T00:00:00.000Z',
         });
         const getPreferences = vi
             .fn()
             .mockResolvedValueOnce({
-                createdAt: "2026-04-18T00:00:00.000Z",
-                dayStartsAt: "09:30",
-                defaultCalendarView: "month",
-                updatedAt: "2026-04-18T00:00:00.000Z",
+                createdAt: '2026-04-18T00:00:00.000Z',
+                dayStartsAt: '09:30',
+                defaultCalendarView: 'month',
+                updatedAt: '2026-04-18T00:00:00.000Z',
                 weekStartsOn: 0,
             })
             .mockResolvedValue({
-                createdAt: "2026-04-18T00:00:00.000Z",
-                dayStartsAt: "07:45",
-                defaultCalendarView: "day",
-                updatedAt: "2026-04-18T00:15:00.000Z",
+                createdAt: '2026-04-18T00:00:00.000Z',
+                dayStartsAt: '07:45',
+                defaultCalendarView: 'day',
+                updatedAt: '2026-04-18T00:15:00.000Z',
                 weekStartsOn: 1,
             });
 
@@ -70,19 +72,19 @@ describe("SettingsPage", () => {
 
         renderWithProviders(<SettingsPage />);
 
-        const timeInput = (await screen.findByLabelText("Day starts at")) as HTMLInputElement;
+        const timeInput = (await screen.findByLabelText('Day starts at')) as HTMLInputElement;
 
         await waitFor(() => {
-            expect(timeInput.value).toBe("09:30");
+            expect(timeInput.value).toBe('09:30');
         });
 
-        fireEvent.change(timeInput, { target: { value: "07:45" } });
-        await userEvent.click(screen.getByRole("button", { name: "Save preferences" }));
+        fireEvent.change(timeInput, { target: { value: '07:45' } });
+        await userEvent.click(screen.getByRole('button', { name: 'Save preferences' }));
 
         await waitFor(() => {
             expect(updatePreferences).toHaveBeenCalledWith({
-                dayStartsAt: "07:45",
-                defaultCalendarView: "month",
+                dayStartsAt: '07:45',
+                defaultCalendarView: 'month',
                 weekStartsOn: 0,
             });
         });
@@ -92,17 +94,17 @@ describe("SettingsPage", () => {
         });
 
         await waitFor(() => {
-            expect(screen.getByRole("button", { name: "Save preferences" })).toHaveProperty(
-                "disabled",
+            expect(screen.getByRole('button', { name: 'Save preferences' })).toHaveProperty(
+                'disabled',
                 true,
             );
         });
 
         resolveUpdate?.({
-            createdAt: "2026-04-18T00:00:00.000Z",
-            dayStartsAt: "07:45",
-            defaultCalendarView: "day",
-            updatedAt: "2026-04-18T00:15:00.000Z",
+            createdAt: '2026-04-18T00:00:00.000Z',
+            dayStartsAt: '07:45',
+            defaultCalendarView: 'day',
+            updatedAt: '2026-04-18T00:15:00.000Z',
             weekStartsOn: 1,
         });
 
@@ -110,27 +112,27 @@ describe("SettingsPage", () => {
             expect(getPreferences).toHaveBeenCalledTimes(2);
         });
 
-        expect((screen.getByLabelText("Day starts at") as HTMLInputElement).value).toBe("07:45");
+        expect((screen.getByLabelText('Day starts at') as HTMLInputElement).value).toBe('07:45');
     });
 
-    it("renders query errors", async () => {
+    it('renders query errors', async () => {
         window.dayFlowApi = {
             app: {
                 getHealth: vi.fn().mockResolvedValue({
-                    databasePath: "/tmp/day-flow.sqlite",
+                    databasePath: '/tmp/day-flow.sqlite',
                     databaseReady: true,
                 }),
             },
             settings: {
-                getPreferences: vi.fn().mockRejectedValue(new Error("Database unavailable.")),
+                getPreferences: vi.fn().mockRejectedValue(new Error('Database unavailable.')),
                 updatePreferences: vi.fn(),
             },
         } satisfies DayFlowApi;
 
         renderWithProviders(<SettingsPage />);
 
-        expect((await screen.findByText("Database unavailable.")).textContent).toContain(
-            "Database unavailable.",
+        expect((await screen.findByText('Database unavailable.')).textContent).toContain(
+            'Database unavailable.',
         );
     });
 });
@@ -139,7 +141,7 @@ function renderWithProviders(component: ReactNode) {
     const queryClient = createQueryClient();
 
     return render(
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
             <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>
         </ThemeProvider>,
     );

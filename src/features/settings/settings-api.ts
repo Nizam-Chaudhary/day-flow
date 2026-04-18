@@ -1,5 +1,5 @@
-import type { AppHealth } from "@/shared/contracts/health";
-import type { AppPreferences, UpdateAppPreferencesInput } from "@/shared/contracts/settings";
+import type { AppHealth } from '@/shared/contracts/health';
+import type { AppPreferences, UpdateAppPreferencesInput } from '@/shared/contracts/settings';
 
 export function getAppHealth(): Promise<AppHealth> {
     return window.dayFlowApi.app.getHealth();

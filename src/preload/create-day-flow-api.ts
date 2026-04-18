@@ -1,13 +1,14 @@
-import { ipcRenderer } from "electron";
+import { ipcRenderer } from 'electron';
+
+import type { AppHealth } from '@/shared/contracts/health';
+import type { AppPreferences, UpdateAppPreferencesInput } from '@/shared/contracts/settings';
 
 import {
     APP_GET_HEALTH_CHANNEL,
     SETTINGS_GET_CHANNEL,
     SETTINGS_UPDATE_CHANNEL,
-} from "@/shared/channels";
-import type { AppHealth } from "@/shared/contracts/health";
-import type { AppPreferences, UpdateAppPreferencesInput } from "@/shared/contracts/settings";
-import { type DayFlowResult, toDayFlowRendererError } from "@/shared/errors";
+} from '@/shared/channels';
+import { type DayFlowResult, toDayFlowRendererError } from '@/shared/errors';
 
 export interface DayFlowApi {
     app: {

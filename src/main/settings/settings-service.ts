@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
+import { eq } from 'drizzle-orm';
 
-import { type DatabaseClient, getDatabaseClient } from "@/main/db/client";
-import { AppPreferencesRow, appPreferencesTable } from "@/main/db/schema";
+import { type DatabaseClient, getDatabaseClient } from '@/main/db/client';
+import { AppPreferencesRow, appPreferencesTable } from '@/main/db/schema';
 import {
     type AppPreferences,
     DEFAULT_APP_PREFERENCES_INPUT,
@@ -9,8 +9,8 @@ import {
     isCalendarView,
     isTimeOfDay,
     isWeekStartsOn,
-} from "@/shared/contracts/settings";
-import { createDayFlowError, normalizeDayFlowError } from "@/shared/errors";
+} from '@/shared/contracts/settings';
+import { createDayFlowError, normalizeDayFlowError } from '@/shared/errors';
 
 export interface SettingsService {
     getPreferences(): AppPreferences;
@@ -48,7 +48,7 @@ export function createSettingsService(
             try {
                 return mapAppPreferencesRow(ensurePreferencesRow());
             } catch (error) {
-                throw normalizeDayFlowError(error, "DATABASE_ERROR");
+                throw normalizeDayFlowError(error, 'DATABASE_ERROR');
             }
         },
         updatePreferences(input) {
@@ -78,14 +78,14 @@ export function createSettingsService(
 
                 if (!updatedPreferences) {
                     throw createDayFlowError(
-                        "DATABASE_ERROR",
-                        "Failed to load updated preferences.",
+                        'DATABASE_ERROR',
+                        'Failed to load updated preferences.',
                     );
                 }
 
                 return mapAppPreferencesRow(updatedPreferences);
             } catch (error) {
-                throw normalizeDayFlowError(error, "DATABASE_ERROR");
+                throw normalizeDayFlowError(error, 'DATABASE_ERROR');
             }
         },
     };
@@ -93,15 +93,15 @@ export function createSettingsService(
 
 function validateUpdateAppPreferencesInput(input: UpdateAppPreferencesInput): void {
     if (!isCalendarView(input.defaultCalendarView)) {
-        throw createDayFlowError("INVALID_INPUT", "Invalid calendar view.");
+        throw createDayFlowError('INVALID_INPUT', 'Invalid calendar view.');
     }
 
     if (!isWeekStartsOn(input.weekStartsOn)) {
-        throw createDayFlowError("INVALID_INPUT", "Invalid week start value.");
+        throw createDayFlowError('INVALID_INPUT', 'Invalid week start value.');
     }
 
     if (!isTimeOfDay(input.dayStartsAt)) {
-        throw createDayFlowError("INVALID_INPUT", "Invalid day start time.");
+        throw createDayFlowError('INVALID_INPUT', 'Invalid day start time.');
     }
 }
 

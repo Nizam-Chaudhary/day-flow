@@ -1,43 +1,63 @@
-import type { ForgeConfig } from "@electron-forge/shared-types";
+import type { ForgeConfig } from '@electron-forge/shared-types';
 
-import { MakerDeb } from "@electron-forge/maker-deb";
-import { MakerRpm } from "@electron-forge/maker-rpm";
-import { MakerSquirrel } from "@electron-forge/maker-squirrel";
-import { MakerZIP } from "@electron-forge/maker-zip";
-import { AutoUnpackNativesPlugin } from "@electron-forge/plugin-auto-unpack-natives";
-import { FusesPlugin } from "@electron-forge/plugin-fuses";
-import { VitePlugin } from "@electron-forge/plugin-vite";
-import { FuseV1Options, FuseVersion } from "@electron/fuses";
+import { MakerDeb } from '@electron-forge/maker-deb';
+import { MakerRpm } from '@electron-forge/maker-rpm';
+import { MakerSquirrel } from '@electron-forge/maker-squirrel';
+import { MakerZIP } from '@electron-forge/maker-zip';
+import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
+import { FusesPlugin } from '@electron-forge/plugin-fuses';
+import { VitePlugin } from '@electron-forge/plugin-vite';
+import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
 const config: ForgeConfig = {
     packagerConfig: {
         asar: true,
-        executableName: "day-flow",
-        extraResource: ["drizzle"],
+        executableName: 'day-flow',
+        extraResource: ['drizzle', 'assets'],
+        icon: 'assets/icons',
     },
     makers: [
-        new MakerSquirrel({}, ["win32"]),
-        new MakerZIP({}, ["darwin"]),
-        new MakerDeb({}, ["linux"]),
-        new MakerRpm({}, ["linux"]),
+        new MakerSquirrel(
+            {
+                setupIcon: 'assets/icons/day-flow.ico',
+            },
+            ['win32'],
+        ),
+        new MakerZIP({}, ['darwin']),
+        new MakerDeb(
+            {
+                options: {
+                    icon: 'assets/icons',
+                },
+            },
+            ['linux'],
+        ),
+        new MakerRpm(
+            {
+                options: {
+                    icon: 'assets/icons',
+                },
+            },
+            ['linux'],
+        ),
     ],
     plugins: [
         new AutoUnpackNativesPlugin({}),
         new VitePlugin({
             build: [
                 {
-                    entry: "src/main.ts",
-                    config: "vite.main.config.ts",
+                    entry: 'src/main.ts',
+                    config: 'vite.main.config.ts',
                 },
                 {
-                    entry: "src/preload.ts",
-                    config: "vite.preload.config.ts",
+                    entry: 'src/preload.ts',
+                    config: 'vite.preload.config.ts',
                 },
             ],
             renderer: [
                 {
-                    name: "main_window",
-                    config: "vite.config.ts",
+                    name: 'main_window',
+                    config: 'vite.config.ts',
                 },
             ],
         }),

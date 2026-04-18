@@ -1,7 +1,7 @@
-import { format, subMinutes } from "date-fns";
-import { create } from "zustand";
+import { format, subMinutes } from 'date-fns';
+import { create } from 'zustand';
 
-import type { CalendarView } from "@/shared/contracts/settings";
+import type { CalendarView } from '@/shared/contracts/settings';
 
 export interface AppShellState {
     activeCalendarView: CalendarView;
@@ -21,13 +21,13 @@ export interface AppShellState {
 }
 
 export const useAppShellStore = create<AppShellState>()((set) => ({
-    activeCalendarView: "week",
+    activeCalendarView: 'week',
     isCommandPaletteOpen: false,
     isNotificationsOpen: false,
     isQuickAddOpen: false,
     isSyncInFlight: false,
     lastSyncedAt: subMinutes(new Date(), 12).toISOString(),
-    selectedDate: format(new Date(), "yyyy-MM-dd"),
+    selectedDate: format(new Date(), 'yyyy-MM-dd'),
     setActiveCalendarView: (activeCalendarView) => {
         set({ activeCalendarView });
     },
@@ -63,12 +63,12 @@ export const appShellSelectors = {
 
 export function resetAppShellStore(): void {
     useAppShellStore.setState({
-        activeCalendarView: "week",
+        activeCalendarView: 'week',
         isCommandPaletteOpen: false,
         isNotificationsOpen: false,
         isQuickAddOpen: false,
         isSyncInFlight: false,
         lastSyncedAt: subMinutes(new Date(), 12).toISOString(),
-        selectedDate: format(new Date(), "yyyy-MM-dd"),
+        selectedDate: format(new Date(), 'yyyy-MM-dd'),
     });
 }

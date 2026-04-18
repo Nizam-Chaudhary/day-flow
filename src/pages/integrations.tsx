@@ -1,12 +1,12 @@
-import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { toast } from "sonner";
+import { HugeiconsIcon } from '@hugeicons/react';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoadingSwap } from "@/components/ui/loading-swap";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LoadingSwap } from '@/components/ui/loading-swap';
 import {
     Table,
     TableBody,
@@ -14,15 +14,15 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
-import { runMockAction } from "@/features/app-shell/mock-actions";
+} from '@/components/ui/table';
+import { runMockAction } from '@/features/app-shell/mock-actions';
 import {
     integrationIcons,
     integrationProviders,
     notionFieldMappings,
-} from "@/features/app-shell/mock-data";
+} from '@/features/app-shell/mock-data';
 
-export const Route = createFileRoute("/integrations")({
+export const Route = createFileRoute('/integrations')({
     component: IntegrationsPage,
 });
 
@@ -35,8 +35,8 @@ function IntegrationsPage() {
         const promise = runMockAction(successMessage);
 
         void toast.promise(promise, {
-            error: "Provider action failed.",
-            loading: "Updating provider connection...",
+            error: 'Provider action failed.',
+            loading: 'Updating provider connection...',
             success: (message) => message,
         });
 
@@ -48,24 +48,24 @@ function IntegrationsPage() {
     };
 
     return (
-        <section className="flex flex-col gap-6">
-            <div className="flex max-w-3xl flex-col gap-2">
-                <p className="text-muted-foreground text-sm">Connections and mappings</p>
-                <h2 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+        <section className='flex flex-col gap-6'>
+            <div className='flex max-w-3xl flex-col gap-2'>
+                <p className='text-sm text-muted-foreground'>Connections and mappings</p>
+                <h2 className='font-heading text-3xl font-semibold tracking-tight sm:text-4xl'>
                     Integrations
                 </h2>
-                <p className="text-muted-foreground max-w-2xl text-sm leading-6">
+                <p className='max-w-2xl text-sm leading-6 text-muted-foreground'>
                     Provider cards stay modular and readable, with connection state, sync context,
                     and a first mapping preview for Notion.
                 </p>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            <div className='grid gap-4 lg:grid-cols-2 xl:grid-cols-3'>
                 {integrationProviders.map((provider) => (
                     <Card key={provider.id}>
                         <CardHeader>
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-2xl">
+                            <div className='flex items-start justify-between gap-3'>
+                                <div className='flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
                                     <HugeiconsIcon
                                         icon={integrationIcons[provider.id]}
                                         strokeWidth={2}
@@ -73,37 +73,35 @@ function IntegrationsPage() {
                                 </div>
                                 <Badge
                                     variant={
-                                        provider.status === "Connected" ? "secondary" : "outline"
-                                    }
-                                >
+                                        provider.status === 'Connected' ? 'secondary' : 'outline'
+                                    }>
                                     {provider.status}
                                 </Badge>
                             </div>
                             <CardTitle>{provider.name}</CardTitle>
                             <CardDescription>{provider.description}</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex flex-col gap-4">
-                            <div className="bg-background rounded-2xl border px-4 py-3">
-                                <p className="text-muted-foreground text-xs uppercase tracking-[0.2em]">
+                        <CardContent className='flex flex-col gap-4'>
+                            <div className='rounded-2xl border bg-background px-4 py-3'>
+                                <p className='text-xs tracking-[0.2em] text-muted-foreground uppercase'>
                                     Last sync
                                 </p>
-                                <p className="mt-2 text-sm font-medium">{provider.lastSyncText}</p>
+                                <p className='mt-2 text-sm font-medium'>{provider.lastSyncText}</p>
                             </div>
                             <Button
                                 disabled={pendingProvider !== null}
-                                variant={provider.status === "Connected" ? "outline" : "default"}
+                                variant={provider.status === 'Connected' ? 'outline' : 'default'}
                                 onClick={() =>
                                     void handleProviderAction(
                                         provider.id,
-                                        provider.status === "Connected"
+                                        provider.status === 'Connected'
                                             ? `${provider.name} configuration opened.`
                                             : `${provider.name} connection started.`,
                                     )
-                                }
-                            >
+                                }>
                                 <LoadingSwap isLoading={pendingProvider === provider.id}>
                                     <span>
-                                        {provider.status === "Connected" ? "Configure" : "Connect"}
+                                        {provider.status === 'Connected' ? 'Configure' : 'Connect'}
                                     </span>
                                 </LoadingSwap>
                             </Button>

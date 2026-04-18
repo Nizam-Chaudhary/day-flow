@@ -1,7 +1,7 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions } from '@tanstack/react-query';
 
-import { getAppHealth, getAppPreferences } from "@/features/settings/settings-api";
-import { queryKeys } from "@/lib/query/query-keys";
+import { getAppHealth, getAppPreferences } from '@/features/settings/settings-api';
+import { queryKeys } from '@/lib/query/query-keys';
 
 export const appHealthQueryOptions = queryOptions({
     queryFn: getAppHealth,

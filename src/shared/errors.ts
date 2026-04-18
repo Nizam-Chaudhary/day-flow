@@ -1,4 +1,4 @@
-export const DAY_FLOW_ERROR_CODES = ["DATABASE_ERROR", "INTERNAL_ERROR", "INVALID_INPUT"] as const;
+export const DAY_FLOW_ERROR_CODES = ['DATABASE_ERROR', 'INTERNAL_ERROR', 'INVALID_INPUT'] as const;
 
 export type DayFlowErrorCode = (typeof DAY_FLOW_ERROR_CODES)[number];
 
@@ -33,22 +33,22 @@ export function dayFlowErr(error: DayFlowError): DayFlowResult<never> {
 }
 
 export function isDayFlowError(value: unknown): value is DayFlowError {
-    if (!value || typeof value !== "object") {
+    if (!value || typeof value !== 'object') {
         return false;
     }
 
     const { code, message } = value as Partial<DayFlowError>;
 
     return (
-        typeof message === "string" &&
-        typeof code === "string" &&
+        typeof message === 'string' &&
+        typeof code === 'string' &&
         DAY_FLOW_ERROR_CODES.includes(code as DayFlowErrorCode)
     );
 }
 
 export function normalizeDayFlowError(
     error: unknown,
-    fallbackCode: DayFlowErrorCode = "INTERNAL_ERROR",
+    fallbackCode: DayFlowErrorCode = 'INTERNAL_ERROR',
 ): DayFlowError {
     if (isDayFlowError(error)) {
         return error;
@@ -58,13 +58,13 @@ export function normalizeDayFlowError(
         return createDayFlowError(fallbackCode, error.message);
     }
 
-    return createDayFlowError(fallbackCode, "An unexpected error occurred.");
+    return createDayFlowError(fallbackCode, 'An unexpected error occurred.');
 }
 
 export function toDayFlowRendererError(error: DayFlowError): DayFlowRendererError {
     const rendererError = new Error(error.message) as DayFlowRendererError;
 
-    rendererError.name = "DayFlowError";
+    rendererError.name = 'DayFlowError';
     rendererError.code = error.code;
     rendererError.details = error.details;
 

@@ -1,15 +1,15 @@
-import { ipcMain, type IpcMainInvokeEvent } from "electron";
+import { ipcMain, type IpcMainInvokeEvent } from 'electron';
 
-import { getDatabaseHealth } from "@/main/db/migrate";
-import { createSettingsService, type SettingsService } from "@/main/settings/settings-service";
+import { getDatabaseHealth } from '@/main/db/migrate';
+import { createSettingsService, type SettingsService } from '@/main/settings/settings-service';
 import {
     APP_GET_HEALTH_CHANNEL,
     SETTINGS_GET_CHANNEL,
     SETTINGS_UPDATE_CHANNEL,
-} from "@/shared/channels";
-import { type AppHealth } from "@/shared/contracts/health";
-import { type UpdateAppPreferencesInput } from "@/shared/contracts/settings";
-import { dayFlowErr, dayFlowOk, normalizeDayFlowError, type DayFlowResult } from "@/shared/errors";
+} from '@/shared/channels';
+import { type AppHealth } from '@/shared/contracts/health';
+import { type UpdateAppPreferencesInput } from '@/shared/contracts/settings';
+import { dayFlowErr, dayFlowOk, normalizeDayFlowError, type DayFlowResult } from '@/shared/errors';
 
 interface IpcDependencies {
     getHealth?: () => AppHealth;
