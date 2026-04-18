@@ -2,8 +2,8 @@ import type { CSSProperties } from 'react';
 
 import { useTheme } from 'next-themes';
 
-import dayFlowMarkDark from '@/assets/brand/day-flow-dark.svg';
-import dayFlowMarkLight from '@/assets/brand/day-flow-light.svg';
+import dayFlowMarkDark from '@/assets/brand/v2/day-flow-dark-transparent.svg';
+import dayFlowMarkLight from '@/assets/brand/v2/day-flow-light-transparent.svg';
 import { cn } from '@/lib/utils';
 
 export type DayFlowLogoProps = {
@@ -27,7 +27,7 @@ const logoSources = {
 export function DayFlowLogo({ className, kind = 'mark', label, size }: DayFlowLogoProps) {
     const { forcedTheme, resolvedTheme, theme } = useTheme();
     const activeTheme = forcedTheme ?? resolvedTheme ?? theme;
-    const variant = activeTheme === 'light' ? 'dark' : 'light';
+    const variant = activeTheme === 'light' ? 'light' : 'dark';
     const src = logoSources[kind][variant];
     const style = getLogoStyle(kind, size);
 
