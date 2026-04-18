@@ -13,6 +13,7 @@ const config: ForgeConfig = {
     packagerConfig: {
         asar: true,
         executableName: "day-flow",
+        extraResource: ["drizzle"],
     },
     makers: [
         new MakerSquirrel({}, ["win32"]),

@@ -16,10 +16,15 @@
         "tsBuildInfoFile": "./node_modules/.cache/tsconfig.node.tsbuildinfo"
     },
     "include": [
+        "drizzle.config.ts",
         "forge.config.ts",
+        "vitest.config.ts",
         "vite.*.config.ts",
         "src/main.ts",
+        "src/main/**/*.ts",
         "src/preload.ts",
+        "src/preload/**/*.ts",
+        "src/shared/**/*.ts",
         "src/**/*.d.ts",
         "vite.config.ts"
     ]

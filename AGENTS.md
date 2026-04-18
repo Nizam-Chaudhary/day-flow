@@ -32,6 +32,10 @@ Long term maintainability is a core priority. Duplicate logic across multiple fi
 - Keep usage consistent with the existing project patterns and styling
 - Avoid duplicating components that already exist in the project
 
+## Typography
+
+- follow guide available on [Shadcn Typography](https://ui.shadcn.com/docs/components/base/typography) for typography usages
+
 ## Commit Guide Reference
 
 - Detailed commit guidelines are available at: `docs/agents-commit.md`

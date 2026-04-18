@@ -1,3 +1,5 @@
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
     RouterProvider,
     createBrowserHistory,
@@ -9,9 +11,11 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import "@/index.css";
+import { createQueryClient } from "@/lib/query/create-query-client";
 import { routeTree } from "@/routeTree.gen";
 
 const history = window.location.protocol === "file:" ? createHashHistory() : createBrowserHistory();
+const queryClient = createQueryClient();
 
 const router = createRouter({
     routeTree,
@@ -32,7 +36,10 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
     <StrictMode>
-        <RouterProvider router={router} />
-        {import.meta.env.DEV ? <TanStackRouterDevtools router={router} /> : null}
+        <QueryClientProvider client={queryClient}>
+            <RouterProvider router={router} />
+            {import.meta.env.DEV ? <TanStackRouterDevtools router={router} /> : null}
+            {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
+        </QueryClientProvider>
     </StrictMode>,
 );

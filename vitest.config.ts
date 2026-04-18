@@ -1,15 +1,16 @@
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-    build: {
-        rollupOptions: {
-            external: ["better-sqlite3"],
-        },
-    },
     resolve: {
         alias: {
             "@": fileURLToPath(new URL("./src", import.meta.url)),
         },
+    },
+    test: {
+        clearMocks: true,
+        environment: "node",
+        restoreMocks: true,
+        setupFiles: ["./src/test/setup.ts"],
     },
 });
