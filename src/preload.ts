@@ -1,4 +1,4 @@
-import { contextBridge } from 'electron';
+import { contextBridge } from "electron";
 
 const electronApp = Object.freeze({
     platform: process.platform,
@@ -9,4 +9,4 @@ const electronApp = Object.freeze({
     }),
 });
 
-contextBridge.exposeInMainWorld('electronApp', electronApp);
+contextBridge.exposeInMainWorld("electronApp", electronApp);

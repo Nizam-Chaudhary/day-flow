@@ -1,4 +1,4 @@
-import { defineConfig } from 'oxlint';
+import { defineConfig } from "oxlint";
 
 export default defineConfig({
     options: {
@@ -6,25 +6,25 @@ export default defineConfig({
         typeCheck: true,
     },
     plugins: [
-        'eslint',
-        'typescript',
-        'unicorn',
-        'react',
-        'oxc',
-        'import',
-        'jsdoc',
-        'jsx-a11y',
-        'node',
-        'promise',
-        'vitest',
-        'react-perf',
+        "eslint",
+        "typescript",
+        "unicorn",
+        "react",
+        "oxc",
+        "import",
+        "jsdoc",
+        "jsx-a11y",
+        "node",
+        "promise",
+        "vitest",
+        "react-perf",
     ],
     categories: {},
     rules: {
-        'react/no-children-prop': 'off',
+        "react/no-children-prop": "off",
     },
     settings: {
-        'jsx-a11y': {
+        "jsx-a11y": {
             polymorphicPropName: undefined,
             components: {},
             attributes: {},

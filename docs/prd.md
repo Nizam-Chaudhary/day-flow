@@ -334,7 +334,7 @@ This should allow a future shared-core approach where Electron and web clients c
 - TanStack Form
 - TanStack Query
 - Zustand
-- shadcn/ui
+- shadcn/ui (--preset b7Br6ynwI)
 - Tailwind CSS
 - date-fns
 - React Day Picker

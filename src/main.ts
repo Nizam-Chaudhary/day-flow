@@ -1,6 +1,6 @@
-import { app, BrowserWindow } from 'electron';
-import squirrelStartup from 'electron-squirrel-startup';
-import { join } from 'node:path';
+import { app, BrowserWindow } from "electron";
+import squirrelStartup from "electron-squirrel-startup";
+import { join } from "node:path";
 
 if (squirrelStartup) {
     app.quit();
@@ -12,7 +12,7 @@ const createMainWindow = async (): Promise<void> => {
         height: 800,
         show: false,
         webPreferences: {
-            preload: join(__dirname, 'preload.js'),
+            preload: join(__dirname, "preload.js"),
             contextIsolation: true,
             nodeIntegration: false,
         },
@@ -21,7 +21,7 @@ const createMainWindow = async (): Promise<void> => {
     mainWindow.setMenuBarVisibility(false);
     mainWindow.removeMenu();
 
-    mainWindow.once('ready-to-show', () => {
+    mainWindow.once("ready-to-show", () => {
         mainWindow.show();
     });
 
@@ -36,15 +36,15 @@ const createMainWindow = async (): Promise<void> => {
 void app.whenReady().then(() => {
     void createMainWindow();
 
-    app.on('activate', () => {
+    app.on("activate", () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             void createMainWindow();
         }
     });
 });
 
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
+app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
         app.quit();
     }
 });

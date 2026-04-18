@@ -1,42 +1,42 @@
-import type { ForgeConfig } from '@electron-forge/shared-types';
+import type { ForgeConfig } from "@electron-forge/shared-types";
 
-import { MakerDeb } from '@electron-forge/maker-deb';
-import { MakerRpm } from '@electron-forge/maker-rpm';
-import { MakerSquirrel } from '@electron-forge/maker-squirrel';
-import { MakerZIP } from '@electron-forge/maker-zip';
-import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
-import { FusesPlugin } from '@electron-forge/plugin-fuses';
-import { VitePlugin } from '@electron-forge/plugin-vite';
-import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { MakerDeb } from "@electron-forge/maker-deb";
+import { MakerRpm } from "@electron-forge/maker-rpm";
+import { MakerSquirrel } from "@electron-forge/maker-squirrel";
+import { MakerZIP } from "@electron-forge/maker-zip";
+import { AutoUnpackNativesPlugin } from "@electron-forge/plugin-auto-unpack-natives";
+import { FusesPlugin } from "@electron-forge/plugin-fuses";
+import { VitePlugin } from "@electron-forge/plugin-vite";
+import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 const config: ForgeConfig = {
     packagerConfig: {
         asar: true,
-        executableName: 'day-flow',
+        executableName: "day-flow",
     },
     makers: [
-        new MakerSquirrel({}, ['win32']),
-        new MakerZIP({}, ['darwin']),
-        new MakerDeb({}, ['linux']),
-        new MakerRpm({}, ['linux']),
+        new MakerSquirrel({}, ["win32"]),
+        new MakerZIP({}, ["darwin"]),
+        new MakerDeb({}, ["linux"]),
+        new MakerRpm({}, ["linux"]),
     ],
     plugins: [
         new AutoUnpackNativesPlugin({}),
         new VitePlugin({
             build: [
                 {
-                    entry: 'src/main.ts',
-                    config: 'vite.main.config.ts',
+                    entry: "src/main.ts",
+                    config: "vite.main.config.ts",
                 },
                 {
-                    entry: 'src/preload.ts',
-                    config: 'vite.preload.config.ts',
+                    entry: "src/preload.ts",
+                    config: "vite.preload.config.ts",
                 },
             ],
             renderer: [
                 {
-                    name: 'main_window',
-                    config: 'vite.renderer.config.ts',
+                    name: "main_window",
+                    config: "vite.config.ts",
                 },
             ],
         }),
