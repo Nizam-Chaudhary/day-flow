@@ -22,6 +22,7 @@
         "vite.*.config.ts",
         "src/main.ts",
         "src/main/**/*.ts",
+        "src/packaging/**/*.ts",
         "src/preload.ts",
         "src/preload/**/*.ts",
         "src/shared/**/*.ts",

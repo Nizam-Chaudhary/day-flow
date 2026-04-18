@@ -8,175 +8,182 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './pages/__root';
-import { Route as CalendarRouteImport } from './pages/calendar';
-import { Route as IndexRouteImport } from './pages/index';
-import { Route as IntegrationsRouteImport } from './pages/integrations';
-import { Route as NotesRouteImport } from './pages/notes';
-import { Route as RemindersRouteImport } from './pages/reminders';
-import { Route as SettingsRouteImport } from './pages/settings';
-import { Route as TasksRouteImport } from './pages/tasks';
+import { Route as rootRouteImport } from './pages/__root'
+import { Route as TasksRouteImport } from './pages/tasks'
+import { Route as SettingsRouteImport } from './pages/settings'
+import { Route as RemindersRouteImport } from './pages/reminders'
+import { Route as NotesRouteImport } from './pages/notes'
+import { Route as IntegrationsRouteImport } from './pages/integrations'
+import { Route as CalendarRouteImport } from './pages/calendar'
+import { Route as IndexRouteImport } from './pages/index'
 
 const TasksRoute = TasksRouteImport.update({
-    id: '/tasks',
-    path: '/tasks',
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RemindersRoute = RemindersRouteImport.update({
-    id: '/reminders',
-    path: '/reminders',
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/reminders',
+  path: '/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NotesRoute = NotesRouteImport.update({
-    id: '/notes',
-    path: '/notes',
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IntegrationsRoute = IntegrationsRouteImport.update({
-    id: '/integrations',
-    path: '/integrations',
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CalendarRoute = CalendarRouteImport.update({
-    id: '/calendar',
-    path: '/calendar',
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
-    '/': typeof IndexRoute;
-    '/calendar': typeof CalendarRoute;
-    '/integrations': typeof IntegrationsRoute;
-    '/notes': typeof NotesRoute;
-    '/reminders': typeof RemindersRoute;
-    '/settings': typeof SettingsRoute;
-    '/tasks': typeof TasksRoute;
+  '/': typeof IndexRoute
+  '/calendar': typeof CalendarRoute
+  '/integrations': typeof IntegrationsRoute
+  '/notes': typeof NotesRoute
+  '/reminders': typeof RemindersRoute
+  '/settings': typeof SettingsRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRoutesByTo {
-    '/': typeof IndexRoute;
-    '/calendar': typeof CalendarRoute;
-    '/integrations': typeof IntegrationsRoute;
-    '/notes': typeof NotesRoute;
-    '/reminders': typeof RemindersRoute;
-    '/settings': typeof SettingsRoute;
-    '/tasks': typeof TasksRoute;
+  '/': typeof IndexRoute
+  '/calendar': typeof CalendarRoute
+  '/integrations': typeof IntegrationsRoute
+  '/notes': typeof NotesRoute
+  '/reminders': typeof RemindersRoute
+  '/settings': typeof SettingsRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRoutesById {
-    __root__: typeof rootRouteImport;
-    '/': typeof IndexRoute;
-    '/calendar': typeof CalendarRoute;
-    '/integrations': typeof IntegrationsRoute;
-    '/notes': typeof NotesRoute;
-    '/reminders': typeof RemindersRoute;
-    '/settings': typeof SettingsRoute;
-    '/tasks': typeof TasksRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/calendar': typeof CalendarRoute
+  '/integrations': typeof IntegrationsRoute
+  '/notes': typeof NotesRoute
+  '/reminders': typeof RemindersRoute
+  '/settings': typeof SettingsRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRouteTypes {
-    fileRoutesByFullPath: FileRoutesByFullPath;
-    fullPaths:
-        | '/'
-        | '/calendar'
-        | '/integrations'
-        | '/notes'
-        | '/reminders'
-        | '/settings'
-        | '/tasks';
-    fileRoutesByTo: FileRoutesByTo;
-    to: '/' | '/calendar' | '/integrations' | '/notes' | '/reminders' | '/settings' | '/tasks';
-    id:
-        | '__root__'
-        | '/'
-        | '/calendar'
-        | '/integrations'
-        | '/notes'
-        | '/reminders'
-        | '/settings'
-        | '/tasks';
-    fileRoutesById: FileRoutesById;
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/calendar'
+    | '/integrations'
+    | '/notes'
+    | '/reminders'
+    | '/settings'
+    | '/tasks'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/calendar'
+    | '/integrations'
+    | '/notes'
+    | '/reminders'
+    | '/settings'
+    | '/tasks'
+  id:
+    | '__root__'
+    | '/'
+    | '/calendar'
+    | '/integrations'
+    | '/notes'
+    | '/reminders'
+    | '/settings'
+    | '/tasks'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-    IndexRoute: typeof IndexRoute;
-    CalendarRoute: typeof CalendarRoute;
-    IntegrationsRoute: typeof IntegrationsRoute;
-    NotesRoute: typeof NotesRoute;
-    RemindersRoute: typeof RemindersRoute;
-    SettingsRoute: typeof SettingsRoute;
-    TasksRoute: typeof TasksRoute;
+  IndexRoute: typeof IndexRoute
+  CalendarRoute: typeof CalendarRoute
+  IntegrationsRoute: typeof IntegrationsRoute
+  NotesRoute: typeof NotesRoute
+  RemindersRoute: typeof RemindersRoute
+  SettingsRoute: typeof SettingsRoute
+  TasksRoute: typeof TasksRoute
 }
 
 declare module '@tanstack/react-router' {
-    interface FileRoutesByPath {
-        '/tasks': {
-            id: '/tasks';
-            path: '/tasks';
-            fullPath: '/tasks';
-            preLoaderRoute: typeof TasksRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        '/settings': {
-            id: '/settings';
-            path: '/settings';
-            fullPath: '/settings';
-            preLoaderRoute: typeof SettingsRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        '/reminders': {
-            id: '/reminders';
-            path: '/reminders';
-            fullPath: '/reminders';
-            preLoaderRoute: typeof RemindersRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        '/notes': {
-            id: '/notes';
-            path: '/notes';
-            fullPath: '/notes';
-            preLoaderRoute: typeof NotesRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        '/integrations': {
-            id: '/integrations';
-            path: '/integrations';
-            fullPath: '/integrations';
-            preLoaderRoute: typeof IntegrationsRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        '/calendar': {
-            id: '/calendar';
-            path: '/calendar';
-            fullPath: '/calendar';
-            preLoaderRoute: typeof CalendarRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        '/': {
-            id: '/';
-            path: '/';
-            fullPath: '/';
-            preLoaderRoute: typeof IndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
+  interface FileRoutesByPath {
+    '/tasks': {
+      id: '/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reminders': {
+      id: '/reminders'
+      path: '/reminders'
+      fullPath: '/reminders'
+      preLoaderRoute: typeof RemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notes': {
+      id: '/notes'
+      path: '/notes'
+      fullPath: '/notes'
+      preLoaderRoute: typeof NotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/integrations': {
+      id: '/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof IntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+  }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-    IndexRoute: IndexRoute,
-    CalendarRoute: CalendarRoute,
-    IntegrationsRoute: IntegrationsRoute,
-    NotesRoute: NotesRoute,
-    RemindersRoute: RemindersRoute,
-    SettingsRoute: SettingsRoute,
-    TasksRoute: TasksRoute,
-};
+  IndexRoute: IndexRoute,
+  CalendarRoute: CalendarRoute,
+  IntegrationsRoute: IntegrationsRoute,
+  NotesRoute: NotesRoute,
+  RemindersRoute: RemindersRoute,
+  SettingsRoute: SettingsRoute,
+  TasksRoute: TasksRoute,
+}
 export const routeTree = rootRouteImport
-    ._addFileChildren(rootRouteChildren)
-    ._addFileTypes<FileRouteTypes>();
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()

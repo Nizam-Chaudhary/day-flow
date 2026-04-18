@@ -1,20 +1,23 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
 
 import { MakerDeb } from '@electron-forge/maker-deb';
-import { MakerRpm } from '@electron-forge/maker-rpm';
+import { MakerFlatpak } from '@electron-forge/maker-flatpak';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { MakerAppImage } from '@reforged/maker-appimage';
+
+import { MakerRpm } from './src/packaging/maker-rpm';
 
 const config: ForgeConfig = {
     packagerConfig: {
         asar: true,
         executableName: 'day-flow',
         extraResource: ['drizzle', 'assets'],
-        icon: 'assets/icons',
+        icon: 'assets/icons/day-flow_1024x1024.png',
     },
     makers: [
         new MakerSquirrel(
@@ -27,7 +30,7 @@ const config: ForgeConfig = {
         new MakerDeb(
             {
                 options: {
-                    icon: 'assets/icons',
+                    icon: 'assets/icons/day-flow_1024x1024.png',
                 },
             },
             ['linux'],
@@ -35,7 +38,25 @@ const config: ForgeConfig = {
         new MakerRpm(
             {
                 options: {
-                    icon: 'assets/icons',
+                    icon: 'assets/icons/day-flow_1024x1024.png',
+                },
+            },
+            ['linux'],
+        ),
+        new MakerAppImage(
+            {
+                options: {
+                    icon: 'assets/icons/day-flow_1024x1024.png',
+                },
+            },
+            ['linux'],
+        ),
+        new MakerFlatpak(
+            {
+                options: {
+                    files: [],
+                    icon: 'assets/icons/day-flow_1024x1024.png',
+                    id: 'com.dayflow.app',
                 },
             },
             ['linux'],
