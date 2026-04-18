@@ -24,7 +24,7 @@ export const Route = createFileRoute('/tasks')({
 type TaskFilter = 'completed' | 'today' | 'upcoming';
 
 function TasksPage() {
-    const { openQuickAdd } = useAppShellActions();
+    const appShellActions = useAppShellActions();
     const [activeFilter, setActiveFilter] = useState<TaskFilter>('today');
     const [selectedTask, setSelectedTask] = useState<MockTask | null>(null);
     const visibleTasks = mockTasks.filter((task) => task.bucket === activeFilter);
@@ -44,25 +44,40 @@ function TasksPage() {
                 </div>
 
                 <div className='flex flex-col gap-3 xl:items-end'>
-                    <ToggleGroup
-                        aria-label='Task filter'
-                        value={activeFilter}
-                        onValueChange={(value) => {
-                            if (
-                                value === 'today' ||
-                                value === 'upcoming' ||
-                                value === 'completed'
-                            ) {
-                                setActiveFilter(value);
-                            }
-                        }}
-                        variant='outline'>
-                        <ToggleGroupItem value='today'>Today</ToggleGroupItem>
-                        <ToggleGroupItem value='upcoming'>Upcoming</ToggleGroupItem>
-                        <ToggleGroupItem value='completed'>Completed</ToggleGroupItem>
+                    <ToggleGroup aria-label='Task filter' variant='outline'>
+                        <ToggleGroupItem
+                            value='today'
+                            pressed={activeFilter === 'today'}
+                            onPressedChange={(pressed) => {
+                                if (pressed) {
+                                    setActiveFilter('today');
+                                }
+                            }}>
+                            Today
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                            value='upcoming'
+                            pressed={activeFilter === 'upcoming'}
+                            onPressedChange={(pressed) => {
+                                if (pressed) {
+                                    setActiveFilter('upcoming');
+                                }
+                            }}>
+                            Upcoming
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                            value='completed'
+                            pressed={activeFilter === 'completed'}
+                            onPressedChange={(pressed) => {
+                                if (pressed) {
+                                    setActiveFilter('completed');
+                                }
+                            }}>
+                            Completed
+                        </ToggleGroupItem>
                     </ToggleGroup>
 
-                    <Button onClick={() => openQuickAdd('task')}>Add task</Button>
+                    <Button onClick={() => appShellActions.openQuickAdd('task')}>Add task</Button>
                 </div>
             </div>
 

@@ -1,3 +1,5 @@
+import type { IconSvgElement } from '@hugeicons/react';
+
 import {
     Calendar01Icon,
     CheckListIcon,
@@ -36,7 +38,7 @@ export interface ShellNavSubItem {
 
 export interface ShellNavItem {
     description: string;
-    icon: object;
+    icon: IconSvgElement;
     items?: ShellNavSubItem[];
     label: string;
     to: ShellNavTo;
@@ -100,7 +102,7 @@ export interface MockPageLink {
 
 export interface MockIntegrationProvider {
     description: string;
-    id: string;
+    id: 'apple' | 'google' | 'notion' | 'outlook' | 'slack';
     lastSyncText: string;
     name: string;
     status: 'Connected' | 'Needs attention' | 'Not connected';
@@ -484,7 +486,7 @@ export const integrationProviders = [
     },
 ] satisfies MockIntegrationProvider[];
 
-export const integrationIcons = {
+export const integrationIcons: Record<MockIntegrationProvider['id'], IconSvgElement> = {
     apple: Calendar01Icon,
     google: GoogleIcon,
     notion: Note01Icon,

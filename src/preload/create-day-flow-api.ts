@@ -27,7 +27,7 @@ export function createDayFlowApi(): DayFlowApi {
         }),
         settings: Object.freeze({
             getPreferences: () => invokeDayFlow<void, AppPreferences>(SETTINGS_GET_CHANNEL),
-            updatePreferences: (input) =>
+            updatePreferences: (input: UpdateAppPreferencesInput) =>
                 invokeDayFlow<UpdateAppPreferencesInput, AppPreferences>(
                     SETTINGS_UPDATE_CHANNEL,
                     input,

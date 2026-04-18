@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { AppPreferences, UpdateAppPreferencesInput } from '@/shared/contracts/settings';
+
 import { createIpcHandlers } from '@/main/ipc/register-ipc';
 import {
     APP_GET_HEALTH_CHANNEL,
@@ -17,18 +19,20 @@ describe('createIpcHandlers', () => {
                 lastMigrationAt: '2026-04-18T00:00:00.000Z',
             }),
             settingsService: {
-                getPreferences: vi.fn(() => ({
+                getPreferences: vi.fn<() => AppPreferences>(() => ({
                     createdAt: '2026-04-18T00:00:00.000Z',
                     dayStartsAt: '08:00',
                     defaultCalendarView: 'week',
                     updatedAt: '2026-04-18T00:00:00.000Z',
                     weekStartsOn: 1,
                 })),
-                updatePreferences: vi.fn((input) => ({
-                    createdAt: '2026-04-18T00:00:00.000Z',
-                    updatedAt: '2026-04-18T00:00:01.000Z',
-                    ...input,
-                })),
+                updatePreferences: vi.fn<(input: UpdateAppPreferencesInput) => AppPreferences>(
+                    (input) => ({
+                        createdAt: '2026-04-18T00:00:00.000Z',
+                        updatedAt: '2026-04-18T00:00:01.000Z',
+                        ...input,
+                    }),
+                ),
             },
         });
 
@@ -73,10 +77,10 @@ describe('createIpcHandlers', () => {
     it('serializes service failures into safe errors', async () => {
         const handlers = createIpcHandlers({
             settingsService: {
-                getPreferences: vi.fn(() => {
+                getPreferences: vi.fn<() => AppPreferences>(() => {
                     throw createDayFlowError('INVALID_INPUT', 'Broken settings payload.');
                 }),
-                updatePreferences: vi.fn(),
+                updatePreferences: vi.fn<(input: UpdateAppPreferencesInput) => AppPreferences>(),
             },
         });
 

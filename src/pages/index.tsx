@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import { useShallow } from 'zustand/react/shallow';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import {
     todaySummary,
     todayTasks,
 } from '@/features/app-shell/mock-data';
-import { CALENDAR_VIEWS, type CalendarView } from '@/shared/contracts/settings';
+import { CALENDAR_VIEWS, isCalendarView, type CalendarView } from '@/shared/contracts/settings';
 import { useAppShellStore } from '@/stores/app-shell-store';
 
 export const Route = createFileRoute('/')({
@@ -28,13 +27,8 @@ const calendarViewLabels: Record<CalendarView, string> = {
 
 function HomePage() {
     const navigate = useNavigate();
-    const { openQuickAdd } = useAppShellActions();
-    const { activeCalendarView, setActiveCalendarView } = useAppShellStore(
-        useShallow((state) => ({
-            activeCalendarView: state.activeCalendarView,
-            setActiveCalendarView: state.setActiveCalendarView,
-        })),
-    );
+    const appShellActions = useAppShellActions();
+    const activeCalendarView = useAppShellStore((state) => state.activeCalendarView);
 
     return (
         <section className='flex flex-col gap-6'>
@@ -53,25 +47,29 @@ function HomePage() {
                 </div>
 
                 <div className='flex flex-col gap-3 xl:items-end'>
-                    <ToggleGroup
-                        aria-label='Today horizon'
-                        value={activeCalendarView}
-                        onValueChange={(value) => {
-                            if (CALENDAR_VIEWS.includes(value as CalendarView)) {
-                                setActiveCalendarView(value as CalendarView);
-                            }
-                        }}
-                        variant='outline'>
+                    <ToggleGroup aria-label='Today horizon' variant='outline'>
                         {CALENDAR_VIEWS.map((value) => (
-                            <ToggleGroupItem key={value} value={value}>
+                            <ToggleGroupItem
+                                key={value}
+                                value={value}
+                                pressed={activeCalendarView === value}
+                                onPressedChange={(pressed) => {
+                                    if (pressed && isCalendarView(value)) {
+                                        useAppShellStore.getState().setActiveCalendarView(value);
+                                    }
+                                }}>
                                 {calendarViewLabels[value]}
                             </ToggleGroupItem>
                         ))}
                     </ToggleGroup>
 
                     <div className='flex flex-wrap gap-2'>
-                        <Button onClick={() => openQuickAdd('task')}>Add task</Button>
-                        <Button variant='outline' onClick={() => openQuickAdd('event')}>
+                        <Button onClick={() => appShellActions.openQuickAdd('task')}>
+                            Add task
+                        </Button>
+                        <Button
+                            variant='outline'
+                            onClick={() => appShellActions.openQuickAdd('event')}>
                             Add event
                         </Button>
                         <Button
@@ -195,7 +193,9 @@ function HomePage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className='grid gap-3'>
-                        <Button className='justify-between' onClick={() => openQuickAdd('task')}>
+                        <Button
+                            className='justify-between'
+                            onClick={() => appShellActions.openQuickAdd('task')}>
                             Add task
                             <span className='text-xs text-primary-foreground/80'>
                                 {format(new Date(), 'p')}
@@ -204,7 +204,7 @@ function HomePage() {
                         <Button
                             className='justify-between'
                             variant='outline'
-                            onClick={() => openQuickAdd('event')}>
+                            onClick={() => appShellActions.openQuickAdd('event')}>
                             Add event
                             <span className='text-xs text-muted-foreground'>Schedule next</span>
                         </Button>

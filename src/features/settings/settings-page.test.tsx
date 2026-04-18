@@ -8,8 +8,11 @@ import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from 'next-themes';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { AppHealth } from '@/shared/contracts/health';
+import type { AppPreferences, UpdateAppPreferencesInput } from '@/shared/contracts/settings';
+
 const { toastPromise } = vi.hoisted(() => ({
-    toastPromise: vi.fn((promise: Promise<unknown>) => promise),
+    toastPromise: vi.fn<(promise: Promise<unknown>) => Promise<unknown>>((promise) => promise),
 }));
 
 vi.mock('sonner', () => ({
@@ -32,35 +35,36 @@ describe('SettingsPage', () => {
     });
 
     it('loads preferences, submits updates with toast feedback, and invalidates the settings query', async () => {
-        const getHealth = vi.fn().mockResolvedValue({
+        const getHealth = vi.fn<() => Promise<AppHealth>>().mockResolvedValue({
             databasePath: '/tmp/day-flow.sqlite',
             databaseReady: true,
             lastMigrationAt: '2026-04-18T00:00:00.000Z',
         });
-        const getPreferences = vi
-            .fn()
-            .mockResolvedValueOnce({
-                createdAt: '2026-04-18T00:00:00.000Z',
-                dayStartsAt: '09:30',
-                defaultCalendarView: 'month',
-                updatedAt: '2026-04-18T00:00:00.000Z',
-                weekStartsOn: 0,
-            })
-            .mockResolvedValue({
-                createdAt: '2026-04-18T00:00:00.000Z',
-                dayStartsAt: '07:45',
-                defaultCalendarView: 'day',
-                updatedAt: '2026-04-18T00:15:00.000Z',
-                weekStartsOn: 1,
-            });
+        const getPreferences = vi.fn<() => Promise<AppPreferences>>(async () => ({
+            createdAt: '2026-04-18T00:00:00.000Z',
+            dayStartsAt: '07:45',
+            defaultCalendarView: 'day',
+            updatedAt: '2026-04-18T00:15:00.000Z',
+            weekStartsOn: 1,
+        }));
 
-        let resolveUpdate: ((value: unknown) => void) | null = null;
-        const updatePreferences = vi.fn().mockImplementation(
-            () =>
-                new Promise((resolve) => {
-                    resolveUpdate = resolve;
-                }),
-        );
+        getPreferences.mockResolvedValueOnce({
+            createdAt: '2026-04-18T00:00:00.000Z',
+            dayStartsAt: '09:30',
+            defaultCalendarView: 'month',
+            updatedAt: '2026-04-18T00:00:00.000Z',
+            weekStartsOn: 0,
+        });
+
+        let resolveUpdate!: (value: AppPreferences) => void;
+        const updatePreferences = vi
+            .fn<(input: UpdateAppPreferencesInput) => Promise<AppPreferences>>()
+            .mockImplementation(
+                () =>
+                    new Promise((resolve) => {
+                        resolveUpdate = resolve;
+                    }),
+            );
 
         window.dayFlowApi = {
             app: { getHealth },
@@ -100,7 +104,7 @@ describe('SettingsPage', () => {
             );
         });
 
-        resolveUpdate?.({
+        resolveUpdate({
             createdAt: '2026-04-18T00:00:00.000Z',
             dayStartsAt: '07:45',
             defaultCalendarView: 'day',
@@ -118,14 +122,17 @@ describe('SettingsPage', () => {
     it('renders query errors', async () => {
         window.dayFlowApi = {
             app: {
-                getHealth: vi.fn().mockResolvedValue({
+                getHealth: vi.fn<() => Promise<AppHealth>>().mockResolvedValue({
                     databasePath: '/tmp/day-flow.sqlite',
                     databaseReady: true,
                 }),
             },
             settings: {
-                getPreferences: vi.fn().mockRejectedValue(new Error('Database unavailable.')),
-                updatePreferences: vi.fn(),
+                getPreferences: vi
+                    .fn<() => Promise<AppPreferences>>()
+                    .mockRejectedValue(new Error('Database unavailable.')),
+                updatePreferences:
+                    vi.fn<(input: UpdateAppPreferencesInput) => Promise<AppPreferences>>(),
             },
         } satisfies DayFlowApi;
 

@@ -88,7 +88,7 @@ const settingsTabs = [
 
 export function SettingsPage() {
     const { resolvedTheme, setTheme, theme } = useTheme();
-    const { syncNow } = useAppShellActions();
+    const appShellActions = useAppShellActions();
     const healthQuery = useQuery(appHealthQueryOptions);
     const preferencesQuery = useQuery(appPreferencesQueryOptions);
     const updatePreferences = useUpdateAppPreferences();
@@ -121,7 +121,7 @@ export function SettingsPage() {
         setIsSyncPending(true);
 
         try {
-            await syncNow();
+            await appShellActions.syncNow();
         } finally {
             setIsSyncPending(false);
         }
@@ -190,19 +190,29 @@ export function SettingsPage() {
                                                             <ToggleGroup
                                                                 aria-label='Default calendar view'
                                                                 id={field.name}
-                                                                value={field.state.value}
-                                                                onValueChange={(value) => {
-                                                                    if (
-                                                                        isCalendarViewValue(value)
-                                                                    ) {
-                                                                        field.handleChange(value);
-                                                                    }
-                                                                }}
                                                                 variant='outline'>
                                                                 {CALENDAR_VIEWS.map((value) => (
                                                                     <ToggleGroupItem
                                                                         key={value}
-                                                                        value={value}>
+                                                                        value={value}
+                                                                        pressed={
+                                                                            field.state.value ===
+                                                                            value
+                                                                        }
+                                                                        onPressedChange={(
+                                                                            pressed,
+                                                                        ) => {
+                                                                            if (
+                                                                                pressed &&
+                                                                                isCalendarViewValue(
+                                                                                    value,
+                                                                                )
+                                                                            ) {
+                                                                                field.handleChange(
+                                                                                    value,
+                                                                                );
+                                                                            }
+                                                                        }}>
                                                                         {calendarViewLabels[value]}
                                                                     </ToggleGroupItem>
                                                                 ))}
@@ -233,19 +243,6 @@ export function SettingsPage() {
                                                             <ToggleGroup
                                                                 aria-label='Week starts on'
                                                                 id={field.name}
-                                                                value={String(field.state.value)}
-                                                                onValueChange={(value) => {
-                                                                    if (
-                                                                        value === '0' ||
-                                                                        value === '1'
-                                                                    ) {
-                                                                        field.handleChange(
-                                                                            Number(
-                                                                                value,
-                                                                            ) as WeekStartsOn,
-                                                                        );
-                                                                    }
-                                                                }}
                                                                 variant='outline'>
                                                                 {weekStartsOnOptions.map(
                                                                     (option) => (
@@ -253,7 +250,21 @@ export function SettingsPage() {
                                                                             key={option.value}
                                                                             value={String(
                                                                                 option.value,
-                                                                            )}>
+                                                                            )}
+                                                                            pressed={
+                                                                                field.state
+                                                                                    .value ===
+                                                                                option.value
+                                                                            }
+                                                                            onPressedChange={(
+                                                                                pressed,
+                                                                            ) => {
+                                                                                if (pressed) {
+                                                                                    field.handleChange(
+                                                                                        option.value,
+                                                                                    );
+                                                                                }
+                                                                            }}>
                                                                             {option.label}
                                                                         </ToggleGroupItem>
                                                                     ),
@@ -354,22 +365,44 @@ export function SettingsPage() {
                                             <ToggleGroup
                                                 aria-label='Theme'
                                                 id='theme-setting'
-                                                value={theme ?? resolvedTheme ?? 'system'}
-                                                onValueChange={(value) => {
-                                                    if (
-                                                        value === 'light' ||
-                                                        value === 'dark' ||
-                                                        value === 'system'
-                                                    ) {
-                                                        setTheme(value);
-                                                    }
-                                                }}
                                                 variant='outline'>
-                                                <ToggleGroupItem value='light'>
+                                                <ToggleGroupItem
+                                                    value='light'
+                                                    pressed={
+                                                        (theme ?? resolvedTheme ?? 'system') ===
+                                                        'light'
+                                                    }
+                                                    onPressedChange={(pressed) => {
+                                                        if (pressed) {
+                                                            setTheme('light');
+                                                        }
+                                                    }}>
                                                     Light
                                                 </ToggleGroupItem>
-                                                <ToggleGroupItem value='dark'>Dark</ToggleGroupItem>
-                                                <ToggleGroupItem value='system'>
+                                                <ToggleGroupItem
+                                                    value='dark'
+                                                    pressed={
+                                                        (theme ?? resolvedTheme ?? 'system') ===
+                                                        'dark'
+                                                    }
+                                                    onPressedChange={(pressed) => {
+                                                        if (pressed) {
+                                                            setTheme('dark');
+                                                        }
+                                                    }}>
+                                                    Dark
+                                                </ToggleGroupItem>
+                                                <ToggleGroupItem
+                                                    value='system'
+                                                    pressed={
+                                                        (theme ?? resolvedTheme ?? 'system') ===
+                                                        'system'
+                                                    }
+                                                    onPressedChange={(pressed) => {
+                                                        if (pressed) {
+                                                            setTheme('system');
+                                                        }
+                                                    }}>
                                                     System
                                                 </ToggleGroupItem>
                                             </ToggleGroup>
@@ -383,7 +416,15 @@ export function SettingsPage() {
                                     <Field orientation='vertical'>
                                         <FieldLabel htmlFor='timezone-setting'>Timezone</FieldLabel>
                                         <FieldContent>
-                                            <Select value={timezone} onValueChange={setTimezone}>
+                                            <Select
+                                                value={timezone}
+                                                onValueChange={(value) => {
+                                                    if (!value) {
+                                                        return;
+                                                    }
+
+                                                    setTimezone(value);
+                                                }}>
                                                 <SelectTrigger
                                                     className='w-full'
                                                     id='timezone-setting'>

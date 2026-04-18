@@ -1,4 +1,4 @@
-import { HugeiconsIcon } from '@hugeicons/react';
+import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
 import { useNavigate } from '@tanstack/react-router';
 
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,7 @@ export function NotificationsPopover({
 }: {
     onOpenChange: (open: boolean) => void;
     open: boolean;
-    triggerIcon: object;
+    triggerIcon: IconSvgElement;
 }) {
     const navigate = useNavigate();
     const unreadCount = shellNotifications.filter((item) => item.unread).length;

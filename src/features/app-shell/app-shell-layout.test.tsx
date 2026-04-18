@@ -8,6 +8,8 @@ import { ThemeProvider } from 'next-themes';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DayFlowApi } from '@/preload/create-day-flow-api';
+import type { AppHealth } from '@/shared/contracts/health';
+import type { AppPreferences, UpdateAppPreferencesInput } from '@/shared/contracts/settings';
 
 import { Toaster } from '@/components/ui/sonner';
 import { createQueryClient } from '@/lib/query/create-query-client';
@@ -223,19 +225,43 @@ describe('App shell routes', () => {
 });
 
 function mockMatchMedia() {
+    const createMediaQueryList = (query: string): MediaQueryList => ({
+        matches: query === '(max-width: 767px)' ? window.innerWidth < 768 : false,
+        media: query,
+        onchange: null,
+        addEventListener:
+            vi.fn<
+                (
+                    type: string,
+                    listener: EventListenerOrEventListenerObject | null,
+                    options?: boolean | AddEventListenerOptions,
+                ) => void
+            >(),
+        removeEventListener:
+            vi.fn<
+                (
+                    type: string,
+                    listener: EventListenerOrEventListenerObject | null,
+                    options?: boolean | EventListenerOptions,
+                ) => void
+            >(),
+        addListener:
+            vi.fn<
+                (listener: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null) => void
+            >(),
+        removeListener:
+            vi.fn<
+                (listener: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null) => void
+            >(),
+        dispatchEvent: vi.fn<(event: Event) => boolean>().mockReturnValue(true),
+    });
+
     Object.defineProperty(window, 'matchMedia', {
         configurable: true,
         writable: true,
-        value: vi.fn().mockImplementation((query: string) => ({
-            matches: query === '(max-width: 767px)' ? window.innerWidth < 768 : false,
-            media: query,
-            onchange: null,
-            addEventListener: vi.fn(),
-            removeEventListener: vi.fn(),
-            addListener: vi.fn(),
-            removeListener: vi.fn(),
-            dispatchEvent: vi.fn(),
-        })),
+        value: vi
+            .fn<(query: string) => MediaQueryList>()
+            .mockImplementation((query: string) => createMediaQueryList(query)),
     });
 }
 
@@ -250,27 +276,29 @@ function setViewportWidth(width: number) {
 function createDayFlowApi(): DayFlowApi {
     return {
         app: {
-            getHealth: vi.fn().mockResolvedValue({
+            getHealth: vi.fn<() => Promise<AppHealth>>().mockResolvedValue({
                 databasePath: '/tmp/day-flow.sqlite',
                 databaseReady: true,
                 lastMigrationAt: '2026-04-18T00:00:00.000Z',
             }),
         },
         settings: {
-            getPreferences: vi.fn().mockResolvedValue({
+            getPreferences: vi.fn<() => Promise<AppPreferences>>().mockResolvedValue({
                 createdAt: '2026-04-18T00:00:00.000Z',
                 dayStartsAt: '08:00',
                 defaultCalendarView: 'week',
                 updatedAt: '2026-04-18T00:15:00.000Z',
                 weekStartsOn: 1,
             }),
-            updatePreferences: vi.fn().mockResolvedValue({
-                createdAt: '2026-04-18T00:00:00.000Z',
-                dayStartsAt: '08:00',
-                defaultCalendarView: 'week',
-                updatedAt: '2026-04-18T00:15:00.000Z',
-                weekStartsOn: 1,
-            }),
+            updatePreferences: vi
+                .fn<(input: UpdateAppPreferencesInput) => Promise<AppPreferences>>()
+                .mockResolvedValue({
+                    createdAt: '2026-04-18T00:00:00.000Z',
+                    dayStartsAt: '08:00',
+                    defaultCalendarView: 'week',
+                    updatedAt: '2026-04-18T00:15:00.000Z',
+                    weekStartsOn: 1,
+                }),
         },
     } satisfies DayFlowApi;
 }

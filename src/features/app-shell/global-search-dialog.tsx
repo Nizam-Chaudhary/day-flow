@@ -1,7 +1,6 @@
 import { Calendar01Icon, Note01Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from '@tanstack/react-router';
-import { useShallow } from 'zustand/react/shallow';
 
 import {
     Command,
@@ -25,19 +24,16 @@ export function GlobalSearchDialog({
     onSyncNow: () => Promise<void>;
 }) {
     const navigate = useNavigate();
-    const { isCommandPaletteOpen, setCommandPaletteOpen } = useAppShellStore(
-        useShallow((state) => ({
-            isCommandPaletteOpen: state.isCommandPaletteOpen,
-            setCommandPaletteOpen: state.setCommandPaletteOpen,
-        })),
-    );
+    const isCommandPaletteOpen = useAppShellStore((state) => state.isCommandPaletteOpen);
 
     return (
         <CommandDialog
             description='Search routes and execute quick planner actions.'
             open={isCommandPaletteOpen}
             title='Global search'
-            onOpenChange={setCommandPaletteOpen}>
+            onOpenChange={(open) => {
+                useAppShellStore.getState().setCommandPaletteOpen(open);
+            }}>
             <Command>
                 <CommandInput placeholder='Search routes, actions, or areas...' />
                 <CommandList>
@@ -48,7 +44,7 @@ export function GlobalSearchDialog({
                                 key={item.to}
                                 value={`${item.label} ${item.description}`}
                                 onSelect={() => {
-                                    setCommandPaletteOpen(false);
+                                    useAppShellStore.getState().setCommandPaletteOpen(false);
                                     void navigate({ to: item.to });
                                 }}>
                                 <HugeiconsIcon icon={item.icon} strokeWidth={2} />
@@ -68,7 +64,7 @@ export function GlobalSearchDialog({
                                 key={item.id}
                                 value={item.label}
                                 onSelect={() => {
-                                    setCommandPaletteOpen(false);
+                                    useAppShellStore.getState().setCommandPaletteOpen(false);
 
                                     if (item.id === 'add-task') {
                                         onOpenQuickAdd('task');

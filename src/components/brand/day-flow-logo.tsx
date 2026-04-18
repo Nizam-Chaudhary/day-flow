@@ -27,7 +27,7 @@ const logoSources = {
 export function DayFlowLogo({ className, kind = 'mark', label, size }: DayFlowLogoProps) {
     const { forcedTheme, resolvedTheme, theme } = useTheme();
     const activeTheme = forcedTheme ?? resolvedTheme ?? theme;
-    const variant = activeTheme === 'light' ? 'light' : 'dark';
+    const variant = activeTheme === 'light' ? 'dark' : 'light';
     const src = logoSources[kind][variant];
     const style = getLogoStyle(kind, size);
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { useShallow } from 'zustand/react/shallow';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -35,19 +34,17 @@ import { useAppShellStore } from '@/stores/app-shell-store';
 type QuickAddType = 'event' | 'task';
 
 export function QuickAddDialog({ initialType = 'task' }: { initialType?: QuickAddType }) {
-    const { isQuickAddOpen, selectedDate, setQuickAddOpen } = useAppShellStore(
-        useShallow((state) => ({
-            isQuickAddOpen: state.isQuickAddOpen,
-            selectedDate: state.selectedDate,
-            setQuickAddOpen: state.setQuickAddOpen,
-        })),
-    );
+    const isQuickAddOpen = useAppShellStore((state) => state.isQuickAddOpen);
+    const selectedDate = useAppShellStore((state) => state.selectedDate);
     const [isSaving, setIsSaving] = useState(false);
     const [title, setTitle] = useState('');
     const [type, setType] = useState<QuickAddType>(initialType);
     const [date, setDate] = useState(selectedDate);
     const [time, setTime] = useState('09:00');
     const [reminder, setReminder] = useState('15 minutes before');
+    const setQuickAddOpen = (open: boolean) => {
+        useAppShellStore.getState().setQuickAddOpen(open);
+    };
 
     useEffect(() => {
         if (isQuickAddOpen) {
@@ -137,15 +134,27 @@ export function QuickAddDialog({ initialType = 'task' }: { initialType?: QuickAd
                                 <ToggleGroup
                                     aria-label='Quick add type'
                                     id='quick-add-type'
-                                    value={type}
-                                    onValueChange={(value) => {
-                                        if (value === 'task' || value === 'event') {
-                                            setType(value);
-                                        }
-                                    }}
                                     variant='outline'>
-                                    <ToggleGroupItem value='task'>Task</ToggleGroupItem>
-                                    <ToggleGroupItem value='event'>Event</ToggleGroupItem>
+                                    <ToggleGroupItem
+                                        value='task'
+                                        pressed={type === 'task'}
+                                        onPressedChange={(pressed) => {
+                                            if (pressed) {
+                                                setType('task');
+                                            }
+                                        }}>
+                                        Task
+                                    </ToggleGroupItem>
+                                    <ToggleGroupItem
+                                        value='event'
+                                        pressed={type === 'event'}
+                                        onPressedChange={(pressed) => {
+                                            if (pressed) {
+                                                setType('event');
+                                            }
+                                        }}>
+                                        Event
+                                    </ToggleGroupItem>
                                 </ToggleGroup>
                             </FieldContent>
                         </Field>
@@ -186,6 +195,10 @@ export function QuickAddDialog({ initialType = 'task' }: { initialType?: QuickAd
                                 <Select
                                     value={reminder}
                                     onValueChange={(value) => {
+                                        if (!value) {
+                                            return;
+                                        }
+
                                         setReminder(value);
                                     }}>
                                     <SelectTrigger className='w-full' id='quick-add-reminder'>

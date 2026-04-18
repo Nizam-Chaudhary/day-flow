@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAppShellActions } from '@/features/app-shell/app-shell-layout';
 import { calendarColumns, mockEvents, type MockEvent } from '@/features/app-shell/mock-data';
-import { CALENDAR_VIEWS, type CalendarView } from '@/shared/contracts/settings';
+import { isCalendarView, type CalendarView } from '@/shared/contracts/settings';
 import { useAppShellStore } from '@/stores/app-shell-store';
 
 export const Route = createFileRoute('/calendar')({
@@ -33,15 +32,10 @@ const calendarModeLabels: Record<CalendarMode, string> = {
 };
 
 function CalendarPage() {
-    const { openQuickAdd } = useAppShellActions();
+    const appShellActions = useAppShellActions();
     const [isAgendaView, setIsAgendaView] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<MockEvent | null>(null);
-    const { activeCalendarView, setActiveCalendarView } = useAppShellStore(
-        useShallow((state) => ({
-            activeCalendarView: state.activeCalendarView,
-            setActiveCalendarView: state.setActiveCalendarView,
-        })),
-    );
+    const activeCalendarView = useAppShellStore((state) => state.activeCalendarView);
 
     const activeMode: CalendarMode = isAgendaView ? 'agenda' : activeCalendarView;
 
@@ -60,29 +54,33 @@ function CalendarPage() {
                 </div>
 
                 <div className='flex flex-col gap-3 xl:items-end'>
-                    <ToggleGroup
-                        aria-label='Calendar view'
-                        value={activeMode}
-                        onValueChange={(value) => {
-                            if (value === 'agenda') {
-                                setIsAgendaView(true);
-                                return;
-                            }
-
-                            if (CALENDAR_VIEWS.includes(value as CalendarView)) {
-                                setIsAgendaView(false);
-                                setActiveCalendarView(value as CalendarView);
-                            }
-                        }}
-                        variant='outline'>
+                    <ToggleGroup aria-label='Calendar view' variant='outline'>
                         {(['day', 'week', 'month', 'agenda'] as const).map((value) => (
-                            <ToggleGroupItem key={value} value={value}>
+                            <ToggleGroupItem
+                                key={value}
+                                value={value}
+                                pressed={activeMode === value}
+                                onPressedChange={(pressed) => {
+                                    if (!pressed) {
+                                        return;
+                                    }
+
+                                    if (value === 'agenda') {
+                                        setIsAgendaView(true);
+                                        return;
+                                    }
+
+                                    if (isCalendarView(value)) {
+                                        setIsAgendaView(false);
+                                        useAppShellStore.getState().setActiveCalendarView(value);
+                                    }
+                                }}>
                                 {calendarModeLabels[value]}
                             </ToggleGroupItem>
                         ))}
                     </ToggleGroup>
 
-                    <Button onClick={() => openQuickAdd('event')}>Add event</Button>
+                    <Button onClick={() => appShellActions.openQuickAdd('event')}>Add event</Button>
                 </div>
             </div>
 

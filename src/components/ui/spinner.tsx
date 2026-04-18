@@ -3,7 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 
 import { cn } from '@/lib/utils';
 
-function Spinner({ className, ...props }: React.ComponentProps<'svg'>) {
+function Spinner({ className, ...props }: React.ComponentProps<'svg'> & { strokeWidth?: number }) {
     return (
         <HugeiconsIcon
             icon={Loading03Icon}

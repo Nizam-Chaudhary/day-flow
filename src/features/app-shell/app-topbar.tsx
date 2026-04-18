@@ -1,8 +1,8 @@
 import { CalendarSyncIcon, Notification03Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { formatDistanceToNow } from 'date-fns';
-import { useShallow } from 'zustand/react/shallow';
 
+import { DayFlowLogo } from '@/components/brand/day-flow-logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/ui/kbd';
@@ -19,33 +19,23 @@ export function AppTopbar({
     onOpenQuickAdd: (type?: 'event' | 'task') => void;
     onSyncNow: () => Promise<void>;
 }) {
-    const {
-        isNotificationsOpen,
-        isSyncInFlight,
-        lastSyncedAt,
-        setCommandPaletteOpen,
-        setNotificationsOpen,
-    } = useAppShellStore(
-        useShallow((state) => ({
-            isNotificationsOpen: state.isNotificationsOpen,
-            isSyncInFlight: state.isSyncInFlight,
-            lastSyncedAt: state.lastSyncedAt,
-            setCommandPaletteOpen: state.setCommandPaletteOpen,
-            setNotificationsOpen: state.setNotificationsOpen,
-        })),
-    );
+    const isNotificationsOpen = useAppShellStore((state) => state.isNotificationsOpen);
+    const isSyncInFlight = useAppShellStore((state) => state.isSyncInFlight);
+    const lastSyncedAt = useAppShellStore((state) => state.lastSyncedAt);
 
     return (
         <header className='sticky top-0 z-40 border-b bg-background'>
             <div className='mx-auto flex w-full max-w-7xl items-center gap-2 px-4 py-3 sm:px-6 lg:px-8'>
                 <SidebarTrigger aria-label='Toggle sidebar' className='shrink-0' variant='ghost' />
 
+                <DayFlowLogo className='shrink-0' kind='mark' label='Day Flow' size={28} />
+
                 <Button
                     aria-label='Open global search'
                     className='min-w-0 flex-1 justify-between'
                     variant='outline'
                     onClick={() => {
-                        setCommandPaletteOpen(true);
+                        useAppShellStore.getState().setCommandPaletteOpen(true);
                     }}>
                     <span className='flex min-w-0 items-center gap-2 truncate'>
                         <HugeiconsIcon
@@ -110,7 +100,9 @@ export function AppTopbar({
                 <NotificationsPopover
                     open={isNotificationsOpen}
                     triggerIcon={Notification03Icon}
-                    onOpenChange={setNotificationsOpen}
+                    onOpenChange={(open) => {
+                        useAppShellStore.getState().setNotificationsOpen(open);
+                    }}
                 />
             </div>
         </header>

@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
 import { createContext, type CSSProperties, useContext, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useShallow } from 'zustand/react/shallow';
 
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -48,38 +47,24 @@ export function AppShellLayout() {
     const preferencesQuery = useQuery(appPreferencesQueryOptions);
     const hasHydratedCalendarView = useRef(false);
     const [quickAddType, setQuickAddType] = useState<QuickAddType>('task');
-    const {
-        isSyncInFlight,
-        setActiveCalendarView,
-        setCommandPaletteOpen,
-        setLastSyncedAt,
-        setQuickAddOpen,
-        setSyncInFlight,
-    } = useAppShellStore(
-        useShallow((state) => ({
-            isSyncInFlight: state.isSyncInFlight,
-            setActiveCalendarView: state.setActiveCalendarView,
-            setCommandPaletteOpen: state.setCommandPaletteOpen,
-            setLastSyncedAt: state.setLastSyncedAt,
-            setQuickAddOpen: state.setQuickAddOpen,
-            setSyncInFlight: state.setSyncInFlight,
-        })),
-    );
+    const isSyncInFlight = useAppShellStore((state) => state.isSyncInFlight);
 
     useEffect(() => {
         if (hasHydratedCalendarView.current || !preferencesQuery.data) {
             return;
         }
 
-        setActiveCalendarView(preferencesQuery.data.defaultCalendarView);
+        useAppShellStore
+            .getState()
+            .setActiveCalendarView(preferencesQuery.data.defaultCalendarView);
         hasHydratedCalendarView.current = true;
-    }, [preferencesQuery.data, setActiveCalendarView]);
+    }, [preferencesQuery.data]);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
                 event.preventDefault();
-                setCommandPaletteOpen(true);
+                useAppShellStore.getState().setCommandPaletteOpen(true);
             }
         };
 
@@ -88,11 +73,11 @@ export function AppShellLayout() {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [setCommandPaletteOpen]);
+    }, []);
 
     const openQuickAdd = (type: QuickAddType = 'task') => {
         setQuickAddType(type);
-        setQuickAddOpen(true);
+        useAppShellStore.getState().setQuickAddOpen(true);
     };
 
     const syncNow = async () => {
@@ -100,7 +85,7 @@ export function AppShellLayout() {
             return;
         }
 
-        setSyncInFlight(true);
+        useAppShellStore.getState().setSyncInFlight(true);
 
         const promise = runMockAction('Everything is in sync.');
 
@@ -108,7 +93,7 @@ export function AppShellLayout() {
             error: 'Sync failed.',
             loading: 'Syncing providers...',
             success: (message) => {
-                setLastSyncedAt(new Date().toISOString());
+                useAppShellStore.getState().setLastSyncedAt(new Date().toISOString());
                 return message;
             },
         });
@@ -116,7 +101,7 @@ export function AppShellLayout() {
         try {
             await promise;
         } finally {
-            setSyncInFlight(false);
+            useAppShellStore.getState().setSyncInFlight(false);
         }
     };
 
@@ -124,7 +109,7 @@ export function AppShellLayout() {
         <AppShellActionsContext.Provider
             value={{
                 openCommandPalette: () => {
-                    setCommandPaletteOpen(true);
+                    useAppShellStore.getState().setCommandPaletteOpen(true);
                 },
                 openQuickAdd,
                 syncNow,
