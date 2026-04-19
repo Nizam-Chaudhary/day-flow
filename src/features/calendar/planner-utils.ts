@@ -1,6 +1,8 @@
 import {
     addDays,
     addMonths,
+    eachDayOfInterval,
+    endOfWeek,
     endOfMonth,
     format,
     parseISO,
@@ -21,8 +23,6 @@ export const PLANNER_TIME_GUTTER_WIDTH = CALENDAR_TIME_GUTTER;
 export const PLANNER_MIN_DAY_COLUMN_WIDTH = 180;
 export const PLANNER_WIDTH_SAFETY_PX = 2;
 export const MINUTES_PER_DAY = 24 * 60;
-export const MONTH_GRID_DAY_COUNT = 42;
-export const MONTH_GRID_WEEK_COUNT = 6;
 export const MONTH_GRID_COLUMN_COUNT = 7;
 const PLANNER_MODE_TARGET_DAYS = {
     day: 2,
@@ -83,6 +83,26 @@ export function getCenteredScrollTopForCurrentTime({
     const maximumScrollTop = Math.max(totalContentHeight - viewportHeight, 0);
 
     return clamp(currentTimeTopOffset - bodyViewportHeight / 2, 0, maximumScrollTop);
+}
+
+export function getCenteredScrollTopForMonthDate({
+    cellHeight,
+    cellOffsetTop,
+    headerHeight,
+    scrollHeight,
+    viewportHeight,
+}: {
+    cellHeight: number;
+    cellOffsetTop: number;
+    headerHeight: number;
+    scrollHeight: number;
+    viewportHeight: number;
+}) {
+    const bodyViewportHeight = Math.max(viewportHeight - headerHeight, 0);
+    const maximumScrollTop = Math.max(scrollHeight - viewportHeight, 0);
+    const cellCenterOffset = cellOffsetTop + cellHeight / 2;
+
+    return clamp(cellCenterOffset - headerHeight - bodyViewportHeight / 2, 0, maximumScrollTop);
 }
 
 export function getVisibleDayCount(width: number, mode: PlannerMode): number {
@@ -233,20 +253,21 @@ export function getMonthLabel(anchorDate: string): string {
 export function getMonthGridDates(anchorDate: string): Date[] {
     const monthStartDate = getMonthStartDate(anchorDate);
     const monthGridStartDate = startOfWeek(monthStartDate, { weekStartsOn: 1 });
+    const monthGridEndDate = endOfWeek(endOfMonth(monthStartDate), { weekStartsOn: 1 });
 
-    return Array.from({ length: MONTH_GRID_DAY_COUNT }, (_, index) =>
-        addDays(monthGridStartDate, index),
-    );
+    return eachDayOfInterval({ end: monthGridEndDate, start: monthGridStartDate });
 }
 
 export function getMonthGridWeeks(anchorDate: string): Date[][] {
     const monthGridDates = getMonthGridDates(anchorDate);
 
-    return Array.from({ length: MONTH_GRID_WEEK_COUNT }, (_, index) =>
-        monthGridDates.slice(
-            index * MONTH_GRID_COLUMN_COUNT,
-            (index + 1) * MONTH_GRID_COLUMN_COUNT,
-        ),
+    return Array.from(
+        { length: Math.ceil(monthGridDates.length / MONTH_GRID_COLUMN_COUNT) },
+        (_, index) =>
+            monthGridDates.slice(
+                index * MONTH_GRID_COLUMN_COUNT,
+                (index + 1) * MONTH_GRID_COLUMN_COUNT,
+            ),
     );
 }
 
@@ -273,10 +294,7 @@ export function isSameIsoDate(date: Date, isoDate: string): boolean {
 }
 
 export function getMonthGridEndDate(anchorDate: string): Date {
-    return addDays(
-        startOfWeek(getMonthStartDate(anchorDate), { weekStartsOn: 1 }),
-        MONTH_GRID_DAY_COUNT - 1,
-    );
+    return endOfWeek(getMonthLastDate(anchorDate), { weekStartsOn: 1 });
 }
 
 export function getMonthLastDate(anchorDate: string): Date {

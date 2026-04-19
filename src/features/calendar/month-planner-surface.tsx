@@ -1,9 +1,11 @@
 import { ArrowLeft02Icon, ArrowRight02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { format, parseISO } from 'date-fns';
+import { useEffect, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
+    getCenteredScrollTopForMonthDate,
     getMonthGridDates,
     getMonthLabel,
     getMonthWeekdayLabels,
@@ -24,11 +26,46 @@ interface MonthPlannerSurfaceProps {
 const MONTH_SURFACE_HEIGHT_CLASS = 'max-h-[calc(100vh-19rem)] min-h-[30rem]';
 
 export function MonthPlannerSurface({ anchorDate, onSelectDate }: MonthPlannerSurfaceProps) {
+    const scrollAreaRef = useRef<HTMLDivElement | null>(null);
+    const stickyHeaderRef = useRef<HTMLDivElement | null>(null);
+    const hasAutoCenteredRef = useRef(false);
+    const pendingCenterOnTodayRef = useRef(false);
     const todayIsoDate = getSystemTodayIsoDate();
     const monthLabel = getMonthLabel(anchorDate);
     const weekdayLabels = getMonthWeekdayLabels();
     const monthGridDates = getMonthGridDates(anchorDate);
     const todayButtonLabel = `Today ${format(parseISO(todayIsoDate), 'd MMM, yyyy')}`;
+    const isTodayInMonth = isDateInMonth(parseISO(todayIsoDate), anchorDate);
+
+    useEffect(() => {
+        const shouldCenter = !hasAutoCenteredRef.current || pendingCenterOnTodayRef.current;
+
+        if (!shouldCenter) {
+            return;
+        }
+
+        hasAutoCenteredRef.current = true;
+
+        if (
+            !isTodayInMonth ||
+            !centerMonthDateInView(scrollAreaRef.current, stickyHeaderRef.current, todayIsoDate)
+        ) {
+            pendingCenterOnTodayRef.current = false;
+            return;
+        }
+
+        pendingCenterOnTodayRef.current = false;
+    }, [isTodayInMonth, todayIsoDate]);
+
+    const handleSelectToday = () => {
+        pendingCenterOnTodayRef.current = true;
+
+        if (isTodayInMonth) {
+            centerMonthDateInView(scrollAreaRef.current, stickyHeaderRef.current, todayIsoDate);
+        }
+
+        onSelectDate(todayIsoDate);
+    };
 
     return (
         <section
@@ -39,7 +76,7 @@ export function MonthPlannerSurface({ anchorDate, onSelectDate }: MonthPlannerSu
                     <Button
                         aria-label={todayButtonLabel}
                         variant='outline'
-                        onClick={() => onSelectDate(todayIsoDate)}>
+                        onClick={handleSelectToday}>
                         {todayButtonLabel}
                     </Button>
                     <Button
@@ -70,9 +107,11 @@ export function MonthPlannerSurface({ anchorDate, onSelectDate }: MonthPlannerSu
                         MONTH_SURFACE_HEIGHT_CLASS,
                         'max-w-full min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain',
                     )}
+                    ref={scrollAreaRef}
                     data-testid='month-planner-scroll-area'>
                     <div
                         className='sticky top-0 z-30 overflow-hidden border-b bg-background'
+                        ref={stickyHeaderRef}
                         data-testid='month-planner-sticky-header'>
                         <div className='grid grid-cols-7 bg-background'>
                             {weekdayLabels.map((label) => (
@@ -134,4 +173,30 @@ export function MonthPlannerSurface({ anchorDate, onSelectDate }: MonthPlannerSu
             </div>
         </section>
     );
+}
+
+function centerMonthDateInView(
+    scrollAreaElement: HTMLDivElement | null,
+    stickyHeaderElement: HTMLDivElement | null,
+    isoDate: string,
+) {
+    if (!scrollAreaElement) {
+        return false;
+    }
+
+    const targetCell = scrollAreaElement.querySelector(`[data-date-cell="${isoDate}"]`);
+
+    if (!(targetCell instanceof HTMLElement)) {
+        return false;
+    }
+
+    scrollAreaElement.scrollTop = getCenteredScrollTopForMonthDate({
+        cellHeight: targetCell.offsetHeight,
+        cellOffsetTop: targetCell.offsetTop,
+        headerHeight: stickyHeaderElement?.offsetHeight ?? 0,
+        scrollHeight: scrollAreaElement.scrollHeight,
+        viewportHeight: scrollAreaElement.clientHeight,
+    });
+
+    return true;
 }

@@ -25,7 +25,7 @@ describe('MonthPlannerSurface', () => {
         expect(screen.getByTestId('month-planner-sticky-header').className).toContain('top-0');
     });
 
-    it('renders a fixed 42-cell month grid with weekend and outside-month markers', () => {
+    it('renders a dynamic month grid with weekend and outside-month markers', () => {
         renderMonthPlannerSurface();
 
         const dayCells = screen.getAllByRole('button', { name: /Select / });
@@ -36,8 +36,8 @@ describe('MonthPlannerSurface', () => {
             '[data-date-cell="2026-03-30"]',
         ) as HTMLElement;
 
-        expect(dayCells).toHaveLength(42);
-        expect(weekendCells).toHaveLength(12);
+        expect(dayCells).toHaveLength(35);
+        expect(weekendCells).toHaveLength(10);
         expect(outsideMonthCell.getAttribute('data-outside-month')).toBe('true');
         expect(outsideMonthCell.className).toContain('text-left');
     });
@@ -88,6 +88,40 @@ describe('MonthPlannerSurface', () => {
         expect(onSelectDate).toHaveBeenCalledWith('2026-03-30');
         expect(screen.getByText('March 2026')).toBeTruthy();
     });
+
+    it('centers today in the scroll viewport on initial render when today is in the month', () => {
+        mockMonthLayoutMetrics();
+        renderMonthPlannerSurface();
+
+        expect(screen.getByTestId('month-planner-scroll-area').scrollTop).toBe(108);
+    });
+
+    it('recenters today when clicking the today button from another month', () => {
+        mockMonthLayoutMetrics();
+        renderMonthPlannerSurfaceHarness({ anchorDate: '2026-05-06' });
+
+        const scrollArea = screen.getByTestId('month-planner-scroll-area');
+        expect(scrollArea.scrollTop).toBe(0);
+
+        fireEvent.click(screen.getByRole('button', { name: getTodayButtonLabel() }));
+
+        expect(screen.getByText('April 2026')).toBeTruthy();
+        expect(scrollArea.scrollTop).toBe(108);
+    });
+
+    it('recenters today when clicking the today button while already on the current month', () => {
+        mockMonthLayoutMetrics();
+        renderMonthPlannerSurfaceHarness({ anchorDate: '2026-04-03' });
+
+        const scrollArea = screen.getByTestId('month-planner-scroll-area');
+        expect(scrollArea.scrollTop).toBe(108);
+
+        scrollArea.scrollTop = 0;
+        fireEvent.click(screen.getByRole('button', { name: getTodayButtonLabel() }));
+
+        expect(screen.getByText('April 2026')).toBeTruthy();
+        expect(scrollArea.scrollTop).toBe(108);
+    });
 });
 
 function MonthPlannerSurfaceHarness({
@@ -128,4 +162,35 @@ function renderMonthPlannerSurfaceHarness({
 
 function getTodayButtonLabel() {
     return `Today ${format(new Date(), 'd MMM, yyyy')}`;
+}
+
+function mockMonthLayoutMetrics() {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(
+        function (this: HTMLElement) {
+            return this.getAttribute('data-testid') === 'month-planner-scroll-area' ? 600 : 0;
+        },
+    );
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(
+        function (this: HTMLElement) {
+            return this.getAttribute('data-testid') === 'month-planner-scroll-area' ? 900 : 0;
+        },
+    );
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(
+        function (this: HTMLElement) {
+            if (this.getAttribute('data-testid') === 'month-planner-sticky-header') {
+                return 48;
+            }
+
+            if (this.getAttribute('data-date-cell') === '2026-04-19') {
+                return 144;
+            }
+
+            return 0;
+        },
+    );
+    vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(
+        function (this: HTMLElement) {
+            return this.getAttribute('data-date-cell') === '2026-04-19' ? 360 : 0;
+        },
+    );
 }

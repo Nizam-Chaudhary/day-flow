@@ -5,6 +5,7 @@ import {
     buildDayRange,
     CALENDAR_CELL_SIZE,
     CURRENT_TIME_INDICATOR_HEIGHT,
+    getCenteredScrollTopForMonthDate,
     formatPlannerRangeLabel,
     getDateHeaderLabel,
     getDateHeaderSubLabel,
@@ -23,7 +24,6 @@ import {
     isDateInMonth,
     isSameIsoDate,
     isWeekendDate,
-    MONTH_GRID_DAY_COUNT,
     PLANNER_HEADER_HEIGHT,
     parseTimeToMinutes,
     shiftIsoDateByDays,
@@ -91,6 +91,39 @@ describe('planner utils', () => {
                 viewportHeight: 120,
             }),
         ).toBe(728);
+    });
+
+    it('centers month dates within the visible month body', () => {
+        expect(
+            getCenteredScrollTopForMonthDate({
+                cellHeight: 144,
+                cellOffsetTop: 360,
+                headerHeight: 48,
+                scrollHeight: 900,
+                viewportHeight: 600,
+            }),
+        ).toBe(108);
+    });
+
+    it('clamps month-date centering near the start and end of the scroll range', () => {
+        expect(
+            getCenteredScrollTopForMonthDate({
+                cellHeight: 144,
+                cellOffsetTop: 48,
+                headerHeight: 48,
+                scrollHeight: 900,
+                viewportHeight: 600,
+            }),
+        ).toBe(0);
+        expect(
+            getCenteredScrollTopForMonthDate({
+                cellHeight: 144,
+                cellOffsetTop: 780,
+                headerHeight: 48,
+                scrollHeight: 900,
+                viewportHeight: 600,
+            }),
+        ).toBe(300);
     });
 
     it('builds a day range from the selected date', () => {
@@ -225,21 +258,41 @@ describe('planner utils', () => {
         expect(getMonthLabel('2026-04-19')).toBe('April 2026');
     });
 
-    it('builds a monday-first month grid with a fixed 42-day span', () => {
+    it('builds a monday-first month grid with a dynamic day span', () => {
         const monthGridDates = getMonthGridDates('2026-04-19');
 
-        expect(monthGridDates).toHaveLength(MONTH_GRID_DAY_COUNT);
+        expect(monthGridDates).toHaveLength(35);
         expect(getIsoDate(monthGridDates[0])).toBe('2026-03-30');
-        expect(getIsoDate(monthGridDates[monthGridDates.length - 1])).toBe('2026-05-10');
+        expect(getIsoDate(monthGridDates[monthGridDates.length - 1])).toBe('2026-05-03');
     });
 
-    it('groups the month grid into six week rows', () => {
+    it('groups the month grid into five week rows when the month only needs five', () => {
         const monthGridWeeks = getMonthGridWeeks('2026-04-19');
 
-        expect(monthGridWeeks).toHaveLength(6);
+        expect(monthGridWeeks).toHaveLength(5);
         expect(monthGridWeeks.every((week) => week.length === 7)).toBe(true);
         expect(getIsoDate(monthGridWeeks[0][0])).toBe('2026-03-30');
-        expect(getIsoDate(monthGridWeeks[5][6])).toBe('2026-05-10');
+        expect(getIsoDate(monthGridWeeks[4][6])).toBe('2026-05-03');
+    });
+
+    it('retains six week rows for months that naturally span six weeks', () => {
+        const monthGridDates = getMonthGridDates('2026-08-19');
+        const monthGridWeeks = getMonthGridWeeks('2026-08-19');
+
+        expect(monthGridDates).toHaveLength(42);
+        expect(monthGridWeeks).toHaveLength(6);
+        expect(getIsoDate(monthGridWeeks[0][0])).toBe('2026-07-27');
+        expect(getIsoDate(monthGridWeeks[5][6])).toBe('2026-09-06');
+    });
+
+    it('supports compact four week months when the month aligns exactly to full weeks', () => {
+        const monthGridDates = getMonthGridDates('2027-02-14');
+        const monthGridWeeks = getMonthGridWeeks('2027-02-14');
+
+        expect(monthGridDates).toHaveLength(28);
+        expect(monthGridWeeks).toHaveLength(4);
+        expect(getIsoDate(monthGridWeeks[0][0])).toBe('2027-02-01');
+        expect(getIsoDate(monthGridWeeks[3][6])).toBe('2027-02-28');
     });
 
     it('returns weekday labels in monday-first order', () => {
