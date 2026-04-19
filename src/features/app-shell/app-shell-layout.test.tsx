@@ -111,9 +111,40 @@ describe('App shell routes', () => {
         renderApp('/');
         await screen.findByRole('heading', { name: 'Today' });
 
-        await user.click(await screen.findByRole('link', { name: /Calendar/i }));
+        await user.click(await screen.findByRole('link', { name: 'Calendar' }));
 
         expect(await screen.findByRole('heading', { name: 'Calendar' })).toBeTruthy();
+    });
+
+    it('renders coming-soon sidebar items as disabled controls', async () => {
+        renderApp('/');
+        await screen.findByRole('heading', { name: 'Today' });
+
+        const primaryNav = screen.getByRole('navigation', { name: 'Primary' });
+
+        expect(within(primaryNav).queryByRole('link', { name: 'Today' })).toBeNull();
+        expect(within(primaryNav).queryByRole('link', { name: 'Tasks' })).toBeNull();
+        expect(within(primaryNav).queryByRole('link', { name: 'Reminders' })).toBeNull();
+        expect(within(primaryNav).queryByRole('link', { name: 'Notes' })).toBeNull();
+
+        expect(within(primaryNav).getByRole('button', { name: 'Today' })).toHaveProperty(
+            'disabled',
+            true,
+        );
+        expect(within(primaryNav).getByRole('button', { name: 'Tasks' })).toHaveProperty(
+            'disabled',
+            true,
+        );
+        expect(within(primaryNav).getByRole('button', { name: 'Reminders' })).toHaveProperty(
+            'disabled',
+            true,
+        );
+        expect(within(primaryNav).getByRole('button', { name: 'Notes' })).toHaveProperty(
+            'disabled',
+            true,
+        );
+        expect(within(primaryNav).getAllByText('Coming soon')).toHaveLength(4);
+        expect(within(primaryNav).getByRole('link', { name: 'Integrations' })).toBeTruthy();
     });
 
     it('renders the sidebar brand as a non-clickable item', async () => {
@@ -361,10 +392,14 @@ describe('App shell routes', () => {
 
         const dialog = await screen.findByRole('dialog');
 
-        expect(within(dialog).getByRole('link', { name: 'Tasks' })).toBeTruthy();
+        expect(within(dialog).getByRole('button', { name: 'Tasks' })).toHaveProperty(
+            'disabled',
+            true,
+        );
+        expect(within(dialog).getByRole('link', { name: 'Integrations' })).toBeTruthy();
     });
 
-    it('closes the mobile sidebar after selecting a nav item', async () => {
+    it('closes the mobile sidebar after selecting an enabled nav item', async () => {
         const user = setupUser();
 
         setViewportWidth(767);
@@ -375,9 +410,9 @@ describe('App shell routes', () => {
 
         const dialog = await screen.findByRole('dialog');
 
-        await user.click(within(dialog).getByRole('link', { name: 'Tasks' }));
+        await user.click(within(dialog).getByRole('link', { name: 'Integrations' }));
 
-        expect(await screen.findByRole('heading', { name: 'Tasks' })).toBeTruthy();
+        expect(await screen.findByRole('heading', { name: 'Integrations' })).toBeTruthy();
 
         await waitFor(() => {
             expect(screen.queryByRole('dialog')).toBeNull();

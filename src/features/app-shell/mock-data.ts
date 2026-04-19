@@ -4,8 +4,6 @@ import {
     Calendar01Icon,
     CheckListIcon,
     ClockAlertIcon,
-    Globe02Icon,
-    GoogleIcon,
     Home01Icon,
     LinkSquare02Icon,
     Note01Icon,
@@ -13,7 +11,6 @@ import {
     PlusSignIcon,
     Search01Icon,
     Settings01Icon,
-    SlackIcon,
 } from '@hugeicons/core-free-icons';
 import { addDays, format, startOfWeek, subMinutes } from 'date-fns';
 
@@ -37,6 +34,8 @@ export interface ShellNavSubItem {
 }
 
 export interface ShellNavItem {
+    badge?: string;
+    disabled?: boolean;
     description: string;
     icon: IconSvgElement;
     items?: ShellNavSubItem[];
@@ -100,17 +99,32 @@ export interface MockPageLink {
     title: string;
 }
 
-export interface MockIntegrationProvider {
+export type MockIntegrationCategoryId = 'calendar' | 'sync' | 'notifications-and-other';
+
+export type MockIntegrationProviderId = 'apple' | 'google' | 'notion' | 'outlook' | 'slack';
+
+export type MockIntegrationCardStatus = 'coming-soon';
+
+export type MockIntegrationLogoKey = MockIntegrationProviderId;
+
+export interface MockIntegrationProviderSummary {
+    category: MockIntegrationCategoryId;
+    connectedAccountCount?: number;
     description: string;
-    id: 'apple' | 'google' | 'notion' | 'outlook' | 'slack';
-    lastSyncText: string;
+    id: MockIntegrationProviderId;
+    isConfigured: boolean;
+    isConnected: boolean;
+    logoKey: MockIntegrationLogoKey;
     name: string;
-    status: 'Connected' | 'Needs attention' | 'Not connected';
+    status: MockIntegrationCardStatus;
+    statusLabel: string;
 }
 
-export interface MockFieldMapping {
-    appField: string;
-    notionField: string;
+export interface MockIntegrationCategory {
+    description: string;
+    id: MockIntegrationCategoryId;
+    providers: MockIntegrationProviderSummary[];
+    title: string;
 }
 
 export const shellBrand = {
@@ -119,7 +133,9 @@ export const shellBrand = {
 
 export const mainNavItems = [
     {
+        badge: 'Coming soon',
         description: 'Daily command center',
+        disabled: true,
         icon: Home01Icon,
         label: 'Today',
         to: '/',
@@ -131,19 +147,25 @@ export const mainNavItems = [
         to: '/calendar',
     },
     {
+        badge: 'Coming soon',
         description: 'Task execution lane',
+        disabled: true,
         icon: CheckListIcon,
         label: 'Tasks',
         to: '/tasks',
     },
     {
+        badge: 'Coming soon',
         description: 'Time-based follow-ups',
+        disabled: true,
         icon: ClockAlertIcon,
         label: 'Reminders',
         to: '/reminders',
     },
     {
+        badge: 'Coming soon',
         description: 'Notion quick access',
+        disabled: true,
         icon: Note01Icon,
         label: 'Notes',
         to: '/notes',
@@ -437,58 +459,91 @@ export const recentPages = [
     },
 ] satisfies MockPageLink[];
 
-export const integrationProviders = [
+const integrationProviderSummaries = [
     {
+        category: 'calendar',
+        connectedAccountCount: 2,
         description: 'Primary work calendar and background event sync.',
         id: 'google',
-        lastSyncText: 'Synced 12 minutes ago',
+        isConfigured: false,
+        isConnected: false,
+        logoKey: 'google',
         name: 'Google Calendar',
-        status: 'Connected',
+        status: 'coming-soon',
+        statusLabel: 'Coming soon',
     },
     {
+        category: 'calendar',
+        connectedAccountCount: 0,
         description: 'Local Apple calendar sources for personal planning.',
         id: 'apple',
-        lastSyncText: 'Waiting for first connect',
+        isConfigured: false,
+        isConnected: false,
+        logoKey: 'apple',
         name: 'Apple Calendar',
-        status: 'Not connected',
+        status: 'coming-soon',
+        statusLabel: 'Coming soon',
     },
     {
+        category: 'calendar',
+        connectedAccountCount: 0,
         description: 'Cross-account meetings and external client events.',
         id: 'outlook',
-        lastSyncText: 'Needs permission refresh',
+        isConfigured: false,
+        isConnected: false,
+        logoKey: 'outlook',
         name: 'Outlook',
-        status: 'Needs attention',
+        status: 'coming-soon',
+        statusLabel: 'Coming soon',
     },
     {
+        category: 'sync',
         description: 'Databases and linked pages for tasks, notes, and references.',
         id: 'notion',
-        lastSyncText: 'Synced 27 minutes ago',
+        isConfigured: false,
+        isConnected: false,
+        logoKey: 'notion',
         name: 'Notion',
-        status: 'Connected',
+        status: 'coming-soon',
+        statusLabel: 'Coming soon',
     },
     {
+        category: 'notifications-and-other',
         description: 'Delivery channel for reminder nudges and summaries.',
         id: 'slack',
-        lastSyncText: 'Not connected',
+        isConfigured: false,
+        isConnected: false,
+        logoKey: 'slack',
         name: 'Slack',
-        status: 'Not connected',
+        status: 'coming-soon',
+        statusLabel: 'Coming soon',
     },
-] satisfies MockIntegrationProvider[];
+] satisfies MockIntegrationProviderSummary[];
 
-export const integrationIcons: Record<MockIntegrationProvider['id'], IconSvgElement> = {
-    apple: Calendar01Icon,
-    google: GoogleIcon,
-    notion: Note01Icon,
-    outlook: Globe02Icon,
-    slack: SlackIcon,
-};
-
-export const notionFieldMappings = [
-    { appField: 'Title', notionField: 'Name' },
-    { appField: 'Due Date', notionField: 'Deadline' },
-    { appField: 'Status', notionField: 'Stage' },
-    { appField: 'Reminder', notionField: 'Reminder Time' },
-    { appField: 'Linked Event', notionField: 'Calendar Reference' },
-] satisfies MockFieldMapping[];
+export const integrationCategories = [
+    {
+        description: 'Bring personal and work calendars into one planning surface.',
+        id: 'calendar',
+        providers: integrationProviderSummaries.filter(
+            (provider) => provider.category === 'calendar',
+        ),
+        title: 'Calendar',
+    },
+    {
+        description: 'Connect structured workspaces that mirror tasks, notes, and references.',
+        id: 'sync',
+        providers: integrationProviderSummaries.filter((provider) => provider.category === 'sync'),
+        title: 'Sync',
+    },
+    {
+        description:
+            'Prepare delivery channels and future utility integrations without exposing unfinished flows.',
+        id: 'notifications-and-other',
+        providers: integrationProviderSummaries.filter(
+            (provider) => provider.category === 'notifications-and-other',
+        ),
+        title: 'Notifications & Other',
+    },
+] satisfies MockIntegrationCategory[];
 
 export const shellLastSyncText = format(subMinutes(anchorDate, 12), 'p');

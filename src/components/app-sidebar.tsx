@@ -6,6 +6,7 @@ import { DayFlowLogo } from '@/components/brand/day-flow-logo';
 import { Separator } from '@/components/ui/separator';
 import {
     Sidebar,
+    SidebarMenuBadge,
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
@@ -36,25 +37,37 @@ function AppSidebarNav({ ariaLabel, items }: { ariaLabel: string; items: ShellNa
         <nav aria-label={ariaLabel}>
             <SidebarMenu className='gap-1'>
                 {items.map((item) => {
-                    const isActive = isActiveRoute(pathname, item.to);
+                    const isActive = item.disabled ? false : isActiveRoute(pathname, item.to);
 
                     return (
                         <SidebarMenuItem key={item.to}>
                             <SidebarMenuButton
+                                aria-disabled={item.disabled || undefined}
+                                disabled={item.disabled}
                                 isActive={isActive}
                                 tooltip={item.label}
                                 render={
-                                    <Link
-                                        to={item.to}
-                                        onClick={() => {
-                                            if (isMobile) {
-                                                setOpenMobile(false);
-                                            }
-                                        }}
-                                    />
-                                }>
+                                    item.disabled ? undefined : (
+                                        <Link
+                                            to={item.to}
+                                            onClick={() => {
+                                                if (isMobile) {
+                                                    setOpenMobile(false);
+                                                }
+                                            }}
+                                        />
+                                    )
+                                }
+                                className={cn(item.disabled && 'text-sidebar-foreground/55')}>
                                 <HugeiconsIcon icon={item.icon} strokeWidth={2} />
                                 <span>{item.label}</span>
+                                {item.badge ? (
+                                    <SidebarMenuBadge
+                                        aria-hidden='true'
+                                        className='text-[10px] text-sidebar-foreground/55 uppercase'>
+                                        {item.badge}
+                                    </SidebarMenuBadge>
+                                ) : null}
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     );

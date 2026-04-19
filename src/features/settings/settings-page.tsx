@@ -34,18 +34,9 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAppShellActions } from '@/features/app-shell/app-shell-layout';
-import { notionFieldMappings } from '@/features/app-shell/mock-data';
 import { mapFieldErrors } from '@/features/settings/form-errors';
 import {
     appHealthQueryOptions,
@@ -574,24 +565,21 @@ export function SettingsPage() {
 
                 <TabsContent className='pt-4' value='integrations'>
                     <SettingsScaffoldCard
-                        description='Field mapping UI is presentational in this pass and backed by mock rows only.'
+                        description='Integration setup states stay intentionally disabled here until the configuration model is designed.'
                         title='Integrations config'>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>App field</TableHead>
-                                    <TableHead>Notion field</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {notionFieldMappings.map((mapping) => (
-                                    <TableRow key={mapping.appField}>
-                                        <TableCell>{mapping.appField}</TableCell>
-                                        <TableCell>{mapping.notionField}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                        <div className='rounded-2xl border border-dashed border-border bg-muted/30 px-4 py-5'>
+                            <div className='flex flex-col gap-2'>
+                                <Badge
+                                    variant='outline'
+                                    className='w-fit border-dashed text-muted-foreground'>
+                                    Coming soon
+                                </Badge>
+                                <p className='text-sm text-muted-foreground'>
+                                    Notion mappings and provider-specific configuration will return
+                                    after the integrations model is finalized.
+                                </p>
+                            </div>
+                        </div>
                     </SettingsScaffoldCard>
                 </TabsContent>
 
