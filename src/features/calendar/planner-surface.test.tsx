@@ -30,14 +30,14 @@ describe('PlannerSurface', () => {
 
         renderPlannerSurface();
 
-        expect(await screen.findByText(getPlannerRangeLabel(0))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(0, 5))).toBeTruthy();
 
         await user.click(screen.getByRole('button', { name: 'Next dates' }));
 
         expect(screen.getByTestId('planner-track').style.transition).toContain('transform');
 
         await waitFor(() => {
-            expect(screen.getByText(getPlannerRangeLabel(4))).toBeTruthy();
+            expect(screen.getByText(getPlannerRangeLabel(5, 5))).toBeTruthy();
         });
     });
 
@@ -45,14 +45,14 @@ describe('PlannerSurface', () => {
         const user = userEvent.setup();
 
         renderPlannerSurface();
-        await screen.findByText(getPlannerRangeLabel(0));
+        await screen.findByText(getPlannerRangeLabel(0, 5));
 
         const scrollArea = screen.getByTestId('planner-scroll-area');
         scrollArea.scrollTop = 240;
 
         await user.click(screen.getByRole('button', { name: 'Next dates' }));
         await waitFor(() => {
-            expect(screen.getByText(getPlannerRangeLabel(4))).toBeTruthy();
+            expect(screen.getByText(getPlannerRangeLabel(5, 5))).toBeTruthy();
         });
 
         expect(scrollArea.scrollTop).toBe(240);
@@ -63,7 +63,7 @@ describe('PlannerSurface', () => {
         const onSelectDate = vi.fn<(date: string) => void>();
 
         renderPlannerSurface({ onSelectDate });
-        await screen.findByText(getPlannerRangeLabel(0));
+        await screen.findByText(getPlannerRangeLabel(0, 5));
 
         const selectedDate = format(addDays(new Date(), 1), 'yyyy-MM-dd');
         const selectedLabel = getDateHeaderLabel(addDays(new Date(), 1));
@@ -71,7 +71,7 @@ describe('PlannerSurface', () => {
         await user.click(screen.getByRole('button', { name: new RegExp(selectedLabel) }));
 
         expect(onSelectDate).toHaveBeenCalledWith(selectedDate);
-        expect(await screen.findByText(getPlannerRangeLabel(1))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(1, 5))).toBeTruthy();
     });
 
     it('uses instant page commits and disables drag transitions for reduced motion', async () => {
@@ -80,13 +80,13 @@ describe('PlannerSurface', () => {
         mockMatchMedia(true);
         renderPlannerSurface();
 
-        expect(await screen.findByText(getPlannerRangeLabel(0))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(0, 5))).toBeTruthy();
 
         const track = screen.getByTestId('planner-track');
         await user.click(screen.getByRole('button', { name: 'Next dates' }));
 
         expect(track.style.transition).toBe('');
-        expect(await screen.findByText(getPlannerRangeLabel(4))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(5, 5))).toBeTruthy();
 
         const dragTarget = track.parentElement as HTMLElement;
 
@@ -120,29 +120,82 @@ describe('PlannerSurface', () => {
         });
 
         expect(track.style.transform).toContain('-1280px');
-        expect(screen.getByText(getPlannerRangeLabel(4))).toBeTruthy();
+        expect(screen.getByText(getPlannerRangeLabel(5, 5))).toBeTruthy();
     });
 
     it('keeps the buffered track clipped inside shrinkable planner wrappers', async () => {
         renderPlannerSurface();
-        await screen.findByText(getPlannerRangeLabel(0));
+        await screen.findByText(getPlannerRangeLabel(0, 5));
 
         const plannerSurface = screen.getByTestId('planner-surface');
         const scrollArea = screen.getByTestId('planner-scroll-area');
         const track = screen.getByTestId('planner-track');
         const viewport = track.parentElement as HTMLElement;
+        const page = track.firstElementChild as HTMLElement;
+        const dateColumn = page.querySelector('[data-date-column]') as HTMLElement;
+        const dateLabel = page.querySelector('[data-date-column] > span') as HTMLElement;
+        const bodyGrid = page.children[1] as HTMLElement;
+        const overlayGrid = bodyGrid.lastElementChild as HTMLElement;
+        const hourCell = bodyGrid.querySelector(
+            '[class*="min-w-0"][class*="border-r"][class*="border-b"]',
+        ) as HTMLElement;
 
         expect(plannerSurface.className).toContain('min-w-0');
         expect(scrollArea.className).toContain('overflow-x-hidden');
         expect(viewport.className).toContain('overflow-hidden');
         expect(viewport.className).toContain('min-w-0');
         expect(track.style.width).toBe('3840px');
+        expect(page.style.minWidth).toBe('');
+        expect(page.style.width).toBe('1280px');
+        expect(dateColumn.className).not.toContain('min-w-[var(--calendar-cell-size)]');
+        expect(dateColumn.className).toContain('min-w-0');
+        expect(dateLabel.className).toContain('truncate');
+        expect(bodyGrid.style.gridTemplateColumns).toContain('minmax(0, 1fr)');
+        expect(overlayGrid.style.gridTemplateColumns).toContain('minmax(0, 1fr)');
+        expect(hourCell.className).not.toContain('min-w-[var(--calendar-cell-size)]');
+        expect(hourCell.className).toContain('min-w-0');
+    });
+
+    it('falls back to fewer week columns when width is constrained', async () => {
+        mockElementMeasurements(980);
+        setViewportWidth(980);
+
+        renderPlannerSurface();
+
+        expect(await screen.findByText(getPlannerRangeLabel(0, 4))).toBeTruthy();
+    });
+
+    it('resolves visible days from the measured planner viewport width', async () => {
+        mockElementMeasurements(980);
+        setViewportWidth(1280);
+
+        renderPlannerSurface();
+
+        expect(await screen.findByText(getPlannerRangeLabel(0, 4))).toBeTruthy();
+        expect(screen.getByTestId('planner-track').style.width).toBe('2940px');
+    });
+
+    it('shows two visible days in day mode when width allows it', async () => {
+        renderPlannerSurface({ mode: 'day' });
+
+        expect(await screen.findByText(getPlannerRangeLabel(0, 2))).toBeTruthy();
+    });
+
+    it('falls back to one visible day in day mode when width is constrained', async () => {
+        mockElementMeasurements(440);
+        setViewportWidth(440);
+
+        renderPlannerSurface({ mode: 'day' });
+
+        expect(await screen.findByText(getPlannerRangeLabel(0, 1))).toBeTruthy();
     });
 });
 
 function renderPlannerSurface({
+    mode = 'week',
     onSelectDate,
 }: {
+    mode?: 'day' | 'week';
     onSelectDate?: (date: string) => void;
 } = {}) {
     function PlannerSurfaceHarness() {
@@ -152,7 +205,7 @@ function renderPlannerSurface({
             <PlannerSurface
                 anchorDate={anchorDate}
                 events={mockEvents}
-                mode='week'
+                mode={mode}
                 onOpenEvent={vi.fn<(event: (typeof mockEvents)[number]) => void>()}
                 onSelectDate={(date) => {
                     onSelectDate?.(date);
@@ -216,7 +269,7 @@ function mockMatchMedia(prefersReducedMotion: boolean) {
     }));
 }
 
-function getPlannerRangeLabel(startOffset: number, visibleDays = 4) {
+function getPlannerRangeLabel(startOffset: number, visibleDays: number) {
     return formatPlannerRangeLabel(
         buildDayRange(getIsoDate(addDays(new Date(), startOffset)), visibleDays),
     );

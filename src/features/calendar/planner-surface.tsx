@@ -28,12 +28,12 @@ import {
     getPlannerPageStartDates,
     getPlannerSnapTarget,
     getSystemTodayIsoDate,
+    getVisibleDayCount,
     parseTimeToMinutes,
     shiftIsoDateByDays,
     type PlannerMode,
     type PlannerSnapTarget,
 } from '@/features/calendar/planner-utils';
-import { useVisibleDayCount } from '@/features/calendar/use-visible-day-count';
 import { cn } from '@/lib/utils';
 
 interface PlannerSurfaceProps {
@@ -72,14 +72,26 @@ export function PlannerSurface({
     const animationTimerRef = useRef<number | null>(null);
     const dragStateRef = useRef<PlannerDragState | null>(null);
     const suppressClickRef = useRef(false);
-
-    const { containerRef, visibleDayCount } = useVisibleDayCount(mode);
     const prefersReducedMotion = usePrefersReducedMotion();
-    const [pageWidth, setPageWidth] = useState(0);
+    const [pageWidth, setPageWidth] = useState(() =>
+        typeof window === 'undefined' ? 0 : window.innerWidth,
+    );
     const [dragOffsetPx, setDragOffsetPx] = useState(0);
     const [isAnimating, setIsAnimating] = useState(false);
     const [transitionEnabled, setTransitionEnabled] = useState(false);
     const [activeSnapTarget, setActiveSnapTarget] = useState<PlannerSnapTarget>('current');
+    const visibleDayCount = useMemo(
+        () =>
+            getVisibleDayCount(
+                pageWidth > 0
+                    ? pageWidth
+                    : typeof window === 'undefined'
+                      ? 1280
+                      : window.innerWidth,
+                mode,
+            ),
+        [mode, pageWidth],
+    );
 
     const rangeDates = useMemo(
         () => buildDayRange(anchorDate, visibleDayCount),
@@ -127,22 +139,22 @@ export function PlannerSurface({
     const helperLabel = `${visibleDayCount} ${visibleDayCount === 1 ? 'day' : 'days'} visible`;
     const todayIsoDate = getSystemTodayIsoDate();
     const todayButtonLabel = `Today ${format(parseISO(todayIsoDate), 'd MMM, yyyy')}`;
-    const pageMinWidth = CALENDAR_TIME_GUTTER + visibleDayCount * CALENDAR_CELL_SIZE;
     const centeredOffsetPx = pageWidth > 0 ? -pageWidth : 0;
     const trackTranslatePx = centeredOffsetPx + dragOffsetPx;
 
     useEffect(() => {
-        const element = viewportRef.current;
+        const element = scrollAreaRef.current;
 
         if (!element) {
-            setPageWidth(window.innerWidth);
+            setPageWidth(Math.max(Math.floor(window.innerWidth), 0));
             return;
         }
 
         const measure = () => {
-            setPageWidth(
-                element.clientWidth || element.getBoundingClientRect().width || window.innerWidth,
-            );
+            const measuredWidth =
+                element.clientWidth || element.getBoundingClientRect().width || window.innerWidth;
+
+            setPageWidth(Math.max(Math.floor(measuredWidth), 0));
         };
 
         measure();
@@ -357,10 +369,7 @@ export function PlannerSurface({
     };
 
     return (
-        <section
-            className='flex max-w-full min-w-0 flex-col gap-4'
-            data-testid='planner-surface'
-            ref={containerRef}>
+        <section className='flex max-w-full min-w-0 flex-col gap-4' data-testid='planner-surface'>
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex items-center gap-2'>
                     <Button
@@ -429,7 +438,6 @@ export function PlannerSurface({
                                 <PlannerPageGrid
                                     eventsByDate={eventsByDate}
                                     key={getIsoDate(pageDates[0])}
-                                    minWidth={pageMinWidth}
                                     pageWidth={pageWidth}
                                     pageDates={pageDates}
                                     todayIsoDate={todayIsoDate}
@@ -447,7 +455,6 @@ export function PlannerSurface({
 
 function PlannerPageGrid({
     eventsByDate,
-    minWidth,
     onOpenEvent,
     onSelectDate,
     pageDates,
@@ -455,14 +462,13 @@ function PlannerPageGrid({
     todayIsoDate,
 }: {
     eventsByDate: Map<string, MockEvent[]>;
-    minWidth: number;
     onOpenEvent(this: void, event: MockEvent): void;
     onSelectDate(this: void, date: string): void;
     pageDates: Date[];
     pageWidth: number;
     todayIsoDate: string;
 }) {
-    const gridTemplateColumns = `var(--calendar-time-gutter) repeat(${pageDates.length}, minmax(var(--calendar-cell-size), 1fr))`;
+    const gridTemplateColumns = `var(--calendar-time-gutter) repeat(${pageDates.length}, minmax(0, 1fr))`;
 
     return (
         <div
@@ -471,7 +477,6 @@ function PlannerPageGrid({
                 {
                     '--calendar-cell-size': `${CALENDAR_CELL_SIZE}px`,
                     '--calendar-time-gutter': `${CALENDAR_TIME_GUTTER}px`,
-                    minWidth: `${minWidth}px`,
                     width: pageWidth > 0 ? `${pageWidth}px` : '100%',
                 } as CSSProperties
             }>
@@ -485,17 +490,17 @@ function PlannerPageGrid({
                         <button
                             key={isoDate}
                             className={cn(
-                                'flex h-16 min-w-[var(--calendar-cell-size)] flex-col items-start justify-center border-r border-b bg-background px-4 text-left transition-colors hover:bg-muted/50',
+                                'flex h-16 min-w-0 flex-col items-start justify-center border-r border-b bg-background px-3 text-left transition-colors hover:bg-muted/50',
                                 isTodayColumn &&
                                     'border-t border-l border-t-highlight border-r-highlight border-b-highlight border-l-highlight bg-muted/50',
                             )}
                             data-date-column={isoDate}
                             type='button'
                             onClick={() => onSelectDate(isoDate)}>
-                            <span className='text-sm font-medium tracking-tight'>
+                            <span className='block min-w-0 truncate text-sm font-medium tracking-tight'>
                                 {getDateHeaderLabel(date)}
                             </span>
-                            <span className='text-xs text-muted-foreground'>
+                            <span className='block min-w-0 truncate text-xs text-muted-foreground'>
                                 {getDateHeaderSubLabel(date)}
                             </span>
                         </button>
@@ -517,7 +522,7 @@ function PlannerPageGrid({
                 <div
                     className='pointer-events-none absolute inset-y-0 right-0 left-[var(--calendar-time-gutter)] grid'
                     style={{
-                        gridTemplateColumns: `repeat(${pageDates.length}, minmax(var(--calendar-cell-size), 1fr))`,
+                        gridTemplateColumns: `repeat(${pageDates.length}, minmax(0, 1fr))`,
                     }}>
                     {pageDates.map((date) => {
                         const isoDate = getIsoDate(date);
@@ -592,7 +597,7 @@ function FragmentRow({
                     <div
                         key={`${isoDate}-${hour}`}
                         className={cn(
-                            'h-[var(--calendar-cell-size)] min-w-[var(--calendar-cell-size)] border-r border-b bg-background',
+                            'h-[var(--calendar-cell-size)] min-w-0 border-r border-b bg-background',
                             isTodayColumn && 'border-l border-r-highlight border-l-highlight',
                             isTodayColumn && isLastHourRow && 'border-b-highlight',
                         )}

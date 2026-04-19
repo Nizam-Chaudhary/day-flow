@@ -7,6 +7,21 @@ export type PlannerSnapTarget = 'previous' | 'current' | 'next';
 
 export const CALENDAR_CELL_SIZE = 72;
 export const CALENDAR_TIME_GUTTER = 88;
+export const PLANNER_TIME_GUTTER_WIDTH = CALENDAR_TIME_GUTTER;
+export const PLANNER_MIN_DAY_COLUMN_WIDTH = 180;
+export const PLANNER_WIDTH_SAFETY_PX = 2;
+const PLANNER_MODE_TARGET_DAYS = {
+    day: 2,
+    week: 5,
+} as const satisfies Record<PlannerMode, number>;
+const PLANNER_MODE_MIN_DAYS = {
+    day: 1,
+    week: 1,
+} as const satisfies Record<PlannerMode, number>;
+const PLANNER_MODE_MAX_DAYS = {
+    day: 2,
+    week: 5,
+} as const;
 
 export function parseTimeToMinutes(time: string): number {
     const [hoursValue, minutesValue] = time.split(':');
@@ -32,23 +47,33 @@ export function getEventDurationMinutes(event: Pick<MockEvent, 'endTime' | 'star
 }
 
 export function getVisibleDayCount(width: number, mode: PlannerMode): number {
-    const usableWidth = Math.max(width - CALENDAR_TIME_GUTTER, 0);
+    return resolveVisibleDayCount({
+        availableWidth: width,
+        mode,
+        preferredDays: PLANNER_MODE_TARGET_DAYS[mode],
+    });
+}
 
-    let count = 1;
+function resolveVisibleDayCount({
+    availableWidth,
+    mode,
+    preferredDays,
+}: {
+    availableWidth: number;
+    mode: PlannerMode;
+    preferredDays: number;
+}) {
+    const safeAvailableWidth = Math.max(availableWidth - PLANNER_WIDTH_SAFETY_PX, 0);
+    const usableDayAreaWidth = Math.max(safeAvailableWidth - PLANNER_TIME_GUTTER_WIDTH, 0);
+    const maxReadableDays = Math.max(
+        Math.floor(usableDayAreaWidth / PLANNER_MIN_DAY_COLUMN_WIDTH),
+        1,
+    );
+    const minDays = PLANNER_MODE_MIN_DAYS[mode];
+    const maxDays = Math.min(PLANNER_MODE_MAX_DAYS[mode], preferredDays);
+    const resolvedDays = Math.min(maxDays, maxReadableDays);
 
-    if (usableWidth >= 1440) {
-        count = 7;
-    } else if (usableWidth >= 1200) {
-        count = 5;
-    } else if (usableWidth >= 960) {
-        count = 4;
-    } else if (usableWidth >= 720) {
-        count = 3;
-    } else if (usableWidth >= 480) {
-        count = 2;
-    }
-
-    return mode === 'day' ? Math.min(count, 5) : Math.min(count, 7);
+    return Math.min(Math.max(resolvedDays, minDays), maxDays);
 }
 
 export function getNavigationStep(visibleDayCount: number): number {

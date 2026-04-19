@@ -57,9 +57,9 @@ function CalendarPage() {
     }, [selectedDate]);
 
     return (
-        <section className='flex min-w-0 flex-col gap-6'>
-            <div className='flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between'>
-                <div className='flex max-w-3xl flex-col gap-2'>
+        <section className='flex max-w-full min-w-0 flex-col gap-6'>
+            <div className='flex flex-wrap items-end justify-between gap-4'>
+                <div className='flex max-w-3xl min-w-0 flex-1 basis-80 flex-col gap-2'>
                     <h2 className='font-heading text-3xl font-semibold tracking-tight sm:text-4xl'>
                         Calendar
                     </h2>
@@ -69,8 +69,14 @@ function CalendarPage() {
                     </p>
                 </div>
 
-                <div className='flex flex-col gap-3 xl:items-end'>
-                    <ToggleGroup aria-label='Calendar view' variant='outline'>
+                <div
+                    className='flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:items-start lg:items-end'
+                    data-testid='calendar-page-controls'>
+                    <ToggleGroup
+                        aria-label='Calendar view'
+                        className='w-full flex-wrap justify-start sm:w-auto lg:justify-end'
+                        data-testid='calendar-view-toggle'
+                        variant='outline'>
                         {(['day', 'week', 'month', 'agenda'] as const).map((value) => (
                             <ToggleGroupItem
                                 key={value}
@@ -96,7 +102,11 @@ function CalendarPage() {
                         ))}
                     </ToggleGroup>
 
-                    <Button onClick={() => appShellActions.openQuickAdd('event')}>Add event</Button>
+                    <Button
+                        className='w-full sm:w-auto'
+                        onClick={() => appShellActions.openQuickAdd('event')}>
+                        Add event
+                    </Button>
                 </div>
             </div>
 

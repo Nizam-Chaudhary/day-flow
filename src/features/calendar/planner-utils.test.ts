@@ -55,11 +55,32 @@ describe('planner utils', () => {
         ]);
     });
 
-    it('clamps visible day counts by mode', () => {
+    it('resolves week mode visible day counts from available width', () => {
+        expect(getVisibleDayCount(1280, 'week')).toBe(5);
+        expect(getVisibleDayCount(980, 'week')).toBe(4);
+        expect(getVisibleDayCount(760, 'week')).toBe(3);
+        expect(getVisibleDayCount(620, 'week')).toBe(2);
+        expect(getVisibleDayCount(440, 'week')).toBe(1);
+    });
+
+    it('resolves day mode visible day counts from available width', () => {
+        expect(getVisibleDayCount(1280, 'day')).toBe(2);
+        expect(getVisibleDayCount(620, 'day')).toBe(2);
+        expect(getVisibleDayCount(440, 'day')).toBe(1);
+    });
+
+    it('caps visible day counts by mode targets', () => {
         expect(getVisibleDayCount(320, 'day')).toBe(1);
-        expect(getVisibleDayCount(1600, 'day')).toBe(5);
-        expect(getVisibleDayCount(960, 'week')).toBe(3);
-        expect(getVisibleDayCount(1800, 'week')).toBe(7);
+        expect(getVisibleDayCount(1800, 'day')).toBe(2);
+        expect(getVisibleDayCount(2200, 'week')).toBe(5);
+    });
+
+    it('uses a safety margin to avoid resolving one extra day at thresholds', () => {
+        expect(getVisibleDayCount(988, 'week')).toBe(4);
+        expect(getVisibleDayCount(989, 'week')).toBe(4);
+        expect(getVisibleDayCount(990, 'week')).toBe(5);
+        expect(getVisibleDayCount(449, 'day')).toBe(1);
+        expect(getVisibleDayCount(450, 'day')).toBe(2);
     });
 
     it('resolves planner snap targets from distance and velocity', () => {

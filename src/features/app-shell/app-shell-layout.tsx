@@ -117,11 +117,11 @@ export function AppShellLayout() {
             <SidebarProvider defaultOpen style={sidebarStyle}>
                 <AppSidebar />
                 <SidebarInset>
-                    <div className='flex min-h-screen min-w-0 flex-1 flex-col'>
+                    <div className='flex min-h-screen max-w-full min-w-0 flex-1 flex-col overflow-x-clip'>
                         <AppTopbar onOpenQuickAdd={openQuickAdd} onSyncNow={syncNow} />
 
-                        <main className='flex-1 px-4 pt-6 pb-8 sm:px-6 lg:px-8 lg:pt-8'>
-                            <div className='mx-auto flex w-full max-w-7xl flex-col gap-6'>
+                        <main className='max-w-full min-w-0 flex-1 overflow-x-clip px-4 pt-6 pb-8 sm:px-6 lg:px-8 lg:pt-8'>
+                            <div className='mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-6'>
                                 <Outlet />
                             </div>
                         </main>

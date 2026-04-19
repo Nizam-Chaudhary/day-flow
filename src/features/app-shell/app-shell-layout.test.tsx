@@ -159,11 +159,11 @@ describe('App shell routes', () => {
         renderApp('/calendar');
         await screen.findByRole('heading', { name: 'Calendar' });
 
-        expect(await screen.findByText(getPlannerRangeLabel(0))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(0, 5))).toBeTruthy();
 
         await user.click(screen.getByRole('button', { name: 'Next dates' }));
 
-        expect(await screen.findByText(getPlannerRangeLabel(4))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(5, 5))).toBeTruthy();
     });
 
     it('renders the shared planner in day view', async () => {
@@ -175,7 +175,7 @@ describe('App shell routes', () => {
         await user.click(screen.getByRole('button', { name: 'Day' }));
 
         expect(await screen.findByTestId('planner-surface')).toBeTruthy();
-        expect(await screen.findByText(getPlannerRangeLabel(0))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(0, 2))).toBeTruthy();
         expect(screen.getByRole('button', { name: getTodayButtonLabel() })).toBeTruthy();
     });
 
@@ -188,7 +188,7 @@ describe('App shell routes', () => {
         await user.click(screen.getByRole('button', { name: 'Day' }));
         await user.click(screen.getByRole('button', { name: 'Week' }));
 
-        expect(await screen.findByText(getPlannerRangeLabel(0))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(0, 5))).toBeTruthy();
     });
 
     it('resets the planner to today when clicking the today button', async () => {
@@ -198,10 +198,10 @@ describe('App shell routes', () => {
         await screen.findByRole('heading', { name: 'Calendar' });
 
         await user.click(screen.getByRole('button', { name: 'Next dates' }));
-        expect(await screen.findByText(getPlannerRangeLabel(4))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(5, 5))).toBeTruthy();
 
         await user.click(screen.getByRole('button', { name: getTodayButtonLabel() }));
-        expect(await screen.findByText(getPlannerRangeLabel(0))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(0, 5))).toBeTruthy();
     });
 
     it('keeps the calendar planner inside shrinkable page containers', async () => {
@@ -213,6 +213,36 @@ describe('App shell routes', () => {
 
         expect(plannerSurface.className).toContain('min-w-0');
         expect(calendarSection?.className).toContain('min-w-0');
+    });
+
+    it('uses wrap-safe calendar controls while the desktop sidebar is expanded', async () => {
+        renderApp('/calendar');
+        await screen.findByRole('heading', { name: 'Calendar' });
+
+        const sidebarWrapper = document.querySelector('[data-slot="sidebar-wrapper"]');
+        const sidebarInset = document.querySelector('[data-slot="sidebar-inset"]');
+        const sidebar = document.querySelector('[data-slot="sidebar"][data-state="expanded"]');
+        const plannerSurface = await screen.findByTestId('planner-surface');
+        const calendarSection = plannerSurface.closest('section');
+        const controls = await screen.findByTestId('calendar-page-controls');
+        const viewToggle = await screen.findByTestId('calendar-view-toggle');
+        const addEventButton = screen.getByRole('button', { name: 'Add event' });
+        const shellColumn = plannerSurface.closest('[class*="overflow-x-clip"]') as HTMLElement;
+
+        expect(sidebar).toBeTruthy();
+        expect(sidebarWrapper?.className).toContain('overflow-x-clip');
+        expect(sidebarInset?.className).toContain('overflow-x-clip');
+        expect(sidebarInset?.className).toContain('max-w-full');
+        expect(calendarSection?.className).toContain('min-w-0');
+        expect(calendarSection?.className).toContain('max-w-full');
+        expect(controls.className).toContain('w-full');
+        expect(controls.className).toContain('sm:w-auto');
+        expect(viewToggle.className).toContain('w-full');
+        expect(viewToggle.className).toContain('flex-wrap');
+        expect(addEventButton.className).toContain('w-full');
+        expect(addEventButton.className).toContain('sm:w-auto');
+        expect(plannerSurface.className).toContain('min-w-0');
+        expect(shellColumn?.className).toContain('overflow-x-clip');
     });
 
     it('opens the task detail sheet from the tasks page', async () => {
@@ -370,7 +400,7 @@ function setupUser() {
     return userEvent.setup();
 }
 
-function getPlannerRangeLabel(startOffset: number, visibleDays = 4) {
+function getPlannerRangeLabel(startOffset: number, visibleDays: number) {
     return formatPlannerRangeLabel(
         buildDayRange(getIsoDate(addDays(new Date(), startOffset)), visibleDays),
     );
