@@ -1,0 +1,30 @@
+{
+    "name": "@day-flow/db",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "exports": {
+        "./client": "./src/client.ts",
+        "./google-repository": "./src/google-repository.ts",
+        "./schema": "./src/schema.ts"
+    },
+    "scripts": {
+        "build": "echo 'No build output for db'",
+        "format": "oxfmt .",
+        "lint": "oxlint . --fix --fix-suggestions",
+        "test": "vitest run --passWithNoTests",
+        "db:generate": "drizzle-kit generate",
+        "db:studio": "drizzle-kit studio"
+    },
+    "dependencies": {
+        "@day-flow/contracts": "workspace:*",
+        "better-sqlite3": "^12.9.0",
+        "drizzle-orm": "^0.45.2"
+    },
+    "devDependencies": {
+        "@types/better-sqlite3": "^7.6.13",
+        "@types/node": "25.6.0",
+        "drizzle-kit": "^0.31.10",
+        "vitest": "^4.1.4"
+    }
+}

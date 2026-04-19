@@ -1,0 +1,22 @@
+{
+    "name": "@day-flow/integrations-google",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "exports": {
+        "./index": "./src/index.ts"
+    },
+    "scripts": {
+        "build": "echo 'No build output for integrations-google'",
+        "format": "oxfmt .",
+        "lint": "oxlint . --fix --fix-suggestions",
+        "test": "vitest run --passWithNoTests"
+    },
+    "dependencies": {
+        "@day-flow/contracts": "workspace:*",
+        "@day-flow/db": "workspace:*"
+    },
+    "devDependencies": {
+        "vitest": "^4.1.4"
+    }
+}

@@ -1,0 +1,25 @@
+{
+    "name": "@day-flow/contracts",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "exports": {
+        "./channels": "./src/channels.ts",
+        "./errors": "./src/errors.ts",
+        "./health": "./src/health.ts",
+        "./google-calendar": "./src/google-calendar.ts",
+        "./settings": "./src/settings.ts"
+    },
+    "scripts": {
+        "build": "echo 'No build output for contracts'",
+        "format": "oxfmt .",
+        "lint": "oxlint . --fix --fix-suggestions",
+        "test": "vitest run --passWithNoTests"
+    },
+    "dependencies": {
+        "date-fns": "^4.1.0"
+    },
+    "devDependencies": {
+        "vitest": "^4.1.4"
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "name": "@day-flow/auth-server",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "bun run src/index.ts",
+        "build": "echo 'No build output for auth-server'",
+        "format": "oxfmt .",
+        "lint": "oxlint . --fix --fix-suggestions",
+        "test": "vitest run --passWithNoTests"
+    },
+    "dependencies": {
+        "@hono/node-server": "^1.14.1",
+        "hono": "^4.8.3"
+    },
+    "devDependencies": {
+        "@types/node": "25.6.0",
+        "vitest": "^4.1.4"
+    }
+}
