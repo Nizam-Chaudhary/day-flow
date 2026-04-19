@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -24,9 +23,7 @@ export const Route = createFileRoute('/calendar')({
     component: CalendarPage,
 });
 
-type CalendarMode = CalendarView | 'agenda';
-
-const calendarModeLabels: Record<CalendarMode, string> = {
+const calendarModeLabels: Record<CalendarView | 'agenda', string> = {
     agenda: 'Agenda',
     day: 'Day',
     month: 'Month',
@@ -35,13 +32,10 @@ const calendarModeLabels: Record<CalendarMode, string> = {
 
 function CalendarPage() {
     const appShellActions = useAppShellActions();
-    const [isAgendaView, setIsAgendaView] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<MockEvent | null>(null);
     const hasInitializedSelectedDate = useRef(false);
     const activeCalendarView = useAppShellStore((state) => state.activeCalendarView);
     const selectedDate = useAppShellStore((state) => state.selectedDate);
-
-    const activeMode: CalendarMode = isAgendaView ? 'agenda' : activeCalendarView;
 
     useEffect(() => {
         if (hasInitializedSelectedDate.current) {
@@ -65,8 +59,8 @@ function CalendarPage() {
                         Calendar
                     </h2>
                     <p className='max-w-2xl text-sm leading-6 text-muted-foreground'>
-                        View day, week, month, or agenda layouts without changing the underlying
-                        shell contracts.
+                        View day, week, or month layouts without changing the underlying shell
+                        contracts.
                     </p>
                 </div>
 
@@ -77,27 +71,20 @@ function CalendarPage() {
                         aria-label='Calendar view'
                         className='w-full flex-wrap justify-start sm:w-auto lg:justify-end'
                         data-testid='calendar-view-toggle'
-                        value={[activeMode]}
+                        value={[activeCalendarView]}
                         variant='outline'
                         onValueChange={(groupValue) => {
                             const [nextMode] = groupValue;
 
-                            if (!nextMode) {
-                                return;
-                            }
-
-                            if (nextMode === 'agenda') {
-                                setIsAgendaView(true);
-                                return;
-                            }
-
-                            if (isCalendarView(nextMode)) {
-                                setIsAgendaView(false);
+                            if (nextMode && isCalendarView(nextMode)) {
                                 useAppShellStore.getState().setActiveCalendarView(nextMode);
                             }
                         }}>
                         {(['day', 'week', 'month', 'agenda'] as const).map((value) => (
-                            <ToggleGroupItem key={value} value={value}>
+                            <ToggleGroupItem
+                                key={value}
+                                disabled={value === 'agenda'}
+                                value={value}>
                                 {calendarModeLabels[value]}
                             </ToggleGroupItem>
                         ))}
@@ -111,44 +98,7 @@ function CalendarPage() {
                 </div>
             </div>
 
-            {activeMode === 'agenda' ? (
-                <Card className='overflow-hidden'>
-                    <CardHeader>
-                        <CardTitle>Planner surface</CardTitle>
-                        <CardDescription>
-                            Mock unified events with source badges and a consistent right-side
-                            detail sheet.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className='flex flex-col gap-3'>
-                            {mockEvents.map((event) => (
-                                <button
-                                    key={event.id}
-                                    aria-label={`Open event ${event.title}`}
-                                    className='flex w-full flex-col gap-3 rounded-2xl border bg-background p-4 text-left transition-colors hover:bg-muted/60'
-                                    type='button'
-                                    onClick={() => {
-                                        setSelectedEvent(event);
-                                    }}>
-                                    <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-                                        <div>
-                                            <p className='font-medium'>{event.title}</p>
-                                            <p className='mt-1 text-sm text-muted-foreground'>
-                                                {event.date} · {event.startTime} - {event.endTime}
-                                            </p>
-                                        </div>
-                                        <Badge variant='secondary'>{event.source}</Badge>
-                                    </div>
-                                    <p className='text-sm leading-6 text-muted-foreground'>
-                                        {event.description}
-                                    </p>
-                                </button>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            ) : activeMode === 'month' ? (
+            {activeCalendarView === 'month' ? (
                 <MonthPlannerSurface
                     anchorDate={selectedDate}
                     onSelectDate={(date) => {
@@ -159,7 +109,7 @@ function CalendarPage() {
                 <PlannerSurface
                     anchorDate={selectedDate}
                     events={mockEvents}
-                    mode={activeMode}
+                    mode={activeCalendarView}
                     onOpenEvent={(event) => {
                         setSelectedEvent(event);
                     }}

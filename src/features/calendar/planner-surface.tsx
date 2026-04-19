@@ -147,7 +147,6 @@ export function PlannerSurface({
     }, [events, renderedDates]);
 
     const rangeLabel = formatPlannerRangeLabel(rangeDates);
-    const helperLabel = `${visibleDayCount} ${visibleDayCount === 1 ? 'day' : 'days'} visible`;
     const todayIsoDate = getIsoDate(currentTime);
     const isTodayVisible = rangeDates.some((date) => getIsoDate(date) === todayIsoDate);
     const todayButtonLabel = `Today ${format(parseISO(todayIsoDate), 'd MMM, yyyy')}`;
@@ -446,13 +445,12 @@ export function PlannerSurface({
 
                 <div aria-live='polite' className='min-w-0 sm:text-right'>
                     <p className='text-sm font-medium tracking-tight'>{rangeLabel}</p>
-                    <p className='text-xs text-muted-foreground'>{helperLabel}</p>
                 </div>
             </div>
 
             <div className='max-w-full min-w-0 overflow-hidden border bg-background'>
                 <div
-                    className='max-h-[calc(100vh-19rem)] min-h-[30rem] max-w-full min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain'
+                    className='max-h-[calc(100vh-19rem)] min-h-120 max-w-full min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain'
                     data-testid='planner-scroll-area'
                     ref={scrollAreaRef}>
                     <div

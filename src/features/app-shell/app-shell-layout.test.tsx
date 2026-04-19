@@ -127,22 +127,20 @@ describe('App shell routes', () => {
         expect(within(primaryNav).queryByRole('link', { name: 'Reminders' })).toBeNull();
         expect(within(primaryNav).queryByRole('link', { name: 'Notes' })).toBeNull();
 
-        expect(within(primaryNav).getByRole('button', { name: 'Today' })).toHaveProperty(
-            'disabled',
-            true,
-        );
-        expect(within(primaryNav).getByRole('button', { name: 'Tasks' })).toHaveProperty(
-            'disabled',
-            true,
-        );
-        expect(within(primaryNav).getByRole('button', { name: 'Reminders' })).toHaveProperty(
-            'disabled',
-            true,
-        );
-        expect(within(primaryNav).getByRole('button', { name: 'Notes' })).toHaveProperty(
-            'disabled',
-            true,
-        );
+        expect(
+            within(primaryNav).getByRole('button', { name: 'Today' }).getAttribute('aria-disabled'),
+        ).toBe('true');
+        expect(
+            within(primaryNav).getByRole('button', { name: 'Tasks' }).getAttribute('aria-disabled'),
+        ).toBe('true');
+        expect(
+            within(primaryNav)
+                .getByRole('button', { name: 'Reminders' })
+                .getAttribute('aria-disabled'),
+        ).toBe('true');
+        expect(
+            within(primaryNav).getByRole('button', { name: 'Notes' }).getAttribute('aria-disabled'),
+        ).toBe('true');
         expect(within(primaryNav).getAllByText('Coming soon')).toHaveLength(4);
         expect(within(primaryNav).getByRole('link', { name: 'Integrations' })).toBeTruthy();
     });
@@ -224,6 +222,19 @@ describe('App shell routes', () => {
 
         expect(weekButton.getAttribute('aria-pressed')).toBe('true');
         expect(await screen.findByText(getPlannerRangeLabel(0, 5))).toBeTruthy();
+    });
+
+    it('renders agenda as a disabled calendar view', async () => {
+        renderApp('/calendar');
+        await screen.findByRole('heading', { name: 'Calendar' });
+
+        const agendaButton = screen.getByRole('button', { name: 'Agenda' });
+
+        expect(agendaButton).toHaveProperty('disabled', true);
+        expect(screen.getByRole('button', { name: 'Week' }).getAttribute('aria-pressed')).toBe(
+            'true',
+        );
+        expect(screen.queryByText('Planner surface')).toBeNull();
     });
 
     it('hydrates the active calendar view toggle from preferences on load', async () => {
@@ -392,10 +403,9 @@ describe('App shell routes', () => {
 
         const dialog = await screen.findByRole('dialog');
 
-        expect(within(dialog).getByRole('button', { name: 'Tasks' })).toHaveProperty(
-            'disabled',
-            true,
-        );
+        expect(
+            within(dialog).getByRole('button', { name: 'Tasks' }).getAttribute('aria-disabled'),
+        ).toBe('true');
         expect(within(dialog).getByRole('link', { name: 'Integrations' })).toBeTruthy();
     });
 
