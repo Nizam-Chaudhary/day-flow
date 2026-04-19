@@ -1,5 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,8 @@ import {
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAppShellActions } from '@/features/app-shell/app-shell-layout';
 import { calendarColumns, mockEvents, type MockEvent } from '@/features/app-shell/mock-data';
+import { PlannerSurface } from '@/features/calendar/planner-surface';
+import { appPreferencesQueryOptions } from '@/features/settings/settings-query-options';
 import { isCalendarView, type CalendarView } from '@/shared/contracts/settings';
 import { useAppShellStore } from '@/stores/app-shell-store';
 
@@ -35,15 +38,32 @@ function CalendarPage() {
     const appShellActions = useAppShellActions();
     const [isAgendaView, setIsAgendaView] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<MockEvent | null>(null);
+    const hasInitializedSelectedDate = useRef(false);
     const activeCalendarView = useAppShellStore((state) => state.activeCalendarView);
+    const selectedDate = useAppShellStore((state) => state.selectedDate);
+    const preferencesQuery = useQuery(appPreferencesQueryOptions);
 
     const activeMode: CalendarMode = isAgendaView ? 'agenda' : activeCalendarView;
+    const weekStartsOn = preferencesQuery.data?.weekStartsOn ?? 1;
+
+    useEffect(() => {
+        if (hasInitializedSelectedDate.current) {
+            return;
+        }
+
+        hasInitializedSelectedDate.current = true;
+
+        if (mockEvents.some((event) => event.date === selectedDate)) {
+            return;
+        }
+
+        useAppShellStore.getState().setSelectedDate(mockEvents[0].date);
+    }, [selectedDate]);
 
     return (
         <section className='flex flex-col gap-6'>
             <div className='flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between'>
                 <div className='flex max-w-3xl flex-col gap-2'>
-                    <p className='text-sm text-muted-foreground'>Unified scheduling workspace</p>
                     <h2 className='font-heading text-3xl font-semibold tracking-tight sm:text-4xl'>
                         Calendar
                     </h2>
@@ -84,16 +104,16 @@ function CalendarPage() {
                 </div>
             </div>
 
-            <Card className='overflow-hidden'>
-                <CardHeader>
-                    <CardTitle>Planner surface</CardTitle>
-                    <CardDescription>
-                        Mock unified events with source badges and a consistent right-side detail
-                        sheet.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {activeMode === 'agenda' ? (
+            {activeMode === 'agenda' ? (
+                <Card className='overflow-hidden'>
+                    <CardHeader>
+                        <CardTitle>Planner surface</CardTitle>
+                        <CardDescription>
+                            Mock unified events with source badges and a consistent right-side
+                            detail sheet.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
                         <div className='flex flex-col gap-3'>
                             {mockEvents.map((event) => (
                                 <button
@@ -119,7 +139,18 @@ function CalendarPage() {
                                 </button>
                             ))}
                         </div>
-                    ) : activeMode === 'month' ? (
+                    </CardContent>
+                </Card>
+            ) : activeMode === 'month' ? (
+                <Card className='overflow-hidden'>
+                    <CardHeader>
+                        <CardTitle>Planner surface</CardTitle>
+                        <CardDescription>
+                            Mock unified events with source badges and a consistent right-side
+                            detail sheet.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
                         <div className='grid gap-3 md:grid-cols-7'>
                             {calendarColumns.map((column) => {
                                 const events = mockEvents.filter(
@@ -163,70 +194,22 @@ function CalendarPage() {
                                 );
                             })}
                         </div>
-                    ) : (
-                        <div
-                            className={`grid gap-4 ${
-                                activeMode === 'day' ? 'md:grid-cols-1' : 'md:grid-cols-7'
-                            }`}>
-                            {(activeMode === 'day'
-                                ? calendarColumns
-                                      .filter((column) =>
-                                          mockEvents.some((event) => event.date === column.date),
-                                      )
-                                      .slice(0, 1)
-                                : calendarColumns
-                            ).map((column) => {
-                                const events = mockEvents.filter(
-                                    (event) => event.date === column.date,
-                                );
-
-                                return (
-                                    <div
-                                        key={column.id}
-                                        className='flex min-h-80 flex-col rounded-2xl border bg-background'>
-                                        <div className='border-b px-4 py-3'>
-                                            <p className='font-medium'>{column.dayLabel}</p>
-                                            <p className='text-sm text-muted-foreground'>
-                                                {column.date}
-                                            </p>
-                                        </div>
-                                        <div className='flex flex-1 flex-col gap-3 p-4'>
-                                            {events.length > 0 ? (
-                                                events.map((event) => (
-                                                    <button
-                                                        key={event.id}
-                                                        aria-label={`Open event ${event.title}`}
-                                                        className='flex flex-col gap-2 rounded-2xl border border-transparent bg-primary/8 px-3 py-3 text-left transition-colors hover:bg-primary/12'
-                                                        type='button'
-                                                        onClick={() => {
-                                                            setSelectedEvent(event);
-                                                        }}>
-                                                        <div className='flex items-center justify-between gap-3'>
-                                                            <p className='font-medium'>
-                                                                {event.title}
-                                                            </p>
-                                                            <Badge variant='secondary'>
-                                                                {event.source}
-                                                            </Badge>
-                                                        </div>
-                                                        <p className='text-sm text-muted-foreground'>
-                                                            {event.startTime} - {event.endTime}
-                                                        </p>
-                                                    </button>
-                                                ))
-                                            ) : (
-                                                <div className='flex flex-1 items-center justify-center rounded-2xl border border-dashed text-sm text-muted-foreground'>
-                                                    No scheduled events
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            ) : (
+                <PlannerSurface
+                    anchorDate={selectedDate}
+                    events={mockEvents}
+                    mode={activeMode}
+                    onOpenEvent={(event) => {
+                        setSelectedEvent(event);
+                    }}
+                    onSelectDate={(date) => {
+                        useAppShellStore.getState().setSelectedDate(date);
+                    }}
+                    weekStartsOn={weekStartsOn}
+                />
+            )}
 
             <Sheet
                 open={selectedEvent !== null}

@@ -46,6 +46,20 @@ describe('App shell routes', () => {
         expect(screen.getByRole('button', { name: 'Open global search' })).toBeTruthy();
     });
 
+    it.each([
+        ['/calendar', 'Calendar', 'Unified scheduling workspace'],
+        ['/tasks', 'Tasks', 'Execution lane'],
+        ['/reminders', 'Reminders', 'Follow-up lane'],
+        ['/notes', 'Notes', 'Bridge, not editor'],
+        ['/integrations', 'Integrations', 'Connections and mappings'],
+        ['/settings', 'Settings', 'Preferences and diagnostics'],
+    ])('removes the eyebrow label from %s', async (path, heading, removedLabel) => {
+        renderApp(path);
+        await screen.findByRole('heading', { name: heading });
+
+        expect(screen.queryByText(removedLabel)).toBeNull();
+    });
+
     it('opens and closes the global search dialog', async () => {
         const user = userEvent.setup();
 
@@ -126,10 +140,36 @@ describe('App shell routes', () => {
 
         renderApp('/calendar');
         await screen.findByRole('heading', { name: 'Calendar' });
+        expect(await screen.findByTestId('planner-surface')).toBeTruthy();
 
         await user.click(await screen.findByRole('button', { name: 'Open event Launch standup' }));
 
         expect(await screen.findByRole('heading', { name: 'Launch standup' })).toBeTruthy();
+    });
+
+    it('navigates the planner by the visible date span', async () => {
+        const user = userEvent.setup();
+
+        renderApp('/calendar');
+        await screen.findByRole('heading', { name: 'Calendar' });
+
+        expect(await screen.findByText('15 - 18 Apr 2026')).toBeTruthy();
+
+        await user.click(screen.getByRole('button', { name: 'Next dates' }));
+
+        expect(await screen.findByText('20 - 23 Apr 2026')).toBeTruthy();
+    });
+
+    it('renders the shared planner in day view', async () => {
+        const user = userEvent.setup();
+
+        renderApp('/calendar');
+        await screen.findByRole('heading', { name: 'Calendar' });
+
+        await user.click(screen.getByRole('button', { name: 'Day' }));
+
+        expect(await screen.findByTestId('planner-surface')).toBeTruthy();
+        expect(await screen.findByText('18 - 21 Apr 2026')).toBeTruthy();
     });
 
     it('opens the task detail sheet from the tasks page', async () => {
