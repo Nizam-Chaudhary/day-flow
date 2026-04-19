@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createGoogleAuthServerApp } from './google-auth-server';
+import { createGoogleAuthServerApp, startGoogleAuthServer } from './google-auth-server';
 
 describe('createGoogleAuthServerApp', () => {
     it('creates flows, completes callbacks, and enforces one-time polling', async () => {
@@ -81,5 +81,20 @@ describe('createGoogleAuthServerApp', () => {
         expect(pollPayload.status).toBe('failed');
         expect(pollPayload.error).toBe('access_denied');
         expect(pollPayload.errorDescription).toBe('User denied consent');
+    });
+
+    it('starts an HTTP server on a random local port', async () => {
+        const server = await startGoogleAuthServer({
+            host: '127.0.0.1',
+            port: 0,
+        });
+
+        expect(server.port).toBeGreaterThan(0);
+        await expect(fetch(`${server.baseUrl}/healthz`)).resolves.toMatchObject({
+            ok: true,
+            status: 200,
+        });
+
+        await server.close();
     });
 });

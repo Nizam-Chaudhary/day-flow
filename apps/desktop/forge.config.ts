@@ -16,7 +16,7 @@ const config: ForgeConfig = {
     packagerConfig: {
         asar: true,
         executableName: 'day-flow',
-        extraResource: ['../../packages/db/drizzle', '../../assets'],
+        extraResource: ['../../packages/db/drizzle', '../../assets', '../auth-server'],
         icon: '../../assets/icons/day-flow_1024x1024.png',
     },
     makers: [

@@ -10,7 +10,6 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url)),
-            '@day-flow/auth-server': fileURLToPath(new URL('../auth-server/src', import.meta.url)),
             '@day-flow/contracts': fileURLToPath(
                 new URL('../../packages/contracts/src', import.meta.url),
             ),

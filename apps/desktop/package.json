@@ -38,6 +38,7 @@
     },
     "dependencies": {
         "@base-ui/react": "^1.4.0",
+        "@day-flow/auth-server": "*",
         "@day-flow/contracts": "*",
         "@day-flow/db": "*",
         "@day-flow/integrations-google": "*",

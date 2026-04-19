@@ -5,10 +5,6 @@ import type {
     UpdateGoogleConnectionInput,
 } from '@day-flow/contracts/google-calendar';
 
-import {
-    startGoogleAuthServer,
-    type RunningGoogleAuthServer,
-} from '@day-flow/auth-server/google-auth-server';
 import { createDayFlowError, normalizeDayFlowError } from '@day-flow/contracts/errors';
 import { getOrCreateDatabaseClient, type DatabaseClient } from '@day-flow/db/client';
 import { GoogleRepository } from '@day-flow/db/google-repository';
@@ -23,6 +19,8 @@ import {
 import { shell } from 'electron';
 import { createRequire } from 'node:module';
 
+import type { AuthServerRuntime } from '@/main/auth/auth-server-process-manager';
+
 import { getDatabasePath } from '@/main/db/paths';
 
 const FLOW_POLL_INTERVAL_MS = 1000;
@@ -30,7 +28,7 @@ const FLOW_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 const BACKGROUND_SYNC_TICK_MS = 60 * 1000;
 
 interface CreateGoogleCalendarServiceOptions {
-    authServerFactory?: () => Promise<RunningGoogleAuthServer>;
+    authServerRuntime?: AuthServerRuntime;
     client?: DatabaseClient;
     fetchImpl?: typeof fetch;
     keychain?: GoogleKeychainAdapter | null;
@@ -52,7 +50,7 @@ export interface GoogleCalendarService {
 let googleCalendarService: GoogleCalendarService | undefined;
 
 export function createGoogleCalendarService({
-    authServerFactory = () => startGoogleAuthServer(),
+    authServerRuntime,
     client = getOrCreateDatabaseClient(getDatabasePath()),
     fetchImpl = fetch,
     keychain = null,
@@ -82,10 +80,16 @@ export function createGoogleCalendarService({
         syncService,
     );
 
-    let authServerPromise: Promise<RunningGoogleAuthServer> | undefined;
+    let authServerPromise:
+        | Promise<Awaited<ReturnType<AuthServerRuntime['ensureStarted']>>>
+        | undefined;
 
     const ensureAuthServer = () => {
-        authServerPromise ??= authServerFactory();
+        if (!authServerRuntime) {
+            throw createDayFlowError('AUTH_ERROR', 'Auth server runtime is not available.');
+        }
+
+        authServerPromise ??= authServerRuntime.ensureStarted();
 
         return authServerPromise;
     };
@@ -103,9 +107,10 @@ export function createGoogleCalendarService({
         }
     };
 
-    setInterval(() => {
+    const syncInterval = setInterval(() => {
         void runDueSyncs().catch(() => {});
     }, BACKGROUND_SYNC_TICK_MS);
+    syncInterval.unref?.();
 
     return {
         async disconnectConnection(connectionId) {
@@ -195,8 +200,13 @@ export function createGoogleCalendarService({
     };
 }
 
-export function getGoogleCalendarService(): GoogleCalendarService {
+export function getGoogleCalendarService({
+    authServerRuntime,
+}: {
+    authServerRuntime?: AuthServerRuntime;
+} = {}): GoogleCalendarService {
     googleCalendarService ??= createGoogleCalendarService({
+        authServerRuntime,
         keychain: getKeychainAdapter(),
     });
 

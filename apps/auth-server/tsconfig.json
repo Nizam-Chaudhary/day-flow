@@ -6,7 +6,7 @@
         "module": "ESNext",
         "moduleResolution": "bundler",
         "target": "ES2023",
-        "lib": ["ES2023"],
+        "lib": ["ES2023", "DOM"],
         "types": ["node"],
         "paths": {
             "@day-flow/auth-server/*": ["./src/*"]
