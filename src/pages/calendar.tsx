@@ -76,27 +76,27 @@ function CalendarPage() {
                         aria-label='Calendar view'
                         className='w-full flex-wrap justify-start sm:w-auto lg:justify-end'
                         data-testid='calendar-view-toggle'
-                        variant='outline'>
+                        value={[activeMode]}
+                        variant='outline'
+                        onValueChange={(groupValue) => {
+                            const [nextMode] = groupValue;
+
+                            if (!nextMode) {
+                                return;
+                            }
+
+                            if (nextMode === 'agenda') {
+                                setIsAgendaView(true);
+                                return;
+                            }
+
+                            if (isCalendarView(nextMode)) {
+                                setIsAgendaView(false);
+                                useAppShellStore.getState().setActiveCalendarView(nextMode);
+                            }
+                        }}>
                         {(['day', 'week', 'month', 'agenda'] as const).map((value) => (
-                            <ToggleGroupItem
-                                key={value}
-                                value={value}
-                                pressed={activeMode === value}
-                                onPressedChange={(pressed) => {
-                                    if (!pressed) {
-                                        return;
-                                    }
-
-                                    if (value === 'agenda') {
-                                        setIsAgendaView(true);
-                                        return;
-                                    }
-
-                                    if (isCalendarView(value)) {
-                                        setIsAgendaView(false);
-                                        useAppShellStore.getState().setActiveCalendarView(value);
-                                    }
-                                }}>
+                            <ToggleGroupItem key={value} value={value}>
                                 {calendarModeLabels[value]}
                             </ToggleGroupItem>
                         ))}

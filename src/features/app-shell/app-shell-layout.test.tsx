@@ -179,6 +179,43 @@ describe('App shell routes', () => {
         expect(screen.getByRole('button', { name: getTodayButtonLabel() })).toBeTruthy();
     });
 
+    it('keeps the active calendar view selected when clicked again', async () => {
+        const user = setupUser();
+
+        renderApp('/calendar');
+        await screen.findByRole('heading', { name: 'Calendar' });
+
+        const weekButton = screen.getByRole('button', { name: 'Week' });
+
+        expect(weekButton.getAttribute('aria-pressed')).toBe('true');
+
+        await user.click(weekButton);
+
+        expect(weekButton.getAttribute('aria-pressed')).toBe('true');
+        expect(await screen.findByText(getPlannerRangeLabel(0, 5))).toBeTruthy();
+    });
+
+    it('hydrates the active calendar view toggle from preferences on load', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            defaultCalendarView: 'month',
+        });
+
+        renderApp('/calendar');
+        await screen.findByRole('heading', { name: 'Calendar' });
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: 'Month' }).getAttribute('aria-pressed')).toBe(
+                'true',
+            );
+        });
+
+        expect(screen.getByRole('button', { name: 'Week' }).getAttribute('aria-pressed')).toBe(
+            'false',
+        );
+        expect(screen.queryByTestId('planner-surface')).toBeNull();
+        expect(screen.getAllByText('No events').length).toBeGreaterThan(0);
+    });
+
     it('keeps the current day as the first visible date when switching back to week view', async () => {
         const user = setupUser();
 
@@ -410,7 +447,16 @@ function getTodayButtonLabel() {
     return `Today ${format(new Date(), 'd MMM, yyyy')}`;
 }
 
-function createDayFlowApi(): DayFlowApi {
+function createDayFlowApi(preferenceOverrides: Partial<AppPreferences> = {}): DayFlowApi {
+    const preferences: AppPreferences = {
+        createdAt: '2026-04-18T00:00:00.000Z',
+        dayStartsAt: '08:00',
+        defaultCalendarView: 'week',
+        updatedAt: '2026-04-18T00:15:00.000Z',
+        weekStartsOn: 1,
+        ...preferenceOverrides,
+    };
+
     return {
         app: {
             getHealth: vi.fn<() => Promise<AppHealth>>().mockResolvedValue({
@@ -420,22 +466,10 @@ function createDayFlowApi(): DayFlowApi {
             }),
         },
         settings: {
-            getPreferences: vi.fn<() => Promise<AppPreferences>>().mockResolvedValue({
-                createdAt: '2026-04-18T00:00:00.000Z',
-                dayStartsAt: '08:00',
-                defaultCalendarView: 'week',
-                updatedAt: '2026-04-18T00:15:00.000Z',
-                weekStartsOn: 1,
-            }),
+            getPreferences: vi.fn<() => Promise<AppPreferences>>().mockResolvedValue(preferences),
             updatePreferences: vi
                 .fn<(input: UpdateAppPreferencesInput) => Promise<AppPreferences>>()
-                .mockResolvedValue({
-                    createdAt: '2026-04-18T00:00:00.000Z',
-                    dayStartsAt: '08:00',
-                    defaultCalendarView: 'week',
-                    updatedAt: '2026-04-18T00:15:00.000Z',
-                    weekStartsOn: 1,
-                }),
+                .mockResolvedValue(preferences),
         },
     } satisfies DayFlowApi;
 }
