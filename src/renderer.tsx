@@ -46,7 +46,7 @@ createRoot(rootElement).render(
             storageKey='day-flow-theme'>
             <QueryClientProvider client={queryClient}>
                 <RouterProvider router={router} />
-                <Toaster position='top-right' richColors />
+                <Toaster richColors />
                 {/* {import.meta.env.DEV ? <TanStackRouterDevtools router={router} /> : null} */}
                 {/* {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null} */}
             </QueryClientProvider>

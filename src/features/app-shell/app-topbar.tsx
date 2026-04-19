@@ -1,9 +1,6 @@
 import { CalendarSyncIcon, Notification03Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { formatDistanceToNow } from 'date-fns';
 
-import { DayFlowLogo } from '@/components/brand/day-flow-logo';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/ui/kbd';
 import { LoadingSwap } from '@/components/ui/loading-swap';
@@ -21,14 +18,11 @@ export function AppTopbar({
 }) {
     const isNotificationsOpen = useAppShellStore((state) => state.isNotificationsOpen);
     const isSyncInFlight = useAppShellStore((state) => state.isSyncInFlight);
-    const lastSyncedAt = useAppShellStore((state) => state.lastSyncedAt);
 
     return (
         <header className='sticky top-0 z-40 border-b bg-background'>
             <div className='mx-auto flex w-full max-w-7xl items-center gap-2 px-4 py-3 sm:px-6 lg:px-8'>
                 <SidebarTrigger aria-label='Toggle sidebar' className='shrink-0' variant='ghost' />
-
-                <DayFlowLogo className='shrink-0' kind='mark' label='Day Flow' size={28} />
 
                 <Button
                     aria-label='Open global search'
@@ -50,22 +44,6 @@ export function AppTopbar({
                     </span>
                     <Kbd>Ctrl/⌘ K</Kbd>
                 </Button>
-
-                <div className='hidden items-center gap-3 xl:flex'>
-                    <div className='text-right'>
-                        <p className='text-xs tracking-[0.2em] text-muted-foreground uppercase'>
-                            Sync
-                        </p>
-                        <p className='text-sm font-medium'>
-                            {lastSyncedAt
-                                ? `Updated ${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}`
-                                : 'Not synced yet'}
-                        </p>
-                    </div>
-                    <Badge variant={isSyncInFlight ? 'default' : 'secondary'}>
-                        {isSyncInFlight ? 'In progress' : 'Steady'}
-                    </Badge>
-                </div>
 
                 <Button
                     aria-label='Open quick add'

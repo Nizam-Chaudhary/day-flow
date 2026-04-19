@@ -105,13 +105,20 @@ describe('App shell routes', () => {
         expect(screen.queryByRole('link', { name: 'Day Flow' })).toBeNull();
     });
 
-    it('renders the Day Flow logo in the top bar', async () => {
+    it('renders header actions without a top bar logo', async () => {
         renderApp('/');
         await screen.findByRole('heading', { name: 'Today' });
 
-        expect(
-            within(screen.getByRole('banner')).getAllByRole('img', { name: 'Day Flow' }),
-        ).toBeTruthy();
+        const banner = screen.getByRole('banner');
+
+        expect(within(banner).getByRole('button', { name: 'Toggle sidebar' })).toBeTruthy();
+        expect(within(banner).getByRole('button', { name: 'Open global search' })).toBeTruthy();
+        expect(within(banner).getByRole('button', { name: 'Sync now' })).toBeTruthy();
+        expect(within(banner).queryByRole('img', { name: 'Day Flow' })).toBeNull();
+        expect(within(banner).queryByText(/Updated /i)).toBeNull();
+        expect(within(banner).queryByText('Not synced yet')).toBeNull();
+        expect(within(banner).queryByText('Steady')).toBeNull();
+        expect(within(banner).queryByText('In progress')).toBeNull();
     });
 
     it('opens the event detail sheet from the calendar page', async () => {
@@ -193,8 +200,11 @@ describe('App shell routes', () => {
         await screen.findByRole('heading', { name: 'Today' });
 
         expect(
-            within(screen.getByRole('banner')).getAllByRole('img', { name: 'Day Flow' }),
+            within(screen.getByRole('banner')).getByRole('button', { name: 'Toggle sidebar' }),
         ).toBeTruthy();
+        expect(
+            within(screen.getByRole('banner')).queryByRole('img', { name: 'Day Flow' }),
+        ).toBeNull();
 
         await user.click(await screen.findByRole('button', { name: 'Toggle sidebar' }));
 
