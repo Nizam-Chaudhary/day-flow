@@ -15,7 +15,7 @@ export async function bootstrapMainProcess(): Promise<void> {
         void authServerRuntime.stop();
     });
 
-    bootstrapDatabase();
+    void bootstrapDatabase();
     registerIpcHandlers({
         googleCalendarService: getGoogleCalendarService({
             authServerRuntime,

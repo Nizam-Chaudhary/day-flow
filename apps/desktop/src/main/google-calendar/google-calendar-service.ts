@@ -7,7 +7,6 @@ import type {
 
 import { createDayFlowError, normalizeDayFlowError } from '@day-flow/contracts/errors';
 import { getOrCreateDatabaseClient, type DatabaseClient } from '@day-flow/db/client';
-import { GoogleRepository } from '@day-flow/db/google-repository';
 import {
     GoogleCalendarCatalogService,
     GoogleCalendarSyncService,
@@ -29,7 +28,7 @@ const BACKGROUND_SYNC_TICK_MS = 60 * 1000;
 
 interface CreateGoogleCalendarServiceOptions {
     authServerRuntime?: AuthServerRuntime;
-    client?: DatabaseClient;
+    client?: DatabaseClient | Promise<DatabaseClient>;
     fetchImpl?: typeof fetch;
     keychain?: GoogleKeychainAdapter | null;
     openExternal?: typeof shell.openExternal;
@@ -62,7 +61,6 @@ export function createGoogleCalendarService({
         return createUnavailableGoogleCalendarService();
     }
 
-    const repository = new GoogleRepository(client);
     const oauthService = new GoogleOAuthService(
         {
             clientId: oauthClientId,
@@ -71,14 +69,12 @@ export function createGoogleCalendarService({
         fetchImpl,
     );
     const tokenStore = new GoogleTokenStore(keychain);
-    const syncService = new GoogleCalendarSyncService(repository, oauthService, tokenStore);
-    const connectionService = new GoogleConnectionService(
-        repository,
-        oauthService,
-        tokenStore,
-        new GoogleCalendarCatalogService(),
-        syncService,
-    );
+    let connectionRuntimePromise:
+        | Promise<{
+              connectionService: GoogleConnectionService;
+              syncService: GoogleCalendarSyncService;
+          }>
+        | undefined;
 
     let authServerPromise:
         | Promise<Awaited<ReturnType<AuthServerRuntime['ensureStarted']>>>
@@ -94,9 +90,35 @@ export function createGoogleCalendarService({
         return authServerPromise;
     };
 
+    const getConnectionRuntime = async () => {
+        connectionRuntimePromise ??= (async () => {
+            const repository = new (
+                await import('@day-flow/db/google-repository')
+            ).GoogleRepository(await client);
+            const syncService = new GoogleCalendarSyncService(repository, oauthService, tokenStore);
+            const connectionService = new GoogleConnectionService(
+                repository,
+                oauthService,
+                tokenStore,
+                new GoogleCalendarCatalogService(),
+                syncService,
+            );
+
+            return {
+                connectionService,
+                syncService,
+            };
+        })();
+
+        return await connectionRuntimePromise;
+    };
+
     const runDueSyncs = async () => {
-        for (const connection of connectionService.listConnections()) {
-            const detail = connectionService.getConnectionDetail(connection.id);
+        const { connectionService, syncService } = await getConnectionRuntime();
+        const connections = await connectionService.listConnections();
+
+        for (const connection of connections) {
+            const detail = await connectionService.getConnectionDetail(connection.id);
             const hasDueCalendar = detail.calendars.some((calendar) =>
                 syncService.shouldSyncCalendar(calendar),
             );
@@ -114,18 +136,27 @@ export function createGoogleCalendarService({
 
     return {
         async disconnectConnection(connectionId) {
+            const { connectionService } = await getConnectionRuntime();
             await connectionService.disconnectConnection(connectionId);
         },
         async getConnectionDetail(connectionId) {
-            return connectionService.getConnectionDetail(connectionId);
+            const { connectionService } = await getConnectionRuntime();
+
+            return await connectionService.getConnectionDetail(connectionId);
         },
         async listConnections() {
-            return connectionService
-                .listConnections()
-                .map((connection) => connectionService.getConnectionDetail(connection.id));
+            const { connectionService } = await getConnectionRuntime();
+            const connections = await connectionService.listConnections();
+
+            return await Promise.all(
+                connections.map(async (connection) => {
+                    return await connectionService.getConnectionDetail(connection.id);
+                }),
+            );
         },
         async startConnection() {
             try {
+                const { connectionService } = await getConnectionRuntime();
                 const authServer = await ensureAuthServer();
                 const flowResponse = await fetchImpl(`${authServer.baseUrl}/oauth/google/flows`, {
                     body: JSON.stringify({
@@ -187,26 +218,34 @@ export function createGoogleCalendarService({
             }
         },
         async syncConnection(connectionId) {
-            return syncService.syncConnection(connectionId);
+            const { syncService } = await getConnectionRuntime();
+
+            return await syncService.syncConnection(connectionId);
         },
         async updateCalendar(input) {
-            const calendar = connectionService.updateCalendar(input);
+            const { connectionService } = await getConnectionRuntime();
+            const calendar = await connectionService.updateCalendar(input);
 
-            return connectionService.getConnectionDetail(calendar.connectionId);
+            return await connectionService.getConnectionDetail(calendar.connectionId);
         },
         async updateConnection(input) {
-            return connectionService.updateConnection(input.connectionId);
+            const { connectionService } = await getConnectionRuntime();
+
+            return await connectionService.updateConnection(input.connectionId);
         },
     };
 }
 
 export function getGoogleCalendarService({
     authServerRuntime,
+    client,
 }: {
     authServerRuntime?: AuthServerRuntime;
+    client?: DatabaseClient | Promise<DatabaseClient>;
 } = {}): GoogleCalendarService {
     googleCalendarService ??= createGoogleCalendarService({
         authServerRuntime,
+        client,
         keychain: getKeychainAdapter(),
     });
 
@@ -261,7 +300,9 @@ async function pollForGoogleFlowCompletion({
             return result;
         }
 
-        await new Promise((resolve) => setTimeout(resolve, FLOW_POLL_INTERVAL_MS));
+        await new Promise((resolve) => {
+            setTimeout(resolve, FLOW_POLL_INTERVAL_MS);
+        });
     }
 
     throw createDayFlowError('AUTH_ERROR', 'Google authorization timed out.');

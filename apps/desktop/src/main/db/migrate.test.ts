@@ -18,29 +18,32 @@ afterEach(() => {
 });
 
 describe('runDatabaseMigrations', () => {
-    it('is idempotent across repeated starts', () => {
+    it('is idempotent across repeated starts', async () => {
         const tempDirectory = mkdtempSync(join(tmpdir(), 'day-flow-migrate-'));
         const databasePath = join(tempDirectory, 'app.sqlite');
 
         cleanupPaths.add(tempDirectory);
 
-        const firstClient = createDatabaseClient({ databasePath });
-        const firstHealth = runDatabaseMigrations(firstClient, migrationsFolder);
+        const firstClient = await createDatabaseClient({ databasePath });
+        const firstHealth = await runDatabaseMigrations(firstClient, migrationsFolder);
 
         expect(firstHealth.databaseReady).toBe(true);
-        firstClient.sqlite.close();
+        firstClient.client.close();
 
-        const secondClient = createDatabaseClient({ databasePath });
+        const secondClient = await createDatabaseClient({ databasePath });
 
-        expect(() => runDatabaseMigrations(secondClient, migrationsFolder)).not.toThrow();
-        expect(
-            secondClient.sqlite
-                .prepare(
-                    "select name from sqlite_master where type = 'table' and name = 'app_preferences'",
-                )
-                .get(),
-        ).toBeTruthy();
+        await expect(runDatabaseMigrations(secondClient, migrationsFolder)).resolves.toMatchObject({
+            databasePath,
+            databaseReady: true,
+        });
+        await expect(
+            secondClient.client.execute(
+                "select name from sqlite_master where type = 'table' and name = 'app_preferences'",
+            ),
+        ).resolves.toMatchObject({
+            rows: [{ name: 'app_preferences' }],
+        });
 
-        secondClient.sqlite.close();
+        secondClient.client.close();
     });
 });

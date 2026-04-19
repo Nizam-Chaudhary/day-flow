@@ -1,51 +1,71 @@
-import Database from 'better-sqlite3';
-import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { createClient, type Client } from '@libsql/client';
+import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import * as schema from './schema';
 
-export type DayFlowDatabase = BetterSQLite3Database<typeof schema>;
+export type DayFlowDatabase = LibSQLDatabase<typeof schema>;
 
 export interface DatabaseClient {
+    client: Client;
     databasePath: string;
+    databaseUrl: string;
     db: DayFlowDatabase;
-    sqlite: Database.Database;
 }
 
 export interface CreateDatabaseClientOptions {
     databasePath: string;
 }
 
-let databaseClient: DatabaseClient | undefined;
+let databaseClientPromise: Promise<DatabaseClient> | undefined;
 
-export function createDatabaseClient({
+export async function createDatabaseClient({
     databasePath,
-}: CreateDatabaseClientOptions): DatabaseClient {
+}: CreateDatabaseClientOptions): Promise<DatabaseClient> {
     mkdirSync(dirname(databasePath), { recursive: true });
 
-    const sqlite = new Database(databasePath);
+    const databaseUrl = `file:${databasePath}`;
+    const client = createClient({ url: databaseUrl });
+    const db = drizzle(client, { schema });
 
-    sqlite.pragma('foreign_keys = ON');
-    sqlite.pragma('journal_mode = WAL');
-    sqlite.pragma('busy_timeout = 5000');
+    try {
+        await client.execute('PRAGMA foreign_keys = ON');
+        await client.execute('PRAGMA journal_mode = WAL');
+        await client.execute('PRAGMA busy_timeout = 5000');
+    } catch (error) {
+        client.close();
+        throw error;
+    }
 
     return {
+        client,
         databasePath,
-        db: drizzle(sqlite, { schema }),
-        sqlite,
+        databaseUrl,
+        db,
     };
 }
 
-export function getOrCreateDatabaseClient(databasePath: string): DatabaseClient {
-    databaseClient ??= createDatabaseClient({
+export function getOrCreateDatabaseClient(databasePath: string): Promise<DatabaseClient> {
+    databaseClientPromise ??= createDatabaseClient({
         databasePath,
+    }).catch((error) => {
+        databaseClientPromise = undefined;
+        throw error;
     });
 
-    return databaseClient;
+    return databaseClientPromise;
 }
 
-export function resetDatabaseClient(): void {
-    databaseClient?.sqlite.close();
-    databaseClient = undefined;
+export async function resetDatabaseClient(): Promise<void> {
+    const clientPromise = databaseClientPromise;
+
+    databaseClientPromise = undefined;
+
+    if (!clientPromise) {
+        return;
+    }
+
+    const { client } = await clientPromise;
+    client.close();
 }

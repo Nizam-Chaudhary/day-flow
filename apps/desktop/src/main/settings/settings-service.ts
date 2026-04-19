@@ -13,23 +13,33 @@ import {
 import { createDayFlowError, normalizeDayFlowError } from '@/shared/errors';
 
 export interface SettingsService {
-    getPreferences(): AppPreferences;
-    updatePreferences(input: UpdateAppPreferencesInput): AppPreferences;
+    getPreferences(): Promise<AppPreferences>;
+    updatePreferences(input: UpdateAppPreferencesInput): Promise<AppPreferences>;
 }
 
 export function createSettingsService(
-    client: DatabaseClient = getDatabaseClient(),
+    clientPromise: DatabaseClient | Promise<DatabaseClient> = getDatabaseClient(),
 ): SettingsService {
-    const selectPreferencesRow = (): AppPreferencesRow | undefined =>
-        client.db.select().from(appPreferencesTable).where(eq(appPreferencesTable.id, 1)).get();
+    const getClient = async () => await clientPromise;
 
-    const ensurePreferencesRow = (): AppPreferencesRow => {
-        const existingPreferences = selectPreferencesRow();
+    const selectPreferencesRow = async (): Promise<AppPreferencesRow | undefined> => {
+        const client = await getClient();
+
+        return await client.db
+            .select()
+            .from(appPreferencesTable)
+            .where(eq(appPreferencesTable.id, 1))
+            .get();
+    };
+
+    const ensurePreferencesRow = async (): Promise<AppPreferencesRow> => {
+        const existingPreferences = await selectPreferencesRow();
 
         if (existingPreferences) {
             return existingPreferences;
         }
 
+        const client = await getClient();
         const timestamp = new Date().toISOString();
         const preferencesToInsert: AppPreferencesRow = {
             id: 1,
@@ -38,27 +48,28 @@ export function createSettingsService(
             updatedAt: timestamp,
         };
 
-        client.db.insert(appPreferencesTable).values(preferencesToInsert).run();
+        await client.db.insert(appPreferencesTable).values(preferencesToInsert).run();
 
         return preferencesToInsert;
     };
 
     return {
-        getPreferences() {
+        async getPreferences() {
             try {
-                return mapAppPreferencesRow(ensurePreferencesRow());
+                return mapAppPreferencesRow(await ensurePreferencesRow());
             } catch (error) {
                 throw normalizeDayFlowError(error, 'DATABASE_ERROR');
             }
         },
-        updatePreferences(input) {
+        async updatePreferences(input) {
             validateUpdateAppPreferencesInput(input);
 
             try {
-                const existingPreferences = ensurePreferencesRow();
+                const client = await getClient();
+                const existingPreferences = await ensurePreferencesRow();
                 const updatedAt = new Date().toISOString();
 
-                client.db
+                await client.db
                     .insert(appPreferencesTable)
                     .values({
                         ...existingPreferences,
@@ -74,7 +85,7 @@ export function createSettingsService(
                     })
                     .run();
 
-                const updatedPreferences = selectPreferencesRow();
+                const updatedPreferences = await selectPreferencesRow();
 
                 if (!updatedPreferences) {
                     throw createDayFlowError(

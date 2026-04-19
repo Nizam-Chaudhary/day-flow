@@ -22,6 +22,18 @@ const GOOGLE_SCOPES = [
     'https://www.googleapis.com/auth/calendar',
 ] as const;
 
+type FetchLike = (
+    input: string,
+    init?: {
+        body?: string;
+        headers?: Record<string, string>;
+        method?: string;
+    },
+) => Promise<{
+    json(): Promise<unknown>;
+    ok: boolean;
+}>;
+
 export interface GoogleKeychainAdapter {
     deletePassword(service: string, account: string): Promise<boolean>;
     getPassword(service: string, account: string): Promise<string | null>;
@@ -150,7 +162,7 @@ export class GoogleTokenStore {
 export class GoogleOAuthService {
     constructor(
         private readonly config: GoogleOAuthClientConfig,
-        private readonly fetchImpl: typeof fetch = fetch,
+        private readonly fetchImpl: FetchLike,
     ) {}
 
     getScopes(): string[] {
@@ -167,7 +179,7 @@ export class GoogleOAuthService {
         redirectUri: string;
     }): Promise<GoogleOAuthTokenSet> {
         const response = await this.fetchImpl('https://oauth2.googleapis.com/token', {
-            body: new URLSearchParams({
+            body: buildUrlEncodedBody({
                 client_id: this.config.clientId,
                 client_secret: this.config.clientSecret,
                 code,
@@ -234,20 +246,7 @@ export class GoogleOAuthService {
     }
 
     async listEvents(accessToken: string, calendarId: string): Promise<GoogleEventListResponse> {
-        const url = new URL(
-            `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
-        );
-
-        url.searchParams.set('singleEvents', 'true');
-        url.searchParams.set('orderBy', 'startTime');
-        url.searchParams.set(
-            'timeMin',
-            new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        );
-        url.searchParams.set(
-            'timeMax',
-            new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
-        );
+        const url = buildGoogleEventsUrl(calendarId);
 
         const response = await this.fetchImpl(url, {
             headers: {
@@ -308,13 +307,13 @@ export class GoogleCalendarSyncService {
     ) {}
 
     async syncConnection(connectionId: string): Promise<GoogleConnectionDetail> {
-        const connection = this.repository.getConnectionRow(connectionId);
+        const connection = await this.repository.getConnectionRow(connectionId);
 
         if (!connection) {
             throw createDayFlowError('NOT_FOUND', 'Google account not found.');
         }
 
-        const syncableCalendars = this.repository.listSyncableCalendars(connectionId);
+        const syncableCalendars = await this.repository.listSyncableCalendars(connectionId);
         const tokens = await this.tokenStore.load(connection);
 
         try {
@@ -325,7 +324,7 @@ export class GoogleCalendarSyncService {
                 );
                 const timestamp = new Date().toISOString();
 
-                this.repository.replaceCalendarEvents(
+                await this.repository.replaceCalendarEvents(
                     calendar.id,
                     events.items.map((event) =>
                         mapEventToRow({
@@ -338,28 +337,28 @@ export class GoogleCalendarSyncService {
                 );
             }
 
-            this.repository.updateCalendarSyncState(
+            await this.repository.updateCalendarSyncState(
                 syncableCalendars.map((calendar) => calendar.id),
                 'success',
                 null,
             );
-            this.repository.updateConnectionSyncState(connectionId, 'success', null);
+            await this.repository.updateConnectionSyncState(connectionId, 'success', null);
         } catch (error) {
             const message =
                 error instanceof Error
                     ? error.message
                     : 'Google Calendar sync failed unexpectedly.';
 
-            this.repository.updateCalendarSyncState(
+            await this.repository.updateCalendarSyncState(
                 syncableCalendars.map((calendar) => calendar.id),
                 'error',
                 message,
             );
-            this.repository.updateConnectionSyncState(connectionId, 'error', message);
+            await this.repository.updateConnectionSyncState(connectionId, 'error', message);
             throw error;
         }
 
-        const detail = this.repository.getConnectionDetail(connectionId);
+        const detail = await this.repository.getConnectionDetail(connectionId);
 
         if (!detail) {
             throw createDayFlowError('NOT_FOUND', 'Google account not found after sync.');
@@ -397,12 +396,12 @@ export class GoogleConnectionService {
         private readonly syncService: GoogleCalendarSyncService,
     ) {}
 
-    listConnections(): GoogleConnectionSummary[] {
-        return this.repository.listConnections();
+    async listConnections(): Promise<GoogleConnectionSummary[]> {
+        return await this.repository.listConnections();
     }
 
-    getConnectionDetail(connectionId: string): GoogleConnectionDetail {
-        const detail = this.repository.getConnectionDetail(connectionId);
+    async getConnectionDetail(connectionId: string): Promise<GoogleConnectionDetail> {
+        const detail = await this.repository.getConnectionDetail(connectionId);
 
         if (!detail) {
             throw createDayFlowError('NOT_FOUND', 'Google account not found.');
@@ -428,7 +427,7 @@ export class GoogleConnectionService {
         const profile = await this.oauthService.getProfile(tokens.accessToken);
         const calendars = await this.oauthService.listCalendars(tokens.accessToken);
         const storedTokens = await this.tokenStore.store(profile.id, tokens);
-        const detail = this.repository.persistConnection({
+        const detail = await this.repository.persistConnection({
             avatarUrl: profile.picture ?? null,
             calendars: this.calendarCatalogService.mapCatalog(calendars),
             credentialStorageMode: storedTokens.credentialStorageMode,
@@ -440,26 +439,26 @@ export class GoogleConnectionService {
             tokens: storedTokens.tokens,
         });
 
-        return this.syncService.syncConnection(detail.id);
+        return await this.syncService.syncConnection(detail.id);
     }
 
-    updateConnection(connectionId: string): GoogleConnectionDetail {
-        return this.getConnectionDetail(connectionId);
+    async updateConnection(connectionId: string): Promise<GoogleConnectionDetail> {
+        return await this.getConnectionDetail(connectionId);
     }
 
-    updateCalendar(input: UpdateGoogleCalendarInput): GoogleCalendarSummary {
-        return this.repository.updateCalendar(input);
+    async updateCalendar(input: UpdateGoogleCalendarInput): Promise<GoogleCalendarSummary> {
+        return await this.repository.updateCalendar(input);
     }
 
     async disconnectConnection(connectionId: string): Promise<void> {
-        const connection = this.repository.getConnectionRow(connectionId);
+        const connection = await this.repository.getConnectionRow(connectionId);
 
         if (!connection) {
             return;
         }
 
         await this.tokenStore.clear(connection);
-        this.repository.disconnectConnection(connectionId);
+        await this.repository.disconnectConnection(connectionId);
     }
 }
 
@@ -508,6 +507,27 @@ function buildTokenServiceName(connectionId: string): string {
     return `day-flow/google-calendar/${connectionId}`;
 }
 
+function buildGoogleEventsUrl(calendarId: string): string {
+    const params = buildQueryString({
+        orderBy: 'startTime',
+        singleEvents: 'true',
+        timeMax: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+        timeMin: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+
+    return `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`;
+}
+
+function buildQueryString(params: Record<string, string>): string {
+    return Object.entries(params)
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&');
+}
+
+function buildUrlEncodedBody(params: Record<string, string>): string {
+    return buildQueryString(params);
+}
+
 function mapEventToRow({
     calendarId,
     connectionId,
@@ -519,29 +539,32 @@ function mapEventToRow({
     event: GoogleEventListResponse['items'][number];
     timestamp: string;
 }): CalendarEventRow {
-    const startAt = event.start?.dateTime ?? event.start?.date ?? timestamp;
-    const endAt = event.end?.dateTime ?? event.end?.date ?? startAt;
-    const isAllDay = Boolean(event.start?.date && !event.start?.dateTime);
+    const startsAt = event.start?.dateTime ?? event.start?.date;
+    const endsAt = event.end?.dateTime ?? event.end?.date;
+
+    if (!startsAt || !endsAt) {
+        throw createDayFlowError('INTEGRATION_ERROR', 'Google event is missing start or end time.');
+    }
 
     return {
+        id: `${calendarId}:${event.id}`,
+        provider: 'google',
         calendarId,
         connectionId,
-        createdAt: event.created ?? timestamp,
-        description: event.description ?? null,
-        endAt,
-        etag: event.etag ?? null,
         externalEventId: event.id,
-        htmlLink: event.htmlLink ?? null,
-        id: `${connectionId}:${event.id}`,
-        isAllDay,
-        lastSyncedAt: timestamp,
-        location: event.location ?? null,
-        provider: 'google',
-        rawUpdatedAt: event.updated ?? null,
-        startAt,
-        status: event.status ?? 'confirmed',
-        timezone: event.start?.timeZone ?? event.end?.timeZone ?? null,
+        etag: null,
         title: event.summary ?? 'Untitled event',
-        updatedAt: event.updated ?? timestamp,
+        description: event.description ?? null,
+        location: event.location ?? null,
+        startAt: startsAt,
+        endAt: endsAt,
+        isAllDay: Boolean(event.start?.date && !event.start?.dateTime),
+        timezone: null,
+        status: event.status ?? 'confirmed',
+        htmlLink: event.htmlLink ?? null,
+        rawUpdatedAt: event.updated ?? null,
+        lastSyncedAt: timestamp,
+        createdAt: timestamp,
+        updatedAt: timestamp,
     };
 }

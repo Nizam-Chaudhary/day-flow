@@ -1,4 +1,4 @@
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { migrate } from 'drizzle-orm/libsql/migrator';
 
 import type { AppHealth } from '@/shared/contracts/health';
 
@@ -15,8 +15,11 @@ const migrationState: MigrationState = {
     databaseReady: false,
 };
 
-export function runDatabaseMigrations(client: DatabaseClient, migrationsFolder: string): AppHealth {
-    migrate(client.db, { migrationsFolder });
+export async function runDatabaseMigrations(
+    client: DatabaseClient,
+    migrationsFolder: string,
+): Promise<AppHealth> {
+    await migrate(client.db, { migrationsFolder });
 
     migrationState.databasePath = client.databasePath;
     migrationState.databaseReady = true;
@@ -25,8 +28,8 @@ export function runDatabaseMigrations(client: DatabaseClient, migrationsFolder: 
     return getDatabaseHealth();
 }
 
-export function bootstrapDatabase(): AppHealth {
-    return runDatabaseMigrations(getDatabaseClient(), getMigrationsPath());
+export async function bootstrapDatabase(): Promise<AppHealth> {
+    return await runDatabaseMigrations(await getDatabaseClient(), getMigrationsPath());
 }
 
 export function getDatabaseHealth(): AppHealth {

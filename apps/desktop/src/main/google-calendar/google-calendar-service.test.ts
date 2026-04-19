@@ -1,28 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const repositoryConstructor = vi.fn<(client: unknown) => void>();
-const listConnections = vi.fn<() => Array<{ id: string }>>(() => []);
-const getConnectionDetail = vi.fn<(connectionId: string) => { connectionId: string }>();
+const listConnections = vi.fn<() => Promise<Array<{ id: string }>>>(async () => []);
+const getConnectionDetail = vi.fn<(connectionId: string) => Promise<{ connectionId: string }>>();
 const completeConnection = vi.fn<
     (input: { code: string; codeVerifier: string; redirectUri: string }) => Promise<{
         email: string;
         id: string;
     }>
 >();
-const updateCalendar = vi.fn<(input: { calendarId: string }) => { connectionId: string }>();
+const updateCalendar =
+    vi.fn<(input: { calendarId: string }) => Promise<{ connectionId: string }>>();
 const updateConnection = vi.fn<(connectionId: string) => Promise<never>>();
 const disconnectConnection = vi.fn<(connectionId: string) => Promise<void>>();
 const shouldSyncCalendar = vi.fn<(calendar: unknown) => boolean>(() => false);
 const syncConnection = vi.fn<(connectionId: string) => Promise<never>>();
 
 vi.mock('@day-flow/db/client', () => ({
-    getOrCreateDatabaseClient: vi.fn<() => { databasePath: string; db: object; sqlite: object }>(
-        () => ({
-            databasePath: '/tmp/day-flow-test.sqlite',
-            db: {},
-            sqlite: {},
-        }),
-    ),
+    getOrCreateDatabaseClient: vi.fn<
+        () => Promise<{ client: object; databasePath: string; databaseUrl: string; db: object }>
+    >(async () => ({
+        client: {},
+        databasePath: '/tmp/day-flow-test.sqlite',
+        databaseUrl: 'file:/tmp/day-flow-test.sqlite',
+        db: {},
+    })),
 }));
 
 vi.mock('@day-flow/db/google-repository', () => ({
@@ -60,14 +62,14 @@ import { createGoogleCalendarService } from '@/main/google-calendar/google-calen
 beforeEach(() => {
     vi.clearAllMocks();
 
-    getConnectionDetail.mockImplementation((connectionId) => ({
+    getConnectionDetail.mockImplementation(async (connectionId) => ({
         connectionId,
     }));
     completeConnection.mockResolvedValue({
         email: 'user@example.com',
         id: 'google:user-1',
     });
-    updateCalendar.mockImplementation(({ calendarId }) => ({
+    updateCalendar.mockImplementation(async ({ calendarId }) => ({
         connectionId: `connection-for:${calendarId}`,
     }));
     disconnectConnection.mockResolvedValue(undefined);
@@ -124,9 +126,10 @@ describe('createGoogleCalendarService', () => {
                 stop: vi.fn<() => Promise<void>>(async () => undefined),
             },
             client: {
+                client: {} as never,
                 databasePath: '/tmp/day-flow-test.sqlite',
+                databaseUrl: 'file:/tmp/day-flow-test.sqlite',
                 db: {} as never,
-                sqlite: {} as never,
             },
             fetchImpl,
             keychain: null,
@@ -164,9 +167,10 @@ describe('createGoogleCalendarService', () => {
                 stop: vi.fn<() => Promise<void>>(async () => undefined),
             },
             client: {
+                client: {} as never,
                 databasePath: '/tmp/day-flow-test.sqlite',
+                databaseUrl: 'file:/tmp/day-flow-test.sqlite',
                 db: {} as never,
-                sqlite: {} as never,
             },
             fetchImpl: vi.fn<typeof fetch>(),
             keychain: null,

@@ -19,24 +19,24 @@ afterEach(() => {
 });
 
 describe('createSettingsService', () => {
-    it('creates default preferences and persists updates', () => {
+    it('creates default preferences and persists updates', async () => {
         const tempDirectory = mkdtempSync(join(tmpdir(), 'day-flow-settings-'));
         const databasePath = join(tempDirectory, 'preferences.sqlite');
-        const client = createDatabaseClient({ databasePath });
+        const client = await createDatabaseClient({ databasePath });
 
         cleanupPaths.add(tempDirectory);
 
-        runDatabaseMigrations(client, migrationsFolder);
+        await runDatabaseMigrations(client, migrationsFolder);
 
         const settingsService = createSettingsService(client);
 
-        expect(settingsService.getPreferences()).toMatchObject({
+        await expect(settingsService.getPreferences()).resolves.toMatchObject({
             dayStartsAt: '08:00',
             defaultCalendarView: 'week',
             weekStartsOn: 1,
         });
 
-        const updatedPreferences = settingsService.updatePreferences({
+        const updatedPreferences = await settingsService.updatePreferences({
             dayStartsAt: '07:30',
             defaultCalendarView: 'month',
             weekStartsOn: 0,
@@ -47,8 +47,8 @@ describe('createSettingsService', () => {
             defaultCalendarView: 'month',
             weekStartsOn: 0,
         });
-        expect(settingsService.getPreferences()).toMatchObject(updatedPreferences);
+        await expect(settingsService.getPreferences()).resolves.toMatchObject(updatedPreferences);
 
-        client.sqlite.close();
+        client.client.close();
     });
 });

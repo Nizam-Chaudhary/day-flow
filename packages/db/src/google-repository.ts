@@ -44,18 +44,18 @@ export interface PersistGoogleConnectionInput {
 export class GoogleRepository {
     constructor(private readonly client: DatabaseClient) {}
 
-    listConnections(): GoogleConnectionSummary[] {
-        const rows = this.client.db
+    async listConnections(): Promise<GoogleConnectionSummary[]> {
+        const rows = await this.client.db
             .select()
             .from(integrationConnectionsTable)
             .where(eq(integrationConnectionsTable.provider, 'google'))
             .all();
 
-        return rows.map((row) => this.mapConnectionSummary(row));
+        return await Promise.all(rows.map(async (row) => await this.mapConnectionSummary(row)));
     }
 
-    getConnectionDetail(connectionId: string): GoogleConnectionDetail | null {
-        const connectionRow = this.client.db
+    async getConnectionDetail(connectionId: string): Promise<GoogleConnectionDetail | null> {
+        const connectionRow = await this.client.db
             .select()
             .from(integrationConnectionsTable)
             .where(eq(integrationConnectionsTable.id, connectionId))
@@ -65,29 +65,28 @@ export class GoogleRepository {
             return null;
         }
 
-        const calendars = this.client.db
+        const calendars = await this.client.db
             .select()
             .from(integrationCalendarsTable)
             .where(eq(integrationCalendarsTable.connectionId, connectionId))
-            .all()
-            .map((row) => this.mapCalendarSummary(row));
+            .all();
 
         return {
-            ...this.mapConnectionSummary(connectionRow),
-            calendars,
+            ...(await this.mapConnectionSummary(connectionRow)),
+            calendars: calendars.map((row) => this.mapCalendarSummary(row)),
         };
     }
 
-    persistConnection(input: PersistGoogleConnectionInput): GoogleConnectionDetail {
+    async persistConnection(input: PersistGoogleConnectionInput): Promise<GoogleConnectionDetail> {
         const timestamp = new Date().toISOString();
         const connectionId = `google:${input.externalAccountId}`;
-        const existingConnection = this.client.db
+        const existingConnection = await this.client.db
             .select()
             .from(integrationConnectionsTable)
             .where(eq(integrationConnectionsTable.id, connectionId))
             .get();
 
-        this.client.db
+        await this.client.db
             .insert(integrationConnectionsTable)
             .values({
                 id: connectionId,
@@ -127,13 +126,13 @@ export class GoogleRepository {
 
         for (const calendar of input.calendars) {
             const calendarId = `${connectionId}:${calendar.externalCalendarId}`;
-            const existingCalendar = this.client.db
+            const existingCalendar = await this.client.db
                 .select()
                 .from(integrationCalendarsTable)
                 .where(eq(integrationCalendarsTable.id, calendarId))
                 .get();
 
-            this.client.db
+            await this.client.db
                 .insert(integrationCalendarsTable)
                 .values({
                     id: calendarId,
@@ -174,11 +173,11 @@ export class GoogleRepository {
                 .run();
         }
 
-        return this.getConnectionDetail(connectionId)!;
+        return (await this.getConnectionDetail(connectionId))!;
     }
 
-    updateCalendar(input: UpdateGoogleCalendarInput): GoogleCalendarSummary {
-        const existingCalendar = this.client.db
+    async updateCalendar(input: UpdateGoogleCalendarInput): Promise<GoogleCalendarSummary> {
+        const existingCalendar = await this.client.db
             .select()
             .from(integrationCalendarsTable)
             .where(eq(integrationCalendarsTable.id, input.calendarId))
@@ -188,7 +187,7 @@ export class GoogleRepository {
             throw new Error('Google calendar not found.');
         }
 
-        this.client.db
+        await this.client.db
             .update(integrationCalendarsTable)
             .set({
                 ...(input.colorOverride !== undefined
@@ -214,46 +213,47 @@ export class GoogleRepository {
             .run();
 
         return this.mapCalendarSummary(
-            this.client.db
+            (await this.client.db
                 .select()
                 .from(integrationCalendarsTable)
                 .where(eq(integrationCalendarsTable.id, input.calendarId))
-                .get()!,
+                .get())!,
         );
     }
 
-    disconnectConnection(connectionId: string): void {
-        this.client.db
+    async disconnectConnection(connectionId: string): Promise<void> {
+        await this.client.db
             .delete(integrationConnectionsTable)
             .where(eq(integrationConnectionsTable.id, connectionId))
             .run();
     }
 
-    listSyncableCalendars(connectionId: string): IntegrationCalendarRow[] {
-        return this.client.db
+    async listSyncableCalendars(connectionId: string): Promise<IntegrationCalendarRow[]> {
+        const rows = await this.client.db
             .select()
             .from(integrationCalendarsTable)
             .where(eq(integrationCalendarsTable.connectionId, connectionId))
-            .all()
-            .filter((row) => row.isSelected && row.syncEnabled);
+            .all();
+
+        return rows.filter((row) => row.isSelected && row.syncEnabled);
     }
 
-    getConnectionRow(connectionId: string): IntegrationConnectionRow | null {
+    async getConnectionRow(connectionId: string): Promise<IntegrationConnectionRow | null> {
         return (
-            this.client.db
+            (await this.client.db
                 .select()
                 .from(integrationConnectionsTable)
                 .where(eq(integrationConnectionsTable.id, connectionId))
-                .get() ?? null
+                .get()) ?? null
         );
     }
 
-    updateConnectionSyncState(
+    async updateConnectionSyncState(
         connectionId: string,
         status: GoogleConnectionSummary['lastSyncStatus'],
         error: string | null,
-    ): void {
-        this.client.db
+    ): Promise<void> {
+        await this.client.db
             .update(integrationConnectionsTable)
             .set({
                 lastSyncAt: new Date().toISOString(),
@@ -265,16 +265,16 @@ export class GoogleRepository {
             .run();
     }
 
-    updateCalendarSyncState(
+    async updateCalendarSyncState(
         calendarIds: string[],
         status: GoogleConnectionSummary['lastSyncStatus'],
         error: string | null,
-    ): void {
+    ): Promise<void> {
         if (calendarIds.length === 0) {
             return;
         }
 
-        this.client.db
+        await this.client.db
             .update(integrationCalendarsTable)
             .set({
                 lastSyncAt: new Date().toISOString(),
@@ -286,15 +286,15 @@ export class GoogleRepository {
             .run();
     }
 
-    replaceCalendarEvents(calendarId: string, events: CalendarEventRow[]): void {
-        const existing = this.client.db
+    async replaceCalendarEvents(calendarId: string, events: CalendarEventRow[]): Promise<void> {
+        const existing = await this.client.db
             .select({ id: calendarEventsTable.id })
             .from(calendarEventsTable)
             .where(eq(calendarEventsTable.calendarId, calendarId))
             .all();
 
         if (existing.length > 0) {
-            this.client.db
+            await this.client.db
                 .delete(calendarEventsTable)
                 .where(
                     and(
@@ -309,12 +309,14 @@ export class GoogleRepository {
         }
 
         if (events.length > 0) {
-            this.client.db.insert(calendarEventsTable).values(events).run();
+            await this.client.db.insert(calendarEventsTable).values(events).run();
         }
     }
 
-    private mapConnectionSummary(row: IntegrationConnectionRow): GoogleConnectionSummary {
-        const calendars = this.client.db
+    private async mapConnectionSummary(
+        row: IntegrationConnectionRow,
+    ): Promise<GoogleConnectionSummary> {
+        const calendars = await this.client.db
             .select({
                 id: integrationCalendarsTable.id,
                 isSelected: integrationCalendarsTable.isSelected,
