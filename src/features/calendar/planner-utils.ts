@@ -1,13 +1,8 @@
-import { addDays, format, isSameDay, parseISO, startOfWeek } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 
 import type { MockEvent } from '@/features/app-shell/mock-data';
 
 export type PlannerMode = 'day' | 'week';
-
-export interface VisibleWeekSlice {
-    endIndex: number;
-    startIndex: number;
-}
 
 export const CALENDAR_CELL_SIZE = 72;
 export const CALENDAR_TIME_GUTTER = 88;
@@ -55,37 +50,14 @@ export function getVisibleDayCount(width: number, mode: PlannerMode): number {
     return mode === 'day' ? Math.min(count, 5) : Math.min(count, 7);
 }
 
+export function getNavigationStep(visibleDayCount: number): number {
+    return Math.max(Math.floor(visibleDayCount / 2), 1);
+}
+
 export function buildDayRange(anchorDate: string, count: number): Date[] {
     const startDate = parseISO(anchorDate);
 
     return Array.from({ length: Math.max(count, 1) }, (_, index) => addDays(startDate, index));
-}
-
-export function buildWeekRange(anchorDate: string, weekStartsOn: 0 | 1): Date[] {
-    const weekStart = startOfWeek(parseISO(anchorDate), { weekStartsOn });
-
-    return Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
-}
-
-export function getVisibleWeekSlice(
-    weekDates: Date[],
-    anchorDate: string,
-    visibleCount: number,
-): VisibleWeekSlice {
-    const safeVisibleCount = Math.max(1, Math.min(visibleCount, weekDates.length));
-    const anchor = parseISO(anchorDate);
-    const anchorIndex = Math.max(
-        weekDates.findIndex((date) => isSameDay(date, anchor)),
-        0,
-    );
-    const maxStartIndex = Math.max(weekDates.length - safeVisibleCount, 0);
-    const preferredStartIndex = Math.max(anchorIndex - safeVisibleCount + 1, 0);
-    const startIndex = Math.min(preferredStartIndex, maxStartIndex);
-
-    return {
-        endIndex: startIndex + safeVisibleCount - 1,
-        startIndex,
-    };
 }
 
 export function formatPlannerRangeLabel(dates: Date[]): string {

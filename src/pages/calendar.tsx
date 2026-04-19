@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
@@ -17,7 +16,6 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAppShellActions } from '@/features/app-shell/app-shell-layout';
 import { calendarColumns, mockEvents, type MockEvent } from '@/features/app-shell/mock-data';
 import { PlannerSurface } from '@/features/calendar/planner-surface';
-import { appPreferencesQueryOptions } from '@/features/settings/settings-query-options';
 import { isCalendarView, type CalendarView } from '@/shared/contracts/settings';
 import { useAppShellStore } from '@/stores/app-shell-store';
 
@@ -41,10 +39,8 @@ function CalendarPage() {
     const hasInitializedSelectedDate = useRef(false);
     const activeCalendarView = useAppShellStore((state) => state.activeCalendarView);
     const selectedDate = useAppShellStore((state) => state.selectedDate);
-    const preferencesQuery = useQuery(appPreferencesQueryOptions);
 
     const activeMode: CalendarMode = isAgendaView ? 'agenda' : activeCalendarView;
-    const weekStartsOn = preferencesQuery.data?.weekStartsOn ?? 1;
 
     useEffect(() => {
         if (hasInitializedSelectedDate.current) {
@@ -207,7 +203,6 @@ function CalendarPage() {
                     onSelectDate={(date) => {
                         useAppShellStore.getState().setSelectedDate(date);
                     }}
-                    weekStartsOn={weekStartsOn}
                 />
             )}
 

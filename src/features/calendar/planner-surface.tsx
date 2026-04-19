@@ -1,12 +1,11 @@
 import { addDays, format, parseISO } from 'date-fns';
-import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { useMemo, useRef, type CSSProperties } from 'react';
 
 import type { MockEvent } from '@/features/app-shell/mock-data';
 
 import { Button } from '@/components/ui/button';
 import {
     buildDayRange,
-    buildWeekRange,
     CALENDAR_CELL_SIZE,
     CALENDAR_TIME_GUTTER,
     formatHourLabel,
@@ -15,8 +14,8 @@ import {
     getDateHeaderSubLabel,
     getEventDurationMinutes,
     getIsoDate,
+    getNavigationStep,
     getSystemTodayIsoDate,
-    getVisibleWeekSlice,
     parseTimeToMinutes,
     type PlannerMode,
 } from '@/features/calendar/planner-utils';
@@ -29,7 +28,6 @@ interface PlannerSurfaceProps {
     mode: PlannerMode;
     onOpenEvent(this: void, event: MockEvent): void;
     onSelectDate(this: void, date: string): void;
-    weekStartsOn: 0 | 1;
 }
 
 const hourRows = Array.from({ length: 24 }, (_, hour) => hour);
@@ -40,47 +38,15 @@ export function PlannerSurface({
     mode,
     onOpenEvent,
     onSelectDate,
-    weekStartsOn,
 }: PlannerSurfaceProps) {
     const scrollAreaRef = useRef<HTMLDivElement | null>(null);
     const { containerRef, visibleDayCount } = useVisibleDayCount(mode);
 
-    const weekDates = useMemo(
-        () => buildWeekRange(anchorDate, weekStartsOn),
-        [anchorDate, weekStartsOn],
-    );
-    const visibleWeekSlice = useMemo(
-        () => getVisibleWeekSlice(weekDates, anchorDate, visibleDayCount),
-        [anchorDate, visibleDayCount, weekDates],
-    );
     const renderedDates = useMemo(
-        () => (mode === 'day' ? buildDayRange(anchorDate, visibleDayCount) : weekDates),
-        [anchorDate, mode, visibleDayCount, weekDates],
+        () => buildDayRange(anchorDate, visibleDayCount),
+        [anchorDate, visibleDayCount],
     );
-    const rangeDates = useMemo(
-        () =>
-            mode === 'day'
-                ? renderedDates
-                : weekDates.slice(visibleWeekSlice.startIndex, visibleWeekSlice.endIndex + 1),
-        [mode, renderedDates, visibleWeekSlice.endIndex, visibleWeekSlice.startIndex, weekDates],
-    );
-
-    useEffect(() => {
-        if (!scrollAreaRef.current || mode !== 'week') {
-            return;
-        }
-
-        const startDate = weekDates[visibleWeekSlice.startIndex];
-        const target = scrollAreaRef.current.querySelector<HTMLElement>(
-            `[data-date-column="${getIsoDate(startDate)}"]`,
-        );
-
-        target?.scrollIntoView({
-            block: 'nearest',
-            inline: 'start',
-        });
-    }, [mode, visibleWeekSlice.startIndex, weekDates]);
-
+    const rangeDates = renderedDates;
     const eventsByDate = useMemo(() => {
         const dateMap = new Map<string, MockEvent[]>();
 
@@ -111,11 +77,19 @@ export function PlannerSurface({
     const helperLabel = `${visibleDayCount} ${visibleDayCount === 1 ? 'day' : 'days'} visible`;
     const gridTemplateColumns = `var(--calendar-time-gutter) repeat(${renderedDates.length}, minmax(var(--calendar-cell-size), 1fr))`;
     const todayIsoDate = getSystemTodayIsoDate();
+    const navigationStep = getNavigationStep(visibleDayCount);
+    const todayButtonLabel = `Today ${format(parseISO(todayIsoDate), 'd MMM, yyyy')}`;
 
     return (
         <section className='flex flex-col gap-4' data-testid='planner-surface' ref={containerRef}>
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex items-center gap-2'>
+                    <Button
+                        aria-label={todayButtonLabel}
+                        variant='outline'
+                        onClick={() => onSelectDate(todayIsoDate)}>
+                        {todayButtonLabel}
+                    </Button>
                     <Button
                         aria-label='Previous dates'
                         size='icon-sm'
@@ -123,7 +97,7 @@ export function PlannerSurface({
                         onClick={() =>
                             onSelectDate(
                                 format(
-                                    addDays(parseISO(anchorDate), -visibleDayCount),
+                                    addDays(parseISO(anchorDate), -navigationStep),
                                     'yyyy-MM-dd',
                                 ),
                             )
@@ -138,10 +112,7 @@ export function PlannerSurface({
                         variant='outline'
                         onClick={() =>
                             onSelectDate(
-                                format(
-                                    addDays(parseISO(anchorDate), visibleDayCount),
-                                    'yyyy-MM-dd',
-                                ),
+                                format(addDays(parseISO(anchorDate), navigationStep), 'yyyy-MM-dd'),
                             )
                         }>
                         <span aria-hidden='true' className='text-sm'>

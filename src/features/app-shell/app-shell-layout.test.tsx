@@ -4,6 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { addDays, format } from 'date-fns';
 import { ThemeProvider } from 'next-themes';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -61,7 +62,7 @@ describe('App shell routes', () => {
     });
 
     it('opens and closes the global search dialog', async () => {
-        const user = userEvent.setup();
+        const user = setupUser();
 
         renderApp('/');
         await screen.findByRole('heading', { name: 'Today' });
@@ -80,7 +81,7 @@ describe('App shell routes', () => {
     });
 
     it('opens and submits the quick-add dialog', async () => {
-        const user = userEvent.setup();
+        const user = setupUser();
 
         renderApp('/');
         await screen.findByRole('heading', { name: 'Today' });
@@ -100,7 +101,7 @@ describe('App shell routes', () => {
     });
 
     it('navigates between sidebar items', async () => {
-        const user = userEvent.setup();
+        const user = setupUser();
 
         renderApp('/');
         await screen.findByRole('heading', { name: 'Today' });
@@ -136,7 +137,7 @@ describe('App shell routes', () => {
     });
 
     it('opens the event detail sheet from the calendar page', async () => {
-        const user = userEvent.setup();
+        const user = setupUser();
 
         renderApp('/calendar');
         await screen.findByRole('heading', { name: 'Calendar' });
@@ -147,21 +148,21 @@ describe('App shell routes', () => {
         expect(await screen.findByRole('heading', { name: 'Launch standup' })).toBeTruthy();
     });
 
-    it('navigates the planner by the visible date span', async () => {
-        const user = userEvent.setup();
+    it('navigates the planner by half the visible date span', async () => {
+        const user = setupUser();
 
         renderApp('/calendar');
         await screen.findByRole('heading', { name: 'Calendar' });
 
-        expect(await screen.findByText('15 - 18 Apr 2026')).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(0))).toBeTruthy();
 
         await user.click(screen.getByRole('button', { name: 'Next dates' }));
 
-        expect(await screen.findByText('20 - 23 Apr 2026')).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(2))).toBeTruthy();
     });
 
     it('renders the shared planner in day view', async () => {
-        const user = userEvent.setup();
+        const user = setupUser();
 
         renderApp('/calendar');
         await screen.findByRole('heading', { name: 'Calendar' });
@@ -169,11 +170,37 @@ describe('App shell routes', () => {
         await user.click(screen.getByRole('button', { name: 'Day' }));
 
         expect(await screen.findByTestId('planner-surface')).toBeTruthy();
-        expect(await screen.findByText('18 - 21 Apr 2026')).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(0))).toBeTruthy();
+        expect(screen.getByRole('button', { name: getTodayButtonLabel() })).toBeTruthy();
+    });
+
+    it('keeps the current day as the first visible date when switching back to week view', async () => {
+        const user = setupUser();
+
+        renderApp('/calendar');
+        await screen.findByRole('heading', { name: 'Calendar' });
+
+        await user.click(screen.getByRole('button', { name: 'Day' }));
+        await user.click(screen.getByRole('button', { name: 'Week' }));
+
+        expect(await screen.findByText(getPlannerRangeLabel(0))).toBeTruthy();
+    });
+
+    it('resets the planner to today when clicking the today button', async () => {
+        const user = setupUser();
+
+        renderApp('/calendar');
+        await screen.findByRole('heading', { name: 'Calendar' });
+
+        await user.click(screen.getByRole('button', { name: 'Next dates' }));
+        expect(await screen.findByText(getPlannerRangeLabel(2))).toBeTruthy();
+
+        await user.click(screen.getByRole('button', { name: getTodayButtonLabel() }));
+        expect(await screen.findByText(getPlannerRangeLabel(0))).toBeTruthy();
     });
 
     it('opens the task detail sheet from the tasks page', async () => {
-        const user = userEvent.setup();
+        const user = setupUser();
 
         renderApp('/tasks');
         await screen.findByRole('heading', { name: 'Tasks' });
@@ -186,7 +213,7 @@ describe('App shell routes', () => {
     });
 
     it('toggles the desktop sidebar from the header', async () => {
-        const user = userEvent.setup();
+        const user = setupUser();
 
         renderApp('/');
         await screen.findByRole('heading', { name: 'Today' });
@@ -219,7 +246,7 @@ describe('App shell routes', () => {
     });
 
     it('keeps settings searchable in the command palette', async () => {
-        const user = userEvent.setup();
+        const user = setupUser();
 
         renderApp('/');
         await screen.findByRole('heading', { name: 'Today' });
@@ -233,7 +260,7 @@ describe('App shell routes', () => {
     });
 
     it('opens the mobile sidebar from the header toggle', async () => {
-        const user = userEvent.setup();
+        const user = setupUser();
 
         setViewportWidth(767);
         renderApp('/');
@@ -254,7 +281,7 @@ describe('App shell routes', () => {
     });
 
     it('closes the mobile sidebar after selecting a nav item', async () => {
-        const user = userEvent.setup();
+        const user = setupUser();
 
         setViewportWidth(767);
         renderApp('/');
@@ -321,6 +348,29 @@ function setViewportWidth(width: number) {
         writable: true,
         value: width,
     });
+}
+
+function setupUser() {
+    return userEvent.setup();
+}
+
+function getPlannerRangeLabel(startOffset: number, visibleDays = 4) {
+    const startDate = addDays(new Date(), startOffset);
+    const endDate = addDays(startDate, visibleDays - 1);
+
+    if (format(startDate, 'yyyy-MM') === format(endDate, 'yyyy-MM')) {
+        return `${format(startDate, 'd')} - ${format(endDate, 'd MMM yyyy')}`;
+    }
+
+    if (format(startDate, 'yyyy') === format(endDate, 'yyyy')) {
+        return `${format(startDate, 'd MMM')} - ${format(endDate, 'd MMM yyyy')}`;
+    }
+
+    return `${format(startDate, 'd MMM yyyy')} - ${format(endDate, 'd MMM yyyy')}`;
+}
+
+function getTodayButtonLabel() {
+    return `Today ${format(new Date(), 'd MMM, yyyy')}`;
 }
 
 function createDayFlowApi(): DayFlowApi {
