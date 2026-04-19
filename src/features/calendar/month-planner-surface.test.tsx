@@ -25,6 +25,17 @@ describe('MonthPlannerSurface', () => {
         expect(screen.getByTestId('month-planner-sticky-header').className).toContain('top-0');
     });
 
+    it('highlights the current weekday in the month header', () => {
+        renderMonthPlannerSurface();
+
+        const headers = screen.getAllByTestId('month-weekday-header');
+        const todayWeekdayHeader = headers[6] as HTMLElement;
+
+        expect(todayWeekdayHeader.textContent).toBe('Sun');
+        expect(todayWeekdayHeader.getAttribute('data-today-weekday')).toBe('true');
+        expect(todayWeekdayHeader.className).toContain('text-highlight');
+    });
+
     it('renders a dynamic month grid with weekend and outside-month markers', () => {
         renderMonthPlannerSurface();
 

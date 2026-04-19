@@ -36,6 +36,7 @@ export function MonthPlannerSurface({ anchorDate, onSelectDate }: MonthPlannerSu
     const monthGridDates = getMonthGridDates(anchorDate);
     const todayButtonLabel = `Today ${format(parseISO(todayIsoDate), 'd MMM, yyyy')}`;
     const isTodayInMonth = isDateInMonth(parseISO(todayIsoDate), anchorDate);
+    const todayWeekdayIndex = getMondayFirstWeekdayIndex(parseISO(todayIsoDate));
 
     useEffect(() => {
         const shouldCenter = !hasAutoCenteredRef.current || pendingCenterOnTodayRef.current;
@@ -97,7 +98,6 @@ export function MonthPlannerSurface({ anchorDate, onSelectDate }: MonthPlannerSu
 
                 <div aria-live='polite' className='min-w-0 sm:text-right'>
                     <p className='text-sm font-medium tracking-tight'>{monthLabel}</p>
-                    <p className='text-xs text-muted-foreground'>Monday-first month layout</p>
                 </div>
             </div>
 
@@ -114,11 +114,15 @@ export function MonthPlannerSurface({ anchorDate, onSelectDate }: MonthPlannerSu
                         ref={stickyHeaderRef}
                         data-testid='month-planner-sticky-header'>
                         <div className='grid grid-cols-7 bg-background'>
-                            {weekdayLabels.map((label) => (
+                            {weekdayLabels.map((label, index) => (
                                 <div
                                     key={label}
-                                    className='flex h-12 min-w-0 items-center justify-center border-r border-b bg-background px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase last:border-r-0'
-                                    data-testid='month-weekday-header'>
+                                    className={cn(
+                                        'flex h-12 min-w-0 items-center justify-center border-r border-b bg-background px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase last:border-r-0',
+                                        index === todayWeekdayIndex && 'bg-muted/40 text-highlight',
+                                    )}
+                                    data-testid='month-weekday-header'
+                                    data-today-weekday={index === todayWeekdayIndex || undefined}>
                                     <span className='truncate'>{label}</span>
                                 </div>
                             ))}
@@ -173,6 +177,10 @@ export function MonthPlannerSurface({ anchorDate, onSelectDate }: MonthPlannerSu
             </div>
         </section>
     );
+}
+
+function getMondayFirstWeekdayIndex(date: Date): number {
+    return (date.getDay() + 6) % 7;
 }
 
 function centerMonthDateInView(
