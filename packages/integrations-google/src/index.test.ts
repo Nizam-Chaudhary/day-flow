@@ -30,8 +30,8 @@ describe('GoogleTokenStore', () => {
             (service: string, account: string, password: string) => Promise<void>
         >(async () => {});
         const tokenStore = new GoogleTokenStore({
-            deletePassword: vi.fn(),
-            getPassword: vi.fn(),
+            deletePassword: vi.fn<(service: string, account: string) => Promise<boolean>>(),
+            getPassword: vi.fn<(service: string, account: string) => Promise<string | null>>(),
             setPassword,
         });
 

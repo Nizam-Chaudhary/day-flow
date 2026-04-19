@@ -1,3 +1,6 @@
+export { createGoogleAuthServerApp, startGoogleAuthServer } from './google-auth-server';
+export type { CreateGoogleAuthServerOptions, RunningGoogleAuthServer } from './google-auth-server';
+
 import { startGoogleAuthServer } from './google-auth-server';
 
 const server = await startGoogleAuthServer({

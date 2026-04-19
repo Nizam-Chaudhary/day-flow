@@ -19,7 +19,7 @@ export function resolveMigrationsPath({
 }: Pick<DatabasePathContext, 'appPath' | 'isPackaged' | 'resourcesPath'>): string {
     return isPackaged
         ? join(resourcesPath, 'drizzle')
-        : join(appPath, '..', '..', '..', 'packages', 'db', 'drizzle');
+        : join(appPath, '..', '..', 'packages', 'db', 'drizzle');
 }
 
 export function getDatabasePathContext(): DatabasePathContext {

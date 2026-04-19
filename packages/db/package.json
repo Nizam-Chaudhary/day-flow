@@ -17,7 +17,7 @@
         "db:studio": "drizzle-kit studio"
     },
     "dependencies": {
-        "@day-flow/contracts": "workspace:*",
+        "@day-flow/contracts": "*",
         "better-sqlite3": "^12.9.0",
         "drizzle-orm": "^0.45.2"
     },

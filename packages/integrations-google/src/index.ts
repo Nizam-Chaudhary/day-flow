@@ -1,5 +1,6 @@
 import type {
     GoogleCalendarListResponse,
+    GoogleCalendarSummary,
     GoogleConnectionDetail,
     GoogleConnectionSummary,
     GoogleEventListResponse,

@@ -13,8 +13,8 @@
         "test": "vitest run --passWithNoTests"
     },
     "dependencies": {
-        "@day-flow/contracts": "workspace:*",
-        "@day-flow/db": "workspace:*"
+        "@day-flow/contracts": "*",
+        "@day-flow/db": "*"
     },
     "devDependencies": {
         "vitest": "^4.1.4"

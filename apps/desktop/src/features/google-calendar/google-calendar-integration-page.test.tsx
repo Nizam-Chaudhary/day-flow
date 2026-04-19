@@ -49,6 +49,12 @@ const googleConnectionFixture = {
     selectedCalendarCount: 1,
 };
 
+type DayFlowApiOverrides = {
+    app?: Partial<DayFlowApi['app']>;
+    googleCalendar?: Partial<DayFlowApi['googleCalendar']>;
+    settings?: Partial<DayFlowApi['settings']>;
+};
+
 describe('GoogleCalendarIntegrationPage', () => {
     it('renders the empty state when no account is linked', async () => {
         window.dayFlowApi = createDayFlowApi({
@@ -123,41 +129,64 @@ describe('GoogleCalendarIntegrationPage', () => {
     });
 });
 
-function createDayFlowApi(overrides: Partial<DayFlowApi> = {}): DayFlowApi {
+function createDayFlowApi(overrides: DayFlowApiOverrides = {}): DayFlowApi {
     return {
         app: {
-            getHealth: vi.fn().mockResolvedValue({
+            getHealth: vi.fn<DayFlowApi['app']['getHealth']>().mockResolvedValue({
                 databasePath: '/tmp/day-flow.sqlite',
                 databaseReady: true,
                 lastMigrationAt: '2026-04-18T00:00:00.000Z',
             }),
+            ...overrides.app,
         },
         googleCalendar: {
-            disconnectConnection: vi.fn().mockResolvedValue(undefined),
-            getConnectionDetail: vi.fn().mockResolvedValue(googleConnectionFixture),
-            listConnections: vi.fn().mockResolvedValue([googleConnectionFixture]),
-            startConnection: vi.fn().mockResolvedValue({
-                authUrl: 'https://accounts.google.com',
-                connectionId: 'google:user-1',
-                email: 'nizam@example.com',
-                flowId: 'flow-1',
-            }),
-            syncConnection: vi.fn().mockResolvedValue(googleConnectionFixture),
-            updateCalendar: vi.fn().mockResolvedValue(googleConnectionFixture),
-            updateConnection: vi.fn().mockResolvedValue(googleConnectionFixture),
+            disconnectConnection: vi
+                .fn<DayFlowApi['googleCalendar']['disconnectConnection']>()
+                .mockResolvedValue(undefined),
+            getConnectionDetail: vi
+                .fn<DayFlowApi['googleCalendar']['getConnectionDetail']>()
+                .mockResolvedValue(googleConnectionFixture),
+            listConnections: vi
+                .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                .mockResolvedValue([googleConnectionFixture]),
+            startConnection: vi
+                .fn<DayFlowApi['googleCalendar']['startConnection']>()
+                .mockResolvedValue({
+                    authUrl: 'https://accounts.google.com',
+                    connectionId: 'google:user-1',
+                    email: 'nizam@example.com',
+                    flowId: 'flow-1',
+                }),
+            syncConnection: vi
+                .fn<DayFlowApi['googleCalendar']['syncConnection']>()
+                .mockResolvedValue(googleConnectionFixture),
+            updateCalendar: vi
+                .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
+                .mockResolvedValue(googleConnectionFixture),
+            updateConnection: vi
+                .fn<DayFlowApi['googleCalendar']['updateConnection']>()
+                .mockResolvedValue(googleConnectionFixture),
             ...overrides.googleCalendar,
         },
         settings: {
-            getPreferences: vi.fn().mockResolvedValue({
+            getPreferences: vi.fn<DayFlowApi['settings']['getPreferences']>().mockResolvedValue({
                 createdAt: '2026-04-18T00:00:00.000Z',
                 dayStartsAt: '08:00',
                 defaultCalendarView: 'week',
                 updatedAt: '2026-04-18T00:00:00.000Z',
                 weekStartsOn: 1,
             }),
-            updatePreferences: vi.fn(),
+            updatePreferences: vi
+                .fn<DayFlowApi['settings']['updatePreferences']>()
+                .mockResolvedValue({
+                    createdAt: '2026-04-18T00:00:00.000Z',
+                    dayStartsAt: '08:00',
+                    defaultCalendarView: 'week',
+                    updatedAt: '2026-04-18T00:00:00.000Z',
+                    weekStartsOn: 1,
+                }),
+            ...overrides.settings,
         },
-        ...overrides,
     };
 }
 

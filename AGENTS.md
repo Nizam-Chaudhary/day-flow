@@ -2,8 +2,8 @@
 
 ## Task Completion Requirements
 
-- All of `bun format`, `bun lint` must pass before considering tasks completed.
-- NEVER run bun test. Always use bun run test (runs Vitest).
+- All of `npm run format`, `npm run lint` must pass before considering tasks completed.
+- NEVER run npm test. Always use npm run test (runs Vitest).
 
 ## Project Snapshot
 

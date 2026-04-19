@@ -162,7 +162,9 @@ export function GoogleCalendarIntegrationPage() {
                     </CardHeader>
                 </Card>
             ) : (
-                <Accordion defaultValue={connections[0]?.id} className='rounded-2xl border px-4'>
+                <Accordion
+                    defaultValue={connections[0] ? [connections[0].id] : undefined}
+                    className='rounded-2xl border px-4'>
                     {connections.map((connection) => (
                         <AccordionItem key={connection.id} value={connection.id}>
                             <AccordionTrigger className='py-4'>

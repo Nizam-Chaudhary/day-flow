@@ -7,7 +7,7 @@
     "main": ".vite/build/main.js",
     "scripts": {
         "dev": "electron-forge start",
-        "start": "bun run dev",
+        "start": "npm run dev",
         "build": "electron-forge package",
         "package": "electron-forge package",
         "make": "electron-forge make",
@@ -33,13 +33,14 @@
         "clean": "rimraf node_modules .vite .tanstack out",
         "format": "oxfmt $(rg --files src -g '*.ts' -g '*.tsx' -g '*.d.ts') forge.config.ts vite.config.ts vite.main.config.ts vite.preload.config.ts vitest.config.ts tsconfig.app.json tsconfig.node.json package.json components.json components.json.bak",
         "lint": "oxlint . --fix --fix-suggestions",
-        "test": "vitest run --passWithNoTests"
+        "test": "vitest run --passWithNoTests",
+        "postinstall": "electron-rebuild -f -w better-sqlite3 --version 41.0.0"
     },
     "dependencies": {
         "@base-ui/react": "^1.4.0",
-        "@day-flow/contracts": "workspace:*",
-        "@day-flow/db": "workspace:*",
-        "@day-flow/integrations-google": "workspace:*",
+        "@day-flow/contracts": "*",
+        "@day-flow/db": "*",
+        "@day-flow/integrations-google": "*",
         "@fontsource-variable/figtree": "^5.2.10",
         "@fontsource-variable/inter": "^5.2.8",
         "@hugeicons/core-free-icons": "^4.1.1",
@@ -82,7 +83,7 @@
         "@electron-forge/plugin-auto-unpack-natives": "7.11.1",
         "@electron-forge/plugin-fuses": "7.11.1",
         "@electron-forge/plugin-vite": "7.11.1",
-        "@electron/fuses": "2.1.1",
+        "@electron/rebuild": "^3.7.2",
         "@reforged/maker-appimage": "^5.2.0",
         "@tanstack/router-plugin": "1.167.22",
         "@testing-library/react": "^16.3.2",

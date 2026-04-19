@@ -1,5 +1,4 @@
 {
-    "extends": "../../tsconfig.json",
     "compilerOptions": {
         "composite": true,
         "strict": true,
@@ -14,15 +13,9 @@
         "moduleDetection": "force",
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "baseUrl": ".",
         "paths": {
-            "@/*": ["./src/*"],
-            "@day-flow/auth-server/*": ["../auth-server/src/*"],
-            "@day-flow/contracts/*": ["../../packages/contracts/src/*"],
-            "@day-flow/db/*": ["../../packages/db/src/*"],
-            "@day-flow/integrations-google/*": ["../../packages/integrations-google/src/*"]
-        },
-        "tsBuildInfoFile": "../../node_modules/.cache/apps-desktop-tsconfig.app.tsbuildinfo"
+            "@/*": ["./src/*"]
+        }
     },
     "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"]
 }

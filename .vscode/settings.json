@@ -23,6 +23,16 @@
     "search.exclude": {
         "**/routeTree.gen.ts": true
     },
-    "cSpell.words": ["Chaudhary", "Elysia", "Nizam", "oxfmt", "oxlint", "pino", "tsgo", "tsgolint"],
+    "cSpell.words": [
+        "Chaudhary",
+        "dedupe",
+        "Elysia",
+        "Nizam",
+        "oxfmt",
+        "oxlint",
+        "pino",
+        "tsgo",
+        "tsgolint"
+    ],
     "oxc.enable": true
 }

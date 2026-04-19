@@ -6,6 +6,10 @@ import type {
     UpdateGoogleCalendarInput,
 } from '@day-flow/contracts/google-calendar';
 
+import {
+    GOOGLE_REMINDER_LEAD_OPTIONS,
+    GOOGLE_SYNC_INTERVAL_OPTIONS,
+} from '@day-flow/contracts/google-calendar';
 import { and, eq, inArray } from 'drizzle-orm';
 
 import type { DatabaseClient } from './client';
@@ -350,10 +354,17 @@ export class GoogleRepository {
             name: row.name,
             reminderChannel: row.reminderChannel,
             reminderEnabled: row.reminderEnabled,
-            reminderLeadMinutes: row.reminderLeadMinutes,
+            reminderLeadMinutes: GOOGLE_REMINDER_LEAD_OPTIONS.includes(
+                row.reminderLeadMinutes as (typeof GOOGLE_REMINDER_LEAD_OPTIONS)[number],
+            )
+                ? (row.reminderLeadMinutes as GoogleCalendarSummary['reminderLeadMinutes'])
+                : 15,
             syncEnabled: row.syncEnabled,
-            syncIntervalMinutes:
-                row.syncIntervalMinutes as GoogleCalendarSummary['syncIntervalMinutes'],
+            syncIntervalMinutes: GOOGLE_SYNC_INTERVAL_OPTIONS.includes(
+                row.syncIntervalMinutes as (typeof GOOGLE_SYNC_INTERVAL_OPTIONS)[number],
+            )
+                ? (row.syncIntervalMinutes as GoogleCalendarSummary['syncIntervalMinutes'])
+                : 15,
             type: row.calendarType,
         };
     }

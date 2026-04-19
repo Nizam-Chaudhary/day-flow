@@ -334,7 +334,7 @@ This should allow a future shared-core approach where Electron and web clients c
 - TanStack Form
 - TanStack Query
 - Zustand
-- shadcn/ui (bunx --bun shadcn@latest init --preset bH58 --base base --template vite)
+- shadcn/ui (npx shadcn@latest init --preset bH58 --base base --template vite)
 - Tailwind CSS
 - date-fns
 - React Day Picker
@@ -347,7 +347,7 @@ This should allow a future shared-core approach where Electron and web clients c
 ### Runtime / Package Management
 
 - Node.js
-- bun
+- npm
 
 ### Repository Strategy
 

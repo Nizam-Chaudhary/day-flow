@@ -38,11 +38,6 @@ const NotesRoute = NotesRouteImport.update({
     path: '/notes',
     getParentRoute: () => rootRouteImport,
 } as any);
-const IntegrationsGoogleRoute = IntegrationsGoogleRouteImport.update({
-    id: '/integrations/google',
-    path: '/integrations/google',
-    getParentRoute: () => rootRouteImport,
-} as any);
 const IntegrationsRoute = IntegrationsRouteImport.update({
     id: '/integrations',
     path: '/integrations',
@@ -58,76 +53,80 @@ const IndexRoute = IndexRouteImport.update({
     path: '/',
     getParentRoute: () => rootRouteImport,
 } as any);
+const IntegrationsGoogleRoute = IntegrationsGoogleRouteImport.update({
+    id: '/google',
+    path: '/google',
+    getParentRoute: () => IntegrationsRoute,
+} as any);
 
 export interface FileRoutesByFullPath {
     '/': typeof IndexRoute;
     '/calendar': typeof CalendarRoute;
-    '/integrations/google': typeof IntegrationsGoogleRoute;
-    '/integrations': typeof IntegrationsRoute;
+    '/integrations': typeof IntegrationsRouteWithChildren;
     '/notes': typeof NotesRoute;
     '/reminders': typeof RemindersRoute;
     '/settings': typeof SettingsRoute;
     '/tasks': typeof TasksRoute;
+    '/integrations/google': typeof IntegrationsGoogleRoute;
 }
 export interface FileRoutesByTo {
     '/': typeof IndexRoute;
     '/calendar': typeof CalendarRoute;
-    '/integrations/google': typeof IntegrationsGoogleRoute;
-    '/integrations': typeof IntegrationsRoute;
+    '/integrations': typeof IntegrationsRouteWithChildren;
     '/notes': typeof NotesRoute;
     '/reminders': typeof RemindersRoute;
     '/settings': typeof SettingsRoute;
     '/tasks': typeof TasksRoute;
+    '/integrations/google': typeof IntegrationsGoogleRoute;
 }
 export interface FileRoutesById {
     __root__: typeof rootRouteImport;
     '/': typeof IndexRoute;
     '/calendar': typeof CalendarRoute;
-    '/integrations/google': typeof IntegrationsGoogleRoute;
-    '/integrations': typeof IntegrationsRoute;
+    '/integrations': typeof IntegrationsRouteWithChildren;
     '/notes': typeof NotesRoute;
     '/reminders': typeof RemindersRoute;
     '/settings': typeof SettingsRoute;
     '/tasks': typeof TasksRoute;
+    '/integrations/google': typeof IntegrationsGoogleRoute;
 }
 export interface FileRouteTypes {
     fileRoutesByFullPath: FileRoutesByFullPath;
     fullPaths:
         | '/'
         | '/calendar'
-        | '/integrations/google'
         | '/integrations'
         | '/notes'
         | '/reminders'
         | '/settings'
-        | '/tasks';
+        | '/tasks'
+        | '/integrations/google';
     fileRoutesByTo: FileRoutesByTo;
     to:
         | '/'
         | '/calendar'
-        | '/integrations/google'
         | '/integrations'
         | '/notes'
         | '/reminders'
         | '/settings'
-        | '/tasks';
+        | '/tasks'
+        | '/integrations/google';
     id:
         | '__root__'
         | '/'
         | '/calendar'
-        | '/integrations/google'
         | '/integrations'
         | '/notes'
         | '/reminders'
         | '/settings'
-        | '/tasks';
+        | '/tasks'
+        | '/integrations/google';
     fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
     IndexRoute: typeof IndexRoute;
     CalendarRoute: typeof CalendarRoute;
-    IntegrationsGoogleRoute: typeof IntegrationsGoogleRoute;
-    IntegrationsRoute: typeof IntegrationsRoute;
+    IntegrationsRoute: typeof IntegrationsRouteWithChildren;
     NotesRoute: typeof NotesRoute;
     RemindersRoute: typeof RemindersRoute;
     SettingsRoute: typeof SettingsRoute;
@@ -164,13 +163,6 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof NotesRouteImport;
             parentRoute: typeof rootRouteImport;
         };
-        '/integrations/google': {
-            id: '/integrations/google';
-            path: '/integrations/google';
-            fullPath: '/integrations/google';
-            preLoaderRoute: typeof IntegrationsGoogleRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
         '/integrations': {
             id: '/integrations';
             path: '/integrations';
@@ -192,14 +184,30 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof IndexRouteImport;
             parentRoute: typeof rootRouteImport;
         };
+        '/integrations/google': {
+            id: '/integrations/google';
+            path: '/google';
+            fullPath: '/integrations/google';
+            preLoaderRoute: typeof IntegrationsGoogleRouteImport;
+            parentRoute: typeof IntegrationsRoute;
+        };
     }
 }
+
+interface IntegrationsRouteChildren {
+    IntegrationsGoogleRoute: typeof IntegrationsGoogleRoute;
+}
+
+const IntegrationsRouteChildren: IntegrationsRouteChildren = {
+    IntegrationsGoogleRoute: IntegrationsGoogleRoute,
+};
+
+const IntegrationsRouteWithChildren = IntegrationsRoute._addFileChildren(IntegrationsRouteChildren);
 
 const rootRouteChildren: RootRouteChildren = {
     IndexRoute: IndexRoute,
     CalendarRoute: CalendarRoute,
-    IntegrationsGoogleRoute: IntegrationsGoogleRoute,
-    IntegrationsRoute: IntegrationsRoute,
+    IntegrationsRoute: IntegrationsRouteWithChildren,
     NotesRoute: NotesRoute,
     RemindersRoute: RemindersRoute,
     SettingsRoute: SettingsRoute,

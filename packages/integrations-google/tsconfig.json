@@ -1,5 +1,4 @@
 {
-    "extends": "../../tsconfig.json",
     "compilerOptions": {
         "composite": true,
         "noEmit": true,
@@ -7,7 +6,10 @@
         "module": "ESNext",
         "moduleResolution": "bundler",
         "target": "ES2023",
-        "lib": ["ES2023"]
+        "lib": ["ES2023"],
+        "paths": {
+            "@day-flow/integrations-google/*": ["./src/*"]
+        }
     },
     "include": ["src/**/*.ts"]
 }

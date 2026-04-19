@@ -56,7 +56,7 @@ export function createGoogleCalendarService({
     client = getOrCreateDatabaseClient(getDatabasePath()),
     fetchImpl = fetch,
     keychain = null,
-    openExternal = shell.openExternal,
+    openExternal = (url) => shell.openExternal(url),
     oauthClientId = process.env.GOOGLE_CLIENT_ID,
     oauthClientSecret = process.env.GOOGLE_CLIENT_SECRET,
 }: CreateGoogleCalendarServiceOptions = {}): GoogleCalendarService {
