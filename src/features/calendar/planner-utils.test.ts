@@ -3,14 +3,19 @@ import { describe, expect, it } from 'vitest';
 import {
     buildBufferedDayRange,
     buildDayRange,
+    CALENDAR_CELL_SIZE,
+    CURRENT_TIME_INDICATOR_HEIGHT,
     formatPlannerRangeLabel,
     getDateHeaderLabel,
     getDateHeaderSubLabel,
+    getCenteredScrollTopForCurrentTime,
+    getCurrentTimeTopOffset,
     getEventDurationMinutes,
     getIsoDate,
     getPlannerPageStartDates,
     getPlannerSnapTarget,
     getVisibleDayCount,
+    PLANNER_HEADER_HEIGHT,
     parseTimeToMinutes,
     shiftIsoDateByDays,
 } from '@/features/calendar/planner-utils';
@@ -25,6 +30,57 @@ describe('planner utils', () => {
     it('computes event duration from start and end times', () => {
         expect(getEventDurationMinutes({ endTime: '09:45', startTime: '09:00' })).toBe(45);
         expect(getEventDurationMinutes({ endTime: '10:00', startTime: '10:00' })).toBe(30);
+    });
+
+    it('positions the current-time offset within the planner grid', () => {
+        expect(getCurrentTimeTopOffset(10 * 60 + 30)).toBe(10.5 * CALENDAR_CELL_SIZE);
+    });
+
+    it('clamps the current-time offset near the start and end of the day', () => {
+        expect(getCurrentTimeTopOffset(-30)).toBe(0);
+        expect(getCurrentTimeTopOffset(24 * 60 + 30)).toBe(
+            CALENDAR_CELL_SIZE * 24 - CURRENT_TIME_INDICATOR_HEIGHT,
+        );
+    });
+
+    it('centers the current time within the visible planner body', () => {
+        expect(
+            getCenteredScrollTopForCurrentTime({
+                currentMinutes: 10 * 60 + 30,
+                headerHeight: PLANNER_HEADER_HEIGHT,
+                viewportHeight: 720,
+            }),
+        ).toBe(428);
+    });
+
+    it('clamps centered scroll positions near midnight', () => {
+        expect(
+            getCenteredScrollTopForCurrentTime({
+                currentMinutes: 15,
+                headerHeight: PLANNER_HEADER_HEIGHT,
+                viewportHeight: 720,
+            }),
+        ).toBe(0);
+    });
+
+    it('clamps centered scroll positions near the end of day', () => {
+        expect(
+            getCenteredScrollTopForCurrentTime({
+                currentMinutes: 23 * 60 + 59,
+                headerHeight: PLANNER_HEADER_HEIGHT,
+                viewportHeight: 720,
+            }),
+        ).toBe(1072);
+    });
+
+    it('supports small viewport heights when centering the current time', () => {
+        expect(
+            getCenteredScrollTopForCurrentTime({
+                currentMinutes: 10 * 60 + 30,
+                headerHeight: PLANNER_HEADER_HEIGHT,
+                viewportHeight: 120,
+            }),
+        ).toBe(728);
     });
 
     it('builds a day range from the selected date', () => {

@@ -19,16 +19,19 @@ import {
     buildDayRange,
     CALENDAR_CELL_SIZE,
     CALENDAR_TIME_GUTTER,
+    CURRENT_TIME_INDICATOR_HEIGHT,
     formatHourLabel,
     formatPlannerRangeLabel,
+    getCenteredScrollTopForCurrentTime,
+    getCurrentTimeTopOffset,
     getDateHeaderLabel,
     getDateHeaderSubLabel,
     getEventDurationMinutes,
     getIsoDate,
     getPlannerPageStartDates,
     getPlannerSnapTarget,
-    getSystemTodayIsoDate,
     getVisibleDayCount,
+    PLANNER_HEADER_HEIGHT,
     parseTimeToMinutes,
     shiftIsoDateByDays,
     type PlannerMode,
@@ -59,6 +62,11 @@ interface PlannerDragState {
 const hourRows = Array.from({ length: 24 }, (_, hour) => hour);
 const TRACK_TRANSITION_MS = 220;
 const DRAG_LOCK_THRESHOLD_PX = 8;
+const PLANNER_HEADER_VIEWPORT_CLASS = 'sticky top-0 z-30 overflow-hidden border-b bg-background';
+const PLANNER_HEADER_ROW_CLASS = 'grid bg-background';
+const PLANNER_CORNER_CELL_CLASS = 'border-r border-b bg-background';
+const PLANNER_TIME_GUTTER_CLASS =
+    'sticky left-0 z-20 flex items-start justify-end border-r border-b bg-background px-3 py-2 text-xs text-muted-foreground';
 
 export function PlannerSurface({
     anchorDate,
@@ -71,6 +79,8 @@ export function PlannerSurface({
     const viewportRef = useRef<HTMLDivElement | null>(null);
     const animationTimerRef = useRef<number | null>(null);
     const dragStateRef = useRef<PlannerDragState | null>(null);
+    const hasAutoCenteredRef = useRef(false);
+    const pendingCenterOnTodayRef = useRef(false);
     const suppressClickRef = useRef(false);
     const prefersReducedMotion = usePrefersReducedMotion();
     const [pageWidth, setPageWidth] = useState(() =>
@@ -80,6 +90,7 @@ export function PlannerSurface({
     const [isAnimating, setIsAnimating] = useState(false);
     const [transitionEnabled, setTransitionEnabled] = useState(false);
     const [activeSnapTarget, setActiveSnapTarget] = useState<PlannerSnapTarget>('current');
+    const currentTime = useCurrentMinute();
     const visibleDayCount = useMemo(
         () =>
             getVisibleDayCount(
@@ -137,10 +148,17 @@ export function PlannerSurface({
 
     const rangeLabel = formatPlannerRangeLabel(rangeDates);
     const helperLabel = `${visibleDayCount} ${visibleDayCount === 1 ? 'day' : 'days'} visible`;
-    const todayIsoDate = getSystemTodayIsoDate();
+    const todayIsoDate = getIsoDate(currentTime);
+    const isTodayVisible = rangeDates.some((date) => getIsoDate(date) === todayIsoDate);
     const todayButtonLabel = `Today ${format(parseISO(todayIsoDate), 'd MMM, yyyy')}`;
     const centeredOffsetPx = pageWidth > 0 ? -pageWidth : 0;
     const trackTranslatePx = centeredOffsetPx + dragOffsetPx;
+    const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+    const trackStyle = {
+        transform: `translateX(${trackTranslatePx}px)`,
+        transition: transitionEnabled ? `transform ${TRACK_TRANSITION_MS}ms ease` : undefined,
+        width: pageWidth > 0 ? `${pageWidth * pageDateGroups.length}px` : undefined,
+    };
 
     useEffect(() => {
         const element = scrollAreaRef.current;
@@ -188,6 +206,25 @@ export function PlannerSurface({
         },
         [],
     );
+
+    useEffect(() => {
+        const element = scrollAreaRef.current;
+        const shouldCenter = !hasAutoCenteredRef.current || pendingCenterOnTodayRef.current;
+
+        if (!element || !shouldCenter) {
+            return;
+        }
+
+        hasAutoCenteredRef.current = true;
+
+        if (!isTodayVisible) {
+            pendingCenterOnTodayRef.current = false;
+            return;
+        }
+
+        centerCurrentTimeInView(element, currentMinutes);
+        pendingCenterOnTodayRef.current = false;
+    }, [anchorDate, currentMinutes, isTodayVisible, visibleDayCount]);
 
     const commitPageShift = (direction: -1 | 1) => {
         onSelectDate(shiftIsoDateByDays(anchorDate, direction * visibleDayCount));
@@ -243,6 +280,19 @@ export function PlannerSurface({
         }
 
         settleToTarget(direction === -1 ? 'previous' : 'next');
+    };
+
+    const handleSelectToday = () => {
+        const element = scrollAreaRef.current;
+
+        pendingCenterOnTodayRef.current = true;
+
+        if (anchorDate === todayIsoDate && element) {
+            centerCurrentTimeInView(element, currentMinutes);
+            pendingCenterOnTodayRef.current = false;
+        }
+
+        onSelectDate(todayIsoDate);
     };
 
     const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -375,7 +425,7 @@ export function PlannerSurface({
                     <Button
                         aria-label={todayButtonLabel}
                         variant='outline'
-                        onClick={() => onSelectDate(todayIsoDate)}>
+                        onClick={handleSelectToday}>
                         {todayButtonLabel}
                     </Button>
                     <Button
@@ -406,8 +456,27 @@ export function PlannerSurface({
                     data-testid='planner-scroll-area'
                     ref={scrollAreaRef}>
                     <div
+                        className={PLANNER_HEADER_VIEWPORT_CLASS}
+                        data-testid='planner-sticky-header'>
+                        <div
+                            className='flex will-change-transform'
+                            data-testid='planner-header-track'
+                            style={trackStyle}>
+                            {pageDateGroups.map((pageDates) => (
+                                <PlannerPageHeader
+                                    key={getIsoDate(pageDates[0])}
+                                    pageDates={pageDates}
+                                    pageWidth={pageWidth}
+                                    todayIsoDate={todayIsoDate}
+                                    onSelectDate={onSelectDate}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    <div
                         ref={viewportRef}
                         className='relative max-w-full min-w-0 overflow-hidden'
+                        data-testid='planner-body-viewport'
                         data-planner-drag-target='true'
                         onClickCapture={(event) => {
                             if (!suppressClickRef.current) {
@@ -424,25 +493,20 @@ export function PlannerSurface({
                             className='flex will-change-transform'
                             data-planner-snap-target={activeSnapTarget}
                             data-testid='planner-track'
-                            style={{
-                                transform: `translateX(${trackTranslatePx}px)`,
-                                transition: transitionEnabled
-                                    ? `transform ${TRACK_TRANSITION_MS}ms ease`
-                                    : undefined,
-                                width:
-                                    pageWidth > 0
-                                        ? `${pageWidth * pageDateGroups.length}px`
-                                        : undefined,
-                            }}>
+                            style={trackStyle}>
                             {pageDateGroups.map((pageDates) => (
-                                <PlannerPageGrid
+                                <PlannerPageBody
+                                    currentIsoDate={todayIsoDate}
+                                    currentMinutes={currentMinutes}
                                     eventsByDate={eventsByDate}
                                     key={getIsoDate(pageDates[0])}
                                     pageWidth={pageWidth}
                                     pageDates={pageDates}
+                                    showCurrentTimeIndicator={
+                                        getIsoDate(pageDates[0]) === anchorDate
+                                    }
                                     todayIsoDate={todayIsoDate}
                                     onOpenEvent={onOpenEvent}
-                                    onSelectDate={onSelectDate}
                                 />
                             ))}
                         </div>
@@ -453,16 +517,12 @@ export function PlannerSurface({
     );
 }
 
-function PlannerPageGrid({
-    eventsByDate,
-    onOpenEvent,
+function PlannerPageHeader({
     onSelectDate,
     pageDates,
     pageWidth,
     todayIsoDate,
 }: {
-    eventsByDate: Map<string, MockEvent[]>;
-    onOpenEvent(this: void, event: MockEvent): void;
     onSelectDate(this: void, date: string): void;
     pageDates: Date[];
     pageWidth: number;
@@ -475,13 +535,15 @@ function PlannerPageGrid({
             className='relative shrink-0'
             style={
                 {
-                    '--calendar-cell-size': `${CALENDAR_CELL_SIZE}px`,
+                    '--planner-header-height': `${PLANNER_HEADER_HEIGHT}px`,
                     '--calendar-time-gutter': `${CALENDAR_TIME_GUTTER}px`,
                     width: pageWidth > 0 ? `${pageWidth}px` : '100%',
                 } as CSSProperties
             }>
-            <div className='sticky top-0 z-30 grid bg-background' style={{ gridTemplateColumns }}>
-                <div className='sticky left-0 z-40 h-16 border-r border-b bg-background' />
+            <div className={PLANNER_HEADER_ROW_CLASS} style={{ gridTemplateColumns }}>
+                <div
+                    className={cn(PLANNER_CORNER_CELL_CLASS, 'h-[var(--planner-header-height)]')}
+                />
                 {pageDates.map((date) => {
                     const isoDate = getIsoDate(date);
                     const isTodayColumn = isoDate === todayIsoDate;
@@ -490,7 +552,7 @@ function PlannerPageGrid({
                         <button
                             key={isoDate}
                             className={cn(
-                                'flex h-16 min-w-0 flex-col items-start justify-center border-r border-b bg-background px-3 text-left transition-colors hover:bg-muted/50',
+                                'flex h-[var(--planner-header-height)] min-w-0 flex-col items-start justify-center border-r border-b bg-background px-3 text-left transition-colors hover:bg-muted/50',
                                 isTodayColumn &&
                                     'border-t border-l border-t-highlight border-r-highlight border-b-highlight border-l-highlight bg-muted/50',
                             )}
@@ -507,7 +569,44 @@ function PlannerPageGrid({
                     );
                 })}
             </div>
+        </div>
+    );
+}
 
+function PlannerPageBody({
+    currentIsoDate,
+    currentMinutes,
+    eventsByDate,
+    onOpenEvent,
+    pageDates,
+    pageWidth,
+    showCurrentTimeIndicator,
+    todayIsoDate,
+}: {
+    currentIsoDate: string;
+    currentMinutes: number;
+    eventsByDate: Map<string, MockEvent[]>;
+    onOpenEvent(this: void, event: MockEvent): void;
+    pageDates: Date[];
+    pageWidth: number;
+    showCurrentTimeIndicator: boolean;
+    todayIsoDate: string;
+}) {
+    const gridTemplateColumns = `var(--calendar-time-gutter) repeat(${pageDates.length}, minmax(0, 1fr))`;
+    const currentTimeTopOffset = getCurrentTimeTopOffset(currentMinutes);
+    const hasVisibleCurrentDate =
+        showCurrentTimeIndicator && pageDates.some((date) => getIsoDate(date) === currentIsoDate);
+
+    return (
+        <div
+            className='relative shrink-0'
+            style={
+                {
+                    '--calendar-cell-size': `${CALENDAR_CELL_SIZE}px`,
+                    '--calendar-time-gutter': `${CALENDAR_TIME_GUTTER}px`,
+                    width: pageWidth > 0 ? `${pageWidth}px` : '100%',
+                } as CSSProperties
+            }>
             <div className='relative grid bg-background' style={{ gridTemplateColumns }}>
                 {hourRows.map((hour) => (
                     <FragmentRow
@@ -528,15 +627,28 @@ function PlannerPageGrid({
                         const isoDate = getIsoDate(date);
                         const dateEvents = eventsByDate.get(isoDate) ?? [];
                         const isTodayColumn = isoDate === todayIsoDate;
+                        const showCurrentTimeIndicator =
+                            hasVisibleCurrentDate && isoDate === currentIsoDate;
 
                         return (
                             <div
                                 key={isoDate}
+                                data-date-overlay-column={isoDate}
                                 className={cn(
                                     'relative border-r last:border-r-0',
                                     isTodayColumn &&
                                         'border-l border-r-highlight border-l-highlight',
                                 )}>
+                                {showCurrentTimeIndicator ? (
+                                    <div
+                                        className='absolute inset-x-1.5 rounded-full bg-highlight'
+                                        data-testid='current-time-indicator'
+                                        style={{
+                                            height: `${CURRENT_TIME_INDICATOR_HEIGHT}px`,
+                                            top: `${currentTimeTopOffset}px`,
+                                        }}
+                                    />
+                                ) : null}
                                 {dateEvents.map((event) => {
                                     const topOffset =
                                         (parseTimeToMinutes(event.startTime) / 60) *
@@ -586,7 +698,7 @@ function FragmentRow({
 }) {
     return (
         <>
-            <div className='sticky left-0 z-20 flex h-[var(--calendar-cell-size)] items-start justify-end border-r border-b bg-background px-3 py-2 text-xs text-muted-foreground'>
+            <div className={cn(PLANNER_TIME_GUTTER_CLASS, 'h-[var(--calendar-cell-size)]')}>
                 {formatHourLabel(hour)}
             </div>
             {renderedDates.map((date) => {
@@ -610,6 +722,16 @@ function FragmentRow({
 
 function clamp(value: number, minimum: number, maximum: number) {
     return Math.min(Math.max(value, minimum), maximum);
+}
+
+function centerCurrentTimeInView(element: HTMLDivElement, currentMinutes: number) {
+    const viewportHeight = element.clientHeight || element.getBoundingClientRect().height;
+
+    element.scrollTop = getCenteredScrollTopForCurrentTime({
+        currentMinutes,
+        headerHeight: PLANNER_HEADER_HEIGHT,
+        viewportHeight,
+    });
 }
 
 function isInteractiveElement(target: EventTarget | null): boolean {
@@ -651,4 +773,33 @@ function usePrefersReducedMotion() {
     }, []);
 
     return prefersReducedMotion;
+}
+
+function useCurrentMinute() {
+    const [currentDate, setCurrentDate] = useState(() => new Date());
+
+    useEffect(() => {
+        let timerId: number | null = null;
+
+        const scheduleNextTick = () => {
+            const now = new Date();
+            const millisecondsUntilNextMinute =
+                60_000 - (now.getSeconds() * 1_000 + now.getMilliseconds());
+
+            timerId = window.setTimeout(() => {
+                setCurrentDate(new Date());
+                scheduleNextTick();
+            }, millisecondsUntilNextMinute);
+        };
+
+        scheduleNextTick();
+
+        return () => {
+            if (timerId !== null) {
+                window.clearTimeout(timerId);
+            }
+        };
+    }, []);
+
+    return currentDate;
 }

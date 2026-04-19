@@ -7,9 +7,12 @@ export type PlannerSnapTarget = 'previous' | 'current' | 'next';
 
 export const CALENDAR_CELL_SIZE = 72;
 export const CALENDAR_TIME_GUTTER = 88;
+export const PLANNER_HEADER_HEIGHT = 64;
+export const CURRENT_TIME_INDICATOR_HEIGHT = 4;
 export const PLANNER_TIME_GUTTER_WIDTH = CALENDAR_TIME_GUTTER;
 export const PLANNER_MIN_DAY_COLUMN_WIDTH = 180;
 export const PLANNER_WIDTH_SAFETY_PX = 2;
+export const MINUTES_PER_DAY = 24 * 60;
 const PLANNER_MODE_TARGET_DAYS = {
     day: 2,
     week: 5,
@@ -44,6 +47,31 @@ export function parseTimeToMinutes(time: string): number {
 
 export function getEventDurationMinutes(event: Pick<MockEvent, 'endTime' | 'startTime'>): number {
     return Math.max(parseTimeToMinutes(event.endTime) - parseTimeToMinutes(event.startTime), 30);
+}
+
+export function getCurrentTimeTopOffset(currentMinutes: number): number {
+    return clamp(
+        (currentMinutes / 60) * CALENDAR_CELL_SIZE,
+        0,
+        CALENDAR_CELL_SIZE * (MINUTES_PER_DAY / 60) - CURRENT_TIME_INDICATOR_HEIGHT,
+    );
+}
+
+export function getCenteredScrollTopForCurrentTime({
+    currentMinutes,
+    headerHeight,
+    viewportHeight,
+}: {
+    currentMinutes: number;
+    headerHeight: number;
+    viewportHeight: number;
+}) {
+    const currentTimeTopOffset = getCurrentTimeTopOffset(currentMinutes);
+    const bodyViewportHeight = Math.max(viewportHeight - headerHeight, 0);
+    const totalContentHeight = headerHeight + CALENDAR_CELL_SIZE * (MINUTES_PER_DAY / 60);
+    const maximumScrollTop = Math.max(totalContentHeight - viewportHeight, 0);
+
+    return clamp(currentTimeTopOffset - bodyViewportHeight / 2, 0, maximumScrollTop);
 }
 
 export function getVisibleDayCount(width: number, mode: PlannerMode): number {
@@ -185,4 +213,8 @@ export function getDateHeaderLabel(date: Date): string {
 
 export function getDateHeaderSubLabel(date: Date): string {
     return format(date, 'EEEE');
+}
+
+function clamp(value: number, minimum: number, maximum: number) {
+    return Math.min(Math.max(value, minimum), maximum);
 }
