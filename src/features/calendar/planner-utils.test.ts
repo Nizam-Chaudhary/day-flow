@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
     buildDayRange,
     buildWeekRange,
+    getDateHeaderLabel,
+    getDateHeaderSubLabel,
     getEventDurationMinutes,
     getIsoDate,
     getVisibleDayCount,
@@ -60,5 +62,12 @@ describe('planner utils', () => {
         expect(getVisibleDayCount(1600, 'day')).toBe(5);
         expect(getVisibleDayCount(960, 'week')).toBe(3);
         expect(getVisibleDayCount(1800, 'week')).toBe(7);
+    });
+
+    it('formats calendar date headers without repeating the weekday', () => {
+        const date = new Date('2026-04-13');
+
+        expect(getDateHeaderLabel(date)).toBe('13 Apr, 2026');
+        expect(getDateHeaderSubLabel(date)).toBe('Monday');
     });
 });

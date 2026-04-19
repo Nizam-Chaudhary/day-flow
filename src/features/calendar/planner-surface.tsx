@@ -15,6 +15,7 @@ import {
     getDateHeaderSubLabel,
     getEventDurationMinutes,
     getIsoDate,
+    getSystemTodayIsoDate,
     getVisibleWeekSlice,
     parseTimeToMinutes,
     type PlannerMode,
@@ -109,6 +110,7 @@ export function PlannerSurface({
     const rangeLabel = formatPlannerRangeLabel(rangeDates);
     const helperLabel = `${visibleDayCount} ${visibleDayCount === 1 ? 'day' : 'days'} visible`;
     const gridTemplateColumns = `var(--calendar-time-gutter) repeat(${renderedDates.length}, minmax(var(--calendar-cell-size), 1fr))`;
+    const todayIsoDate = getSystemTodayIsoDate();
 
     return (
         <section className='flex flex-col gap-4' data-testid='planner-surface' ref={containerRef}>
@@ -173,14 +175,15 @@ export function PlannerSurface({
                             <div className='sticky left-0 z-40 h-16 border-r border-b bg-background' />
                             {renderedDates.map((date) => {
                                 const isoDate = getIsoDate(date);
-                                const isActive = isoDate === anchorDate;
+                                const isTodayColumn = isoDate === todayIsoDate;
 
                                 return (
                                     <button
                                         key={isoDate}
                                         className={cn(
                                             'flex h-16 min-w-[var(--calendar-cell-size)] flex-col items-start justify-center border-r border-b bg-background px-4 text-left transition-colors hover:bg-muted/50',
-                                            isActive && 'bg-muted/50',
+                                            isTodayColumn &&
+                                                'border-t border-l border-t-highlight border-r-highlight border-b-highlight border-l-highlight bg-muted/50',
                                         )}
                                         data-date-column={isoDate}
                                         type='button'
@@ -200,7 +203,13 @@ export function PlannerSurface({
                             className='relative grid bg-background'
                             style={{ gridTemplateColumns }}>
                             {hourRows.map((hour) => (
-                                <FragmentRow hour={hour} key={hour} renderedDates={renderedDates} />
+                                <FragmentRow
+                                    hour={hour}
+                                    isLastHourRow={hour === hourRows[hourRows.length - 1]}
+                                    key={hour}
+                                    renderedDates={renderedDates}
+                                    todayIsoDate={todayIsoDate}
+                                />
                             ))}
 
                             <div
@@ -211,11 +220,16 @@ export function PlannerSurface({
                                 {renderedDates.map((date) => {
                                     const isoDate = getIsoDate(date);
                                     const dateEvents = eventsByDate.get(isoDate) ?? [];
+                                    const isTodayColumn = isoDate === todayIsoDate;
 
                                     return (
                                         <div
                                             key={isoDate}
-                                            className='relative border-r last:border-r-0'>
+                                            className={cn(
+                                                'relative border-r last:border-r-0',
+                                                isTodayColumn &&
+                                                    'border-l border-r-highlight border-l-highlight',
+                                            )}>
                                             {dateEvents.map((event) => {
                                                 const topOffset =
                                                     (parseTimeToMinutes(event.startTime) / 60) *
@@ -256,18 +270,37 @@ export function PlannerSurface({
     );
 }
 
-function FragmentRow({ hour, renderedDates }: { hour: number; renderedDates: Date[] }) {
+function FragmentRow({
+    hour,
+    isLastHourRow,
+    renderedDates,
+    todayIsoDate,
+}: {
+    hour: number;
+    isLastHourRow: boolean;
+    renderedDates: Date[];
+    todayIsoDate: string;
+}) {
     return (
         <>
             <div className='sticky left-0 z-20 flex h-[var(--calendar-cell-size)] items-start justify-end border-r border-b bg-background px-3 py-2 text-xs text-muted-foreground'>
                 {formatHourLabel(hour)}
             </div>
-            {renderedDates.map((date) => (
-                <div
-                    key={`${getIsoDate(date)}-${hour}`}
-                    className='h-[var(--calendar-cell-size)] min-w-[var(--calendar-cell-size)] border-r border-b bg-background'
-                />
-            ))}
+            {renderedDates.map((date) => {
+                const isoDate = getIsoDate(date);
+                const isTodayColumn = isoDate === todayIsoDate;
+
+                return (
+                    <div
+                        key={`${isoDate}-${hour}`}
+                        className={cn(
+                            'h-[var(--calendar-cell-size)] min-w-[var(--calendar-cell-size)] border-r border-b bg-background',
+                            isTodayColumn && 'border-l border-r-highlight border-l-highlight',
+                            isTodayColumn && isLastHourRow && 'border-b-highlight',
+                        )}
+                    />
+                );
+            })}
         </>
     );
 }

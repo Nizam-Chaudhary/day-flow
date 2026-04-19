@@ -17,8 +17,8 @@ import {
 } from '@hugeicons/core-free-icons';
 import { addDays, format, startOfWeek, subMinutes } from 'date-fns';
 
-const anchorDate = new Date('2026-04-18T09:00:00.000Z');
-const todayDate = new Date('2026-04-18T09:00:00');
+const todayDate = new Date();
+const anchorDate = todayDate;
 const todayIso = format(todayDate, 'yyyy-MM-dd');
 const weekStart = startOfWeek(anchorDate, { weekStartsOn: 1 });
 

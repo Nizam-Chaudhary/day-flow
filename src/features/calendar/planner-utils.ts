@@ -122,8 +122,12 @@ export function getIsoDate(date: Date): string {
     return format(date, 'yyyy-MM-dd');
 }
 
+export function getSystemTodayIsoDate(): string {
+    return getIsoDate(new Date());
+}
+
 export function getDateHeaderLabel(date: Date): string {
-    return format(date, 'EEE - d MMM');
+    return format(date, 'd MMM, yyyy');
 }
 
 export function getDateHeaderSubLabel(date: Date): string {
