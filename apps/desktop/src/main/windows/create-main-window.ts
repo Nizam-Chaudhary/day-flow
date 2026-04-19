@@ -1,6 +1,8 @@
 import { BrowserWindow } from 'electron';
 import { join } from 'node:path';
 
+const OPEN_DEVTOOLS_ON_STARTUP_ENV = 'DAY_FLOW_OPEN_DEVTOOLS';
+
 export async function createMainWindow(): Promise<void> {
     const iconPath = getWindowIconPath();
     const mainWindow = new BrowserWindow({
@@ -17,6 +19,7 @@ export async function createMainWindow(): Promise<void> {
 
     mainWindow.setMenuBarVisibility(false);
     mainWindow.removeMenu();
+    registerDevToolsShortcuts(mainWindow);
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
@@ -24,6 +27,11 @@ export async function createMainWindow(): Promise<void> {
 
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
         await mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+
+        if (shouldOpenDevToolsOnStartup()) {
+            mainWindow.webContents.openDevTools({ mode: 'detach' });
+        }
+
         return;
     }
 
@@ -40,4 +48,43 @@ function getWindowIconPath(): string | undefined {
     }
 
     return join(process.resourcesPath, 'assets/icons/day-flow_1024x1024.png');
+}
+
+function registerDevToolsShortcuts(mainWindow: BrowserWindow): void {
+    if (!MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+        return;
+    }
+
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+        if (!isDevToolsShortcut(input)) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (mainWindow.webContents.isDevToolsOpened()) {
+            mainWindow.webContents.closeDevTools();
+            return;
+        }
+
+        mainWindow.webContents.openDevTools({ mode: 'detach' });
+    });
+}
+
+function isDevToolsShortcut(input: Electron.Input): boolean {
+    if (input.type !== 'keyDown') {
+        return false;
+    }
+
+    if (input.key === 'F12') {
+        return true;
+    }
+
+    return input.key.toLowerCase() === 'i' && input.shift && (input.control || input.meta);
+}
+
+function shouldOpenDevToolsOnStartup(): boolean {
+    const value = process.env[OPEN_DEVTOOLS_ON_STARTUP_ENV];
+
+    return value === '1' || value === 'true';
 }
