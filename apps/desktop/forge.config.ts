@@ -22,7 +22,7 @@ const config: ForgeConfig = {
     makers: [
         new MakerSquirrel(
             {
-                setupIcon: 'assets/icons/day-flow.ico',
+                setupIcon: '../../assets/icons/day-flow.ico',
             },
             ['win32'],
         ),

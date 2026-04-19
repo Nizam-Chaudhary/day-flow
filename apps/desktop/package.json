@@ -4,6 +4,10 @@
     "private": true,
     "description": "Day Flow Electron desktop app",
     "license": "Apache-2.0",
+    "author": "Nizam Chaudhary",
+    "maintainers": [
+        "Nizam Chaudhary"
+    ],
     "main": ".vite/build/main.js",
     "scripts": {
         "dev": "electron-forge start",
@@ -98,5 +102,6 @@
         "vite": "8.0.8",
         "vitest": "^4.1.4"
     },
+    "executableName": "day-flow",
     "productName": "Day Flow"
 }

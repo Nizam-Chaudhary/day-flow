@@ -2,6 +2,7 @@ import type { MakerRpmConfig } from '@electron-forge/maker-rpm';
 
 import { MakerBase, MakerOptions } from '@electron-forge/maker-base';
 import { ForgeArch, ForgePlatform } from '@electron-forge/shared-types';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -37,6 +38,61 @@ function renameRpm(dest: string, _src: string): string {
     );
 }
 
+function sanitizeLinuxPackageName(name: string): string {
+    return name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9+._-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+async function resolveBundledBinaryName({
+    dir,
+    appName,
+    explicitBin,
+}: {
+    dir: string;
+    appName: string;
+    explicitBin?: string;
+}): Promise<string> {
+    const candidateNames = new Set(
+        [explicitBin, appName]
+            .filter(
+                (value): value is string => typeof value === 'string' && value.trim().length > 0,
+            )
+            .map((value) => value.trim()),
+    );
+
+    for (const candidateName of candidateNames) {
+        try {
+            const stats = await fs.stat(path.join(dir, candidateName));
+            if (stats.isFile()) {
+                return candidateName;
+            }
+        } catch {}
+    }
+
+    const directoryEntries = await fs.readdir(dir, { withFileTypes: true });
+    const executableEntry = directoryEntries.find(
+        (entry) =>
+            entry.isFile() &&
+            !entry.name.startsWith('.') &&
+            entry.name !== 'LICENSE' &&
+            entry.name !== 'LICENSES.chromium.html' &&
+            !entry.name.endsWith('.pak') &&
+            !entry.name.endsWith('.bin') &&
+            !entry.name.endsWith('.dat') &&
+            !entry.name.endsWith('.json') &&
+            entry.name !== 'version',
+    );
+
+    if (!executableEntry) {
+        throw new Error(`Unable to determine the packaged Electron binary in "${dir}"`);
+    }
+
+    return executableEntry.name;
+}
+
 export function rpmArch(nodeArch: ForgeArch): string {
     switch (nodeArch) {
         case 'ia32':
@@ -65,21 +121,44 @@ export class MakerRpm extends MakerBase<MakerRpmConfig> {
         return this.isInstalled('electron-installer-redhat');
     }
 
-    async make({ dir, makeDir, targetArch }: MakerOptions): Promise<string[]> {
+    async make({
+        dir,
+        makeDir,
+        targetArch,
+        appName,
+        forgeConfig,
+        packageJSON,
+    }: MakerOptions): Promise<string[]> {
         const installerModule = require('electron-installer-redhat') as ElectronInstallerModule;
         const outDir = path.resolve(makeDir, 'rpm', targetArch);
         const specTemplatePath = path.resolve(
             path.dirname(fileURLToPath(import.meta.url)),
             'rpm.spec.ejs',
         );
+        const configuredExecutableName = forgeConfig.packagerConfig.executableName;
+        const packageName = sanitizeLinuxPackageName(
+            configuredExecutableName ??
+                packageJSON.executableName ??
+                packageJSON.productName ??
+                appName,
+        );
+        const productName = packageJSON.productName ?? appName;
+        const bin = await resolveBundledBinaryName({
+            dir,
+            appName: productName,
+            explicitBin: configuredExecutableName ?? packageJSON.executableName,
+        });
 
         await this.ensureDirectory(outDir);
 
         const installer = new installerModule.Installer({
             ...this.config,
+            bin,
             arch: rpmArch(targetArch),
             dest: outDir,
             logger: () => {},
+            name: packageName,
+            productName,
             rename: renameRpm,
             src: dir,
         });
