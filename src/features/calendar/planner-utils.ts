@@ -1,4 +1,12 @@
-import { addDays, format, parseISO } from 'date-fns';
+import {
+    addDays,
+    addMonths,
+    endOfMonth,
+    format,
+    parseISO,
+    startOfMonth,
+    startOfWeek,
+} from 'date-fns';
 
 import type { MockEvent } from '@/features/app-shell/mock-data';
 
@@ -13,6 +21,9 @@ export const PLANNER_TIME_GUTTER_WIDTH = CALENDAR_TIME_GUTTER;
 export const PLANNER_MIN_DAY_COLUMN_WIDTH = 180;
 export const PLANNER_WIDTH_SAFETY_PX = 2;
 export const MINUTES_PER_DAY = 24 * 60;
+export const MONTH_GRID_DAY_COUNT = 42;
+export const MONTH_GRID_WEEK_COUNT = 6;
+export const MONTH_GRID_COLUMN_COUNT = 7;
 const PLANNER_MODE_TARGET_DAYS = {
     day: 2,
     week: 5,
@@ -118,6 +129,10 @@ export function shiftIsoDateByDays(anchorDate: string, deltaDays: number): strin
     return format(addDays(parseISO(anchorDate), deltaDays), 'yyyy-MM-dd');
 }
 
+export function shiftIsoDateByMonths(anchorDate: string, deltaMonths: number): string {
+    return format(addMonths(startOfMonth(parseISO(anchorDate)), deltaMonths), 'yyyy-MM-dd');
+}
+
 export function getPlannerPageStartDates(anchorDate: string, pageSize: number): string[] {
     const normalizedPageSize = Math.max(pageSize, 1);
 
@@ -205,6 +220,67 @@ export function getIsoDate(date: Date): string {
 
 export function getSystemTodayIsoDate(): string {
     return getIsoDate(new Date());
+}
+
+export function getMonthStartDate(anchorDate: string): Date {
+    return startOfMonth(parseISO(anchorDate));
+}
+
+export function getMonthLabel(anchorDate: string): string {
+    return format(getMonthStartDate(anchorDate), 'MMMM yyyy');
+}
+
+export function getMonthGridDates(anchorDate: string): Date[] {
+    const monthStartDate = getMonthStartDate(anchorDate);
+    const monthGridStartDate = startOfWeek(monthStartDate, { weekStartsOn: 1 });
+
+    return Array.from({ length: MONTH_GRID_DAY_COUNT }, (_, index) =>
+        addDays(monthGridStartDate, index),
+    );
+}
+
+export function getMonthGridWeeks(anchorDate: string): Date[][] {
+    const monthGridDates = getMonthGridDates(anchorDate);
+
+    return Array.from({ length: MONTH_GRID_WEEK_COUNT }, (_, index) =>
+        monthGridDates.slice(
+            index * MONTH_GRID_COLUMN_COUNT,
+            (index + 1) * MONTH_GRID_COLUMN_COUNT,
+        ),
+    );
+}
+
+export function getMonthWeekdayLabels(): string[] {
+    const referenceWeekStart = startOfWeek(new Date('2026-04-13T00:00:00'), { weekStartsOn: 1 });
+
+    return Array.from({ length: MONTH_GRID_COLUMN_COUNT }, (_, index) =>
+        format(addDays(referenceWeekStart, index), 'EEE'),
+    );
+}
+
+export function isDateInMonth(date: Date, anchorDate: string): boolean {
+    return format(date, 'yyyy-MM') === format(getMonthStartDate(anchorDate), 'yyyy-MM');
+}
+
+export function isWeekendDate(date: Date): boolean {
+    const day = date.getDay();
+
+    return day === 0 || day === 6;
+}
+
+export function isSameIsoDate(date: Date, isoDate: string): boolean {
+    return getIsoDate(date) === isoDate;
+}
+
+export function getMonthGridEndDate(anchorDate: string): Date {
+    return addDays(
+        startOfWeek(getMonthStartDate(anchorDate), { weekStartsOn: 1 }),
+        MONTH_GRID_DAY_COUNT - 1,
+    );
+}
+
+export function getMonthLastDate(anchorDate: string): Date {
+    return endOfMonth(getMonthStartDate(anchorDate));
 }
 
 export function getDateHeaderLabel(date: Date): string {

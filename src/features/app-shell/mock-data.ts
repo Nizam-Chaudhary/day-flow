@@ -299,17 +299,6 @@ export const mockEvents = [
     },
 ] satisfies MockEvent[];
 
-export const calendarColumns = Array.from({ length: 7 }, (_, index) => {
-    const date = addDays(weekStart, index);
-
-    return {
-        date: format(date, 'yyyy-MM-dd'),
-        dayLabel: format(date, 'EEE'),
-        id: format(date, 'yyyy-MM-dd'),
-        numericDate: format(date, 'd'),
-    };
-});
-
 export const todayEvents = mockEvents.filter((event) => event.date === todayIso);
 
 export const mockTasks = [

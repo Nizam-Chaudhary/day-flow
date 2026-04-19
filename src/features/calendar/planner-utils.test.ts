@@ -12,12 +12,22 @@ import {
     getCurrentTimeTopOffset,
     getEventDurationMinutes,
     getIsoDate,
+    getMonthGridDates,
+    getMonthGridWeeks,
+    getMonthLabel,
+    getMonthStartDate,
+    getMonthWeekdayLabels,
     getPlannerPageStartDates,
     getPlannerSnapTarget,
     getVisibleDayCount,
+    isDateInMonth,
+    isSameIsoDate,
+    isWeekendDate,
+    MONTH_GRID_DAY_COUNT,
     PLANNER_HEADER_HEIGHT,
     parseTimeToMinutes,
     shiftIsoDateByDays,
+    shiftIsoDateByMonths,
 } from '@/features/calendar/planner-utils';
 
 describe('planner utils', () => {
@@ -109,6 +119,11 @@ describe('planner utils', () => {
             '2026-04-13',
             '2026-04-16',
         ]);
+    });
+
+    it('shifts month anchors by whole months from the start of the month', () => {
+        expect(shiftIsoDateByMonths('2026-04-19', 1)).toBe('2026-05-01');
+        expect(shiftIsoDateByMonths('2026-04-19', -1)).toBe('2026-03-01');
     });
 
     it('resolves week mode visible day counts from available width', () => {
@@ -203,5 +218,41 @@ describe('planner utils', () => {
         expect(formatPlannerRangeLabel([new Date('2026-12-31'), new Date('2027-01-02')])).toBe(
             '31 Dec, 2026 - 2 Jan, 2027',
         );
+    });
+
+    it('returns the month start date and label for the current anchor month', () => {
+        expect(getIsoDate(getMonthStartDate('2026-04-19'))).toBe('2026-04-01');
+        expect(getMonthLabel('2026-04-19')).toBe('April 2026');
+    });
+
+    it('builds a monday-first month grid with a fixed 42-day span', () => {
+        const monthGridDates = getMonthGridDates('2026-04-19');
+
+        expect(monthGridDates).toHaveLength(MONTH_GRID_DAY_COUNT);
+        expect(getIsoDate(monthGridDates[0])).toBe('2026-03-30');
+        expect(getIsoDate(monthGridDates[monthGridDates.length - 1])).toBe('2026-05-10');
+    });
+
+    it('groups the month grid into six week rows', () => {
+        const monthGridWeeks = getMonthGridWeeks('2026-04-19');
+
+        expect(monthGridWeeks).toHaveLength(6);
+        expect(monthGridWeeks.every((week) => week.length === 7)).toBe(true);
+        expect(getIsoDate(monthGridWeeks[0][0])).toBe('2026-03-30');
+        expect(getIsoDate(monthGridWeeks[5][6])).toBe('2026-05-10');
+    });
+
+    it('returns weekday labels in monday-first order', () => {
+        expect(getMonthWeekdayLabels()).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+    });
+
+    it('detects month membership, weekends, and iso-date equality', () => {
+        expect(isDateInMonth(new Date('2026-04-19'), '2026-04-01')).toBe(true);
+        expect(isDateInMonth(new Date('2026-03-30'), '2026-04-01')).toBe(false);
+        expect(isWeekendDate(new Date('2026-04-18'))).toBe(true);
+        expect(isWeekendDate(new Date('2026-04-19'))).toBe(true);
+        expect(isWeekendDate(new Date('2026-04-20'))).toBe(false);
+        expect(isSameIsoDate(new Date('2026-04-19'), '2026-04-19')).toBe(true);
+        expect(isSameIsoDate(new Date('2026-04-19'), '2026-04-20')).toBe(false);
     });
 });

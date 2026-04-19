@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/sheet';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAppShellActions } from '@/features/app-shell/app-shell-layout';
-import { calendarColumns, mockEvents, type MockEvent } from '@/features/app-shell/mock-data';
+import { mockEvents, type MockEvent } from '@/features/app-shell/mock-data';
+import { MonthPlannerSurface } from '@/features/calendar/month-planner-surface';
 import { PlannerSurface } from '@/features/calendar/planner-surface';
 import { isCalendarView, type CalendarView } from '@/shared/contracts/settings';
 import { useAppShellStore } from '@/stores/app-shell-store';
@@ -148,60 +149,12 @@ function CalendarPage() {
                     </CardContent>
                 </Card>
             ) : activeMode === 'month' ? (
-                <Card className='overflow-hidden'>
-                    <CardHeader>
-                        <CardTitle>Planner surface</CardTitle>
-                        <CardDescription>
-                            Mock unified events with source badges and a consistent right-side
-                            detail sheet.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className='grid gap-3 md:grid-cols-7'>
-                            {calendarColumns.map((column) => {
-                                const events = mockEvents.filter(
-                                    (event) => event.date === column.date,
-                                );
-
-                                return (
-                                    <div
-                                        key={column.id}
-                                        className='flex min-h-44 flex-col gap-3 rounded-2xl border bg-background p-3'>
-                                        <div className='flex items-center justify-between'>
-                                            <p className='font-medium'>{column.dayLabel}</p>
-                                            <Badge variant='outline'>{column.numericDate}</Badge>
-                                        </div>
-                                        <div className='flex flex-col gap-2'>
-                                            {events.length > 0 ? (
-                                                events.map((event) => (
-                                                    <button
-                                                        key={event.id}
-                                                        aria-label={`Open event ${event.title}`}
-                                                        className='rounded-xl bg-muted/60 px-3 py-2 text-left text-sm transition-colors hover:bg-muted'
-                                                        type='button'
-                                                        onClick={() => {
-                                                            setSelectedEvent(event);
-                                                        }}>
-                                                        <p className='truncate font-medium'>
-                                                            {event.title}
-                                                        </p>
-                                                        <p className='mt-1 text-xs text-muted-foreground'>
-                                                            {event.startTime}
-                                                        </p>
-                                                    </button>
-                                                ))
-                                            ) : (
-                                                <p className='text-sm text-muted-foreground'>
-                                                    No events
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </CardContent>
-                </Card>
+                <MonthPlannerSurface
+                    anchorDate={selectedDate}
+                    onSelectDate={(date) => {
+                        useAppShellStore.getState().setSelectedDate(date);
+                    }}
+                />
             ) : (
                 <PlannerSurface
                     anchorDate={selectedDate}

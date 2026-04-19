@@ -1,0 +1,131 @@
+// @vitest-environment jsdom
+
+import { fireEvent, render, screen } from '@testing-library/react';
+import { format } from 'date-fns';
+import { useState } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { MonthPlannerSurface } from '@/features/calendar/month-planner-surface';
+
+describe('MonthPlannerSurface', () => {
+    beforeEach(() => {
+        vi.restoreAllMocks();
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-04-19T10:30:00'));
+    });
+
+    it('renders a monday-first sticky weekday header', () => {
+        renderMonthPlannerSurface();
+
+        expect(
+            screen.getAllByTestId('month-weekday-header').map((header) => header.textContent),
+        ).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+
+        expect(screen.getByTestId('month-planner-sticky-header').className).toContain('sticky');
+        expect(screen.getByTestId('month-planner-sticky-header').className).toContain('top-0');
+    });
+
+    it('renders a fixed 42-cell month grid with weekend and outside-month markers', () => {
+        renderMonthPlannerSurface();
+
+        const dayCells = screen.getAllByRole('button', { name: /Select / });
+        const weekendCells = dayCells.filter(
+            (cell) => cell.getAttribute('data-weekend') === 'true',
+        );
+        const outsideMonthCell = document.querySelector(
+            '[data-date-cell="2026-03-30"]',
+        ) as HTMLElement;
+
+        expect(dayCells).toHaveLength(42);
+        expect(weekendCells).toHaveLength(12);
+        expect(outsideMonthCell.getAttribute('data-outside-month')).toBe('true');
+        expect(outsideMonthCell.className).toContain('text-left');
+    });
+
+    it('highlights today with the highlight border and date pill', () => {
+        renderMonthPlannerSurface();
+
+        const todayCell = document.querySelector('[data-date-cell="2026-04-19"]') as HTMLElement;
+        const todayPill = screen.getByText('19');
+
+        expect(todayCell.getAttribute('data-today')).toBe('true');
+        expect(todayCell.className).toContain('outline-highlight');
+        expect(todayPill.className).toContain('bg-highlight');
+    });
+
+    it('moves by full months with the existing navigation controls', () => {
+        renderMonthPlannerSurfaceHarness({ anchorDate: '2026-04-19' });
+        expect(screen.getByText('April 2026')).toBeTruthy();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Next dates' }));
+        expect(screen.getByText('May 2026')).toBeTruthy();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Previous dates' }));
+        expect(screen.getByText('April 2026')).toBeTruthy();
+    });
+
+    it('resets back to today when clicking the today button', () => {
+        renderMonthPlannerSurfaceHarness({ anchorDate: '2026-05-06' });
+
+        fireEvent.click(screen.getByRole('button', { name: getTodayButtonLabel() }));
+
+        expect(screen.getByText('April 2026')).toBeTruthy();
+        expect(
+            (document.querySelector('[data-date-cell="2026-04-19"]') as HTMLElement).getAttribute(
+                'data-today',
+            ),
+        ).toBe('true');
+    });
+
+    it('selects exact dates from the current month and adjacent spillover cells', () => {
+        const onSelectDate = vi.fn<(date: string) => void>();
+        renderMonthPlannerSurfaceHarness({ anchorDate: '2026-04-19', onSelectDate });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Select 16 Apr, 2026' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Select 30 Mar, 2026' }));
+
+        expect(onSelectDate).toHaveBeenCalledWith('2026-04-16');
+        expect(onSelectDate).toHaveBeenCalledWith('2026-03-30');
+        expect(screen.getByText('March 2026')).toBeTruthy();
+    });
+});
+
+function MonthPlannerSurfaceHarness({
+    anchorDate,
+    onSelectDate,
+}: {
+    anchorDate: string;
+    onSelectDate?(this: void, date: string): void;
+}) {
+    const [selectedDate, setSelectedDate] = useState(anchorDate);
+
+    return (
+        <MonthPlannerSurface
+            anchorDate={selectedDate}
+            onSelectDate={(date) => {
+                setSelectedDate(date);
+                onSelectDate?.(date);
+            }}
+        />
+    );
+}
+
+function renderMonthPlannerSurface(anchorDate = '2026-04-19') {
+    return render(<MonthPlannerSurface anchorDate={anchorDate} onSelectDate={() => {}} />);
+}
+
+function renderMonthPlannerSurfaceHarness({
+    anchorDate,
+    onSelectDate,
+}: {
+    anchorDate: string;
+    onSelectDate?(this: void, date: string): void;
+}) {
+    return render(
+        <MonthPlannerSurfaceHarness anchorDate={anchorDate} onSelectDate={onSelectDate} />,
+    );
+}
+
+function getTodayButtonLabel() {
+    return `Today ${format(new Date(), 'd MMM, yyyy')}`;
+}

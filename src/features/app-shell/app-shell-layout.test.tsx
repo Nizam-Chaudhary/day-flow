@@ -213,7 +213,8 @@ describe('App shell routes', () => {
             'false',
         );
         expect(screen.queryByTestId('planner-surface')).toBeNull();
-        expect(screen.getAllByText('No events').length).toBeGreaterThan(0);
+        expect(await screen.findByTestId('month-planner-surface')).toBeTruthy();
+        expect(screen.getByText(format(new Date(), 'MMMM yyyy'))).toBeTruthy();
     });
 
     it('keeps the current day as the first visible date when switching back to week view', async () => {
