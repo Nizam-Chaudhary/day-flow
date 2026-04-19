@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    buildBufferedDayRange,
     buildDayRange,
+    formatPlannerRangeLabel,
     getDateHeaderLabel,
     getDateHeaderSubLabel,
     getEventDurationMinutes,
     getIsoDate,
-    getNavigationStep,
+    getPlannerPageStartDates,
+    getPlannerSnapTarget,
     getVisibleDayCount,
     parseTimeToMinutes,
+    shiftIsoDateByDays,
 } from '@/features/calendar/planner-utils';
 
 describe('planner utils', () => {
@@ -31,6 +35,26 @@ describe('planner utils', () => {
         ]);
     });
 
+    it('builds a buffered day range centered around the committed page', () => {
+        expect(buildBufferedDayRange('2026-04-13', 2).map(getIsoDate)).toEqual([
+            '2026-04-11',
+            '2026-04-12',
+            '2026-04-13',
+            '2026-04-14',
+            '2026-04-15',
+            '2026-04-16',
+        ]);
+    });
+
+    it('shifts and groups planner page start dates by full pages', () => {
+        expect(shiftIsoDateByDays('2026-04-13', 4)).toBe('2026-04-17');
+        expect(getPlannerPageStartDates('2026-04-13', 3)).toEqual([
+            '2026-04-10',
+            '2026-04-13',
+            '2026-04-16',
+        ]);
+    });
+
     it('clamps visible day counts by mode', () => {
         expect(getVisibleDayCount(320, 'day')).toBe(1);
         expect(getVisibleDayCount(1600, 'day')).toBe(5);
@@ -38,13 +62,46 @@ describe('planner utils', () => {
         expect(getVisibleDayCount(1800, 'week')).toBe(7);
     });
 
-    it('moves navigation by half the visible span rounded down with a minimum of one day', () => {
-        expect(getNavigationStep(1)).toBe(1);
-        expect(getNavigationStep(2)).toBe(1);
-        expect(getNavigationStep(3)).toBe(1);
-        expect(getNavigationStep(4)).toBe(2);
-        expect(getNavigationStep(5)).toBe(2);
-        expect(getNavigationStep(7)).toBe(3);
+    it('resolves planner snap targets from distance and velocity', () => {
+        expect(
+            getPlannerSnapTarget({
+                dragOffsetPx: 10,
+                pageWidth: 400,
+                velocityPxPerMs: 0.1,
+            }),
+        ).toBe('current');
+
+        expect(
+            getPlannerSnapTarget({
+                dragOffsetPx: 90,
+                pageWidth: 400,
+                velocityPxPerMs: 0.1,
+            }),
+        ).toBe('previous');
+
+        expect(
+            getPlannerSnapTarget({
+                dragOffsetPx: -90,
+                pageWidth: 400,
+                velocityPxPerMs: 0.1,
+            }),
+        ).toBe('next');
+
+        expect(
+            getPlannerSnapTarget({
+                dragOffsetPx: 12,
+                pageWidth: 400,
+                velocityPxPerMs: 0.5,
+            }),
+        ).toBe('previous');
+
+        expect(
+            getPlannerSnapTarget({
+                dragOffsetPx: -12,
+                pageWidth: 400,
+                velocityPxPerMs: -0.5,
+            }),
+        ).toBe('next');
     });
 
     it('formats calendar date headers without repeating the weekday', () => {
@@ -52,5 +109,22 @@ describe('planner utils', () => {
 
         expect(getDateHeaderLabel(date)).toBe('13 Apr, 2026');
         expect(getDateHeaderSubLabel(date)).toBe('Monday');
+    });
+
+    it('formats planner range labels with a comma before the year', () => {
+        expect(formatPlannerRangeLabel([new Date('2026-04-13')])).toBe('Monday, 13 April, 2026');
+        expect(
+            formatPlannerRangeLabel([
+                new Date('2026-04-13'),
+                new Date('2026-04-14'),
+                new Date('2026-04-15'),
+            ]),
+        ).toBe('13 - 15 Apr, 2026');
+        expect(formatPlannerRangeLabel([new Date('2026-04-30'), new Date('2026-05-02')])).toBe(
+            '30 Apr - 2 May, 2026',
+        );
+        expect(formatPlannerRangeLabel([new Date('2026-12-31'), new Date('2027-01-02')])).toBe(
+            '31 Dec, 2026 - 2 Jan, 2027',
+        );
     });
 });

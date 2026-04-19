@@ -13,6 +13,11 @@ import type { AppHealth } from '@/shared/contracts/health';
 import type { AppPreferences, UpdateAppPreferencesInput } from '@/shared/contracts/settings';
 
 import { Toaster } from '@/components/ui/sonner';
+import {
+    buildDayRange,
+    formatPlannerRangeLabel,
+    getIsoDate,
+} from '@/features/calendar/planner-utils';
 import { createQueryClient } from '@/lib/query/create-query-client';
 import { routeTree } from '@/routeTree.gen';
 import { resetAppShellStore } from '@/stores/app-shell-store';
@@ -148,7 +153,7 @@ describe('App shell routes', () => {
         expect(await screen.findByRole('heading', { name: 'Launch standup' })).toBeTruthy();
     });
 
-    it('navigates the planner by half the visible date span', async () => {
+    it('navigates the planner by one visible page', async () => {
         const user = setupUser();
 
         renderApp('/calendar');
@@ -158,7 +163,7 @@ describe('App shell routes', () => {
 
         await user.click(screen.getByRole('button', { name: 'Next dates' }));
 
-        expect(await screen.findByText(getPlannerRangeLabel(2))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(4))).toBeTruthy();
     });
 
     it('renders the shared planner in day view', async () => {
@@ -193,10 +198,21 @@ describe('App shell routes', () => {
         await screen.findByRole('heading', { name: 'Calendar' });
 
         await user.click(screen.getByRole('button', { name: 'Next dates' }));
-        expect(await screen.findByText(getPlannerRangeLabel(2))).toBeTruthy();
+        expect(await screen.findByText(getPlannerRangeLabel(4))).toBeTruthy();
 
         await user.click(screen.getByRole('button', { name: getTodayButtonLabel() }));
         expect(await screen.findByText(getPlannerRangeLabel(0))).toBeTruthy();
+    });
+
+    it('keeps the calendar planner inside shrinkable page containers', async () => {
+        renderApp('/calendar');
+        await screen.findByRole('heading', { name: 'Calendar' });
+
+        const plannerSurface = await screen.findByTestId('planner-surface');
+        const calendarSection = plannerSurface.closest('section');
+
+        expect(plannerSurface.className).toContain('min-w-0');
+        expect(calendarSection?.className).toContain('min-w-0');
     });
 
     it('opens the task detail sheet from the tasks page', async () => {
@@ -355,18 +371,9 @@ function setupUser() {
 }
 
 function getPlannerRangeLabel(startOffset: number, visibleDays = 4) {
-    const startDate = addDays(new Date(), startOffset);
-    const endDate = addDays(startDate, visibleDays - 1);
-
-    if (format(startDate, 'yyyy-MM') === format(endDate, 'yyyy-MM')) {
-        return `${format(startDate, 'd')} - ${format(endDate, 'd MMM yyyy')}`;
-    }
-
-    if (format(startDate, 'yyyy') === format(endDate, 'yyyy')) {
-        return `${format(startDate, 'd MMM')} - ${format(endDate, 'd MMM yyyy')}`;
-    }
-
-    return `${format(startDate, 'd MMM yyyy')} - ${format(endDate, 'd MMM yyyy')}`;
+    return formatPlannerRangeLabel(
+        buildDayRange(getIsoDate(addDays(new Date(), startOffset)), visibleDays),
+    );
 }
 
 function getTodayButtonLabel() {

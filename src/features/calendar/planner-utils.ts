@@ -3,6 +3,7 @@ import { addDays, format, parseISO } from 'date-fns';
 import type { MockEvent } from '@/features/app-shell/mock-data';
 
 export type PlannerMode = 'day' | 'week';
+export type PlannerSnapTarget = 'previous' | 'current' | 'next';
 
 export const CALENDAR_CELL_SIZE = 72;
 export const CALENDAR_TIME_GUTTER = 88;
@@ -60,27 +61,82 @@ export function buildDayRange(anchorDate: string, count: number): Date[] {
     return Array.from({ length: Math.max(count, 1) }, (_, index) => addDays(startDate, index));
 }
 
+export function shiftIsoDateByDays(anchorDate: string, deltaDays: number): string {
+    return format(addDays(parseISO(anchorDate), deltaDays), 'yyyy-MM-dd');
+}
+
+export function getPlannerPageStartDates(anchorDate: string, pageSize: number): string[] {
+    const normalizedPageSize = Math.max(pageSize, 1);
+
+    return [
+        shiftIsoDateByDays(anchorDate, -normalizedPageSize),
+        anchorDate,
+        shiftIsoDateByDays(anchorDate, normalizedPageSize),
+    ];
+}
+
+export function buildBufferedDayRange(anchorDate: string, pageSize: number, pageCount = 3): Date[] {
+    const normalizedPageSize = Math.max(pageSize, 1);
+    const normalizedPageCount = Math.max(pageCount, 1);
+    const startDate = shiftIsoDateByDays(
+        anchorDate,
+        -normalizedPageSize * Math.floor(normalizedPageCount / 2),
+    );
+
+    return buildDayRange(startDate, normalizedPageSize * normalizedPageCount);
+}
+
+export function getPlannerSnapTarget({
+    dragOffsetPx,
+    pageWidth,
+    velocityPxPerMs,
+    distanceThresholdRatio = 0.18,
+    velocityThresholdPxPerMs = 0.45,
+}: {
+    dragOffsetPx: number;
+    pageWidth: number;
+    velocityPxPerMs: number;
+    distanceThresholdRatio?: number;
+    velocityThresholdPxPerMs?: number;
+}): PlannerSnapTarget {
+    if (pageWidth <= 0) {
+        return 'current';
+    }
+
+    const distanceThresholdPx = pageWidth * distanceThresholdRatio;
+
+    if (Math.abs(dragOffsetPx) >= distanceThresholdPx) {
+        return dragOffsetPx > 0 ? 'previous' : 'next';
+    }
+
+    if (Math.abs(velocityPxPerMs) >= velocityThresholdPxPerMs) {
+        return velocityPxPerMs > 0 ? 'previous' : 'next';
+    }
+
+    return 'current';
+}
+
 export function formatPlannerRangeLabel(dates: Date[]): string {
     if (dates.length === 0) {
         return '';
     }
 
     if (dates.length === 1) {
-        return format(dates[0], 'EEEE, d MMMM yyyy');
+        return format(dates[0], 'EEEE, d MMMM, yyyy');
     }
 
     const firstDate = dates[0];
     const lastDate = dates[dates.length - 1];
 
     if (format(firstDate, 'yyyy-MM') === format(lastDate, 'yyyy-MM')) {
-        return `${format(firstDate, 'd')} - ${format(lastDate, 'd MMM yyyy')}`;
+        return `${format(firstDate, 'd')} - ${format(lastDate, 'd MMM, yyyy')}`;
     }
 
     if (format(firstDate, 'yyyy') === format(lastDate, 'yyyy')) {
-        return `${format(firstDate, 'd MMM')} - ${format(lastDate, 'd MMM yyyy')}`;
+        return `${format(firstDate, 'd MMM')} - ${format(lastDate, 'd MMM, yyyy')}`;
     }
 
-    return `${format(firstDate, 'd MMM yyyy')} - ${format(lastDate, 'd MMM yyyy')}`;
+    return `${format(firstDate, 'd MMM, yyyy')} - ${format(lastDate, 'd MMM, yyyy')}`;
 }
 
 export function formatHourLabel(hour: number): string {

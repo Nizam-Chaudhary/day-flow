@@ -1,10 +1,21 @@
-import { addDays, format, parseISO } from 'date-fns';
-import { useMemo, useRef, type CSSProperties } from 'react';
+import { ArrowLeft02Icon, ArrowRight02Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { format, parseISO } from 'date-fns';
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type CSSProperties,
+    type MutableRefObject,
+    type PointerEvent as ReactPointerEvent,
+} from 'react';
 
 import type { MockEvent } from '@/features/app-shell/mock-data';
 
 import { Button } from '@/components/ui/button';
 import {
+    buildBufferedDayRange,
     buildDayRange,
     CALENDAR_CELL_SIZE,
     CALENDAR_TIME_GUTTER,
@@ -14,10 +25,13 @@ import {
     getDateHeaderSubLabel,
     getEventDurationMinutes,
     getIsoDate,
-    getNavigationStep,
+    getPlannerPageStartDates,
+    getPlannerSnapTarget,
     getSystemTodayIsoDate,
     parseTimeToMinutes,
+    shiftIsoDateByDays,
     type PlannerMode,
+    type PlannerSnapTarget,
 } from '@/features/calendar/planner-utils';
 import { useVisibleDayCount } from '@/features/calendar/use-visible-day-count';
 import { cn } from '@/lib/utils';
@@ -30,7 +44,21 @@ interface PlannerSurfaceProps {
     onSelectDate(this: void, date: string): void;
 }
 
+interface PlannerDragState {
+    cleanup: (() => void) | null;
+    hasPassedDragThreshold: boolean;
+    isHorizontal: boolean;
+    lastTimestamp: number;
+    lastX: number;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    velocityPxPerMs: number;
+}
+
 const hourRows = Array.from({ length: 24 }, (_, hour) => hour);
+const TRACK_TRANSITION_MS = 220;
+const DRAG_LOCK_THRESHOLD_PX = 8;
 
 export function PlannerSurface({
     anchorDate,
@@ -40,13 +68,35 @@ export function PlannerSurface({
     onSelectDate,
 }: PlannerSurfaceProps) {
     const scrollAreaRef = useRef<HTMLDivElement | null>(null);
-    const { containerRef, visibleDayCount } = useVisibleDayCount(mode);
+    const viewportRef = useRef<HTMLDivElement | null>(null);
+    const animationTimerRef = useRef<number | null>(null);
+    const dragStateRef = useRef<PlannerDragState | null>(null);
+    const suppressClickRef = useRef(false);
 
-    const renderedDates = useMemo(
+    const { containerRef, visibleDayCount } = useVisibleDayCount(mode);
+    const prefersReducedMotion = usePrefersReducedMotion();
+    const [pageWidth, setPageWidth] = useState(0);
+    const [dragOffsetPx, setDragOffsetPx] = useState(0);
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [transitionEnabled, setTransitionEnabled] = useState(false);
+    const [activeSnapTarget, setActiveSnapTarget] = useState<PlannerSnapTarget>('current');
+
+    const rangeDates = useMemo(
         () => buildDayRange(anchorDate, visibleDayCount),
         [anchorDate, visibleDayCount],
     );
-    const rangeDates = renderedDates;
+    const pageStartDates = useMemo(
+        () => getPlannerPageStartDates(anchorDate, visibleDayCount),
+        [anchorDate, visibleDayCount],
+    );
+    const renderedDates = useMemo(
+        () => buildBufferedDayRange(anchorDate, visibleDayCount),
+        [anchorDate, visibleDayCount],
+    );
+    const pageDateGroups = useMemo(
+        () => pageStartDates.map((pageStartDate) => buildDayRange(pageStartDate, visibleDayCount)),
+        [pageStartDates, visibleDayCount],
+    );
     const eventsByDate = useMemo(() => {
         const dateMap = new Map<string, MockEvent[]>();
 
@@ -75,13 +125,242 @@ export function PlannerSurface({
 
     const rangeLabel = formatPlannerRangeLabel(rangeDates);
     const helperLabel = `${visibleDayCount} ${visibleDayCount === 1 ? 'day' : 'days'} visible`;
-    const gridTemplateColumns = `var(--calendar-time-gutter) repeat(${renderedDates.length}, minmax(var(--calendar-cell-size), 1fr))`;
     const todayIsoDate = getSystemTodayIsoDate();
-    const navigationStep = getNavigationStep(visibleDayCount);
     const todayButtonLabel = `Today ${format(parseISO(todayIsoDate), 'd MMM, yyyy')}`;
+    const pageMinWidth = CALENDAR_TIME_GUTTER + visibleDayCount * CALENDAR_CELL_SIZE;
+    const centeredOffsetPx = pageWidth > 0 ? -pageWidth : 0;
+    const trackTranslatePx = centeredOffsetPx + dragOffsetPx;
+
+    useEffect(() => {
+        const element = viewportRef.current;
+
+        if (!element) {
+            setPageWidth(window.innerWidth);
+            return;
+        }
+
+        const measure = () => {
+            setPageWidth(
+                element.clientWidth || element.getBoundingClientRect().width || window.innerWidth,
+            );
+        };
+
+        measure();
+
+        const observer = new ResizeObserver(() => {
+            measure();
+        });
+
+        observer.observe(element);
+        window.addEventListener('resize', measure);
+
+        return () => {
+            observer.disconnect();
+            window.removeEventListener('resize', measure);
+        };
+    }, []);
+
+    useEffect(() => {
+        stopAnimationTimer(animationTimerRef);
+        teardownDragSession(dragStateRef);
+        setTransitionEnabled(false);
+        setIsAnimating(false);
+        setActiveSnapTarget('current');
+        setDragOffsetPx(0);
+    }, [anchorDate, visibleDayCount, prefersReducedMotion]);
+
+    useEffect(
+        () => () => {
+            stopAnimationTimer(animationTimerRef);
+            teardownDragSession(dragStateRef);
+        },
+        [],
+    );
+
+    const commitPageShift = (direction: -1 | 1) => {
+        onSelectDate(shiftIsoDateByDays(anchorDate, direction * visibleDayCount));
+    };
+
+    const settleToTarget = (target: PlannerSnapTarget) => {
+        if (prefersReducedMotion || pageWidth <= 0 || target === 'current') {
+            setTransitionEnabled(false);
+            setIsAnimating(false);
+            setActiveSnapTarget('current');
+            setDragOffsetPx(0);
+
+            if (target === 'previous') {
+                commitPageShift(-1);
+            } else if (target === 'next') {
+                commitPageShift(1);
+            }
+
+            return;
+        }
+
+        setTransitionEnabled(true);
+        setIsAnimating(true);
+        setActiveSnapTarget(target);
+        setDragOffsetPx(target === 'previous' ? pageWidth : target === 'next' ? -pageWidth : 0);
+
+        stopAnimationTimer(animationTimerRef);
+        animationTimerRef.current = window.setTimeout(() => {
+            setTransitionEnabled(false);
+            setIsAnimating(false);
+            setActiveSnapTarget('current');
+            setDragOffsetPx(0);
+
+            if (target === 'previous') {
+                commitPageShift(-1);
+                return;
+            }
+
+            if (target === 'next') {
+                commitPageShift(1);
+            }
+        }, TRACK_TRANSITION_MS);
+    };
+
+    const handleNavigate = (direction: -1 | 1) => {
+        if (isAnimating) {
+            return;
+        }
+
+        if (prefersReducedMotion) {
+            commitPageShift(direction);
+            return;
+        }
+
+        settleToTarget(direction === -1 ? 'previous' : 'next');
+    };
+
+    const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (
+            prefersReducedMotion ||
+            isAnimating ||
+            pageWidth <= 0 ||
+            event.button !== 0 ||
+            !event.isPrimary
+        ) {
+            return;
+        }
+
+        if (isInteractiveElement(event.target)) {
+            return;
+        }
+
+        teardownDragSession(dragStateRef);
+        suppressClickRef.current = false;
+
+        const dragState: PlannerDragState = {
+            cleanup: null,
+            hasPassedDragThreshold: false,
+            isHorizontal: false,
+            lastTimestamp: event.timeStamp || performance.now(),
+            lastX: event.clientX,
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            velocityPxPerMs: 0,
+        };
+
+        const handleWindowPointerMove = (nextEvent: PointerEvent) => {
+            const currentDragState = dragStateRef.current;
+
+            if (!currentDragState || nextEvent.pointerId !== currentDragState.pointerId) {
+                return;
+            }
+
+            const deltaX = nextEvent.clientX - currentDragState.startX;
+            const deltaY = nextEvent.clientY - currentDragState.startY;
+            const elapsedMs = Math.max(
+                (nextEvent.timeStamp || performance.now()) - currentDragState.lastTimestamp,
+                1,
+            );
+
+            currentDragState.velocityPxPerMs =
+                (nextEvent.clientX - currentDragState.lastX) / elapsedMs;
+            currentDragState.lastX = nextEvent.clientX;
+            currentDragState.lastTimestamp = nextEvent.timeStamp || performance.now();
+
+            if (!currentDragState.isHorizontal) {
+                if (
+                    Math.abs(deltaX) <= DRAG_LOCK_THRESHOLD_PX ||
+                    Math.abs(deltaX) <= Math.abs(deltaY)
+                ) {
+                    return;
+                }
+
+                currentDragState.isHorizontal = true;
+            }
+
+            nextEvent.preventDefault();
+            currentDragState.hasPassedDragThreshold =
+                currentDragState.hasPassedDragThreshold ||
+                Math.abs(deltaX) > DRAG_LOCK_THRESHOLD_PX;
+
+            setTransitionEnabled(false);
+            setActiveSnapTarget('current');
+            setDragOffsetPx(clamp(deltaX, -pageWidth, pageWidth));
+        };
+
+        const finalizeDrag = (nextEvent: PointerEvent) => {
+            const currentDragState = dragStateRef.current;
+
+            if (!currentDragState || nextEvent.pointerId !== currentDragState.pointerId) {
+                return;
+            }
+
+            teardownDragSession(dragStateRef);
+
+            const dragDistancePx = clamp(
+                nextEvent.clientX - currentDragState.startX,
+                -pageWidth,
+                pageWidth,
+            );
+
+            if (currentDragState.isHorizontal) {
+                nextEvent.preventDefault();
+                suppressClickRef.current = currentDragState.hasPassedDragThreshold;
+                settleToTarget(
+                    getPlannerSnapTarget({
+                        dragOffsetPx: dragDistancePx,
+                        pageWidth,
+                        velocityPxPerMs: currentDragState.velocityPxPerMs,
+                    }),
+                );
+                return;
+            }
+
+            setDragOffsetPx(0);
+            setTransitionEnabled(false);
+            setActiveSnapTarget('current');
+        };
+
+        const cancelDrag = () => {
+            teardownDragSession(dragStateRef);
+            setDragOffsetPx(0);
+            setTransitionEnabled(false);
+            setActiveSnapTarget('current');
+        };
+
+        const cleanup = () => {
+            window.removeEventListener('pointermove', handleWindowPointerMove);
+            window.removeEventListener('pointerup', finalizeDrag);
+            window.removeEventListener('pointercancel', cancelDrag);
+        };
+
+        dragState.cleanup = cleanup;
+        dragStateRef.current = dragState;
+        window.addEventListener('pointermove', handleWindowPointerMove, { passive: false });
+        window.addEventListener('pointerup', finalizeDrag, { passive: false });
+        window.addEventListener('pointercancel', cancelDrag);
+    };
 
     return (
-        <section className='flex flex-col gap-4' data-testid='planner-surface' ref={containerRef}>
+        <section
+            className='flex max-w-full min-w-0 flex-col gap-4'
+            data-testid='planner-surface'
+            ref={containerRef}>
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex items-center gap-2'>
                     <Button
@@ -94,150 +373,198 @@ export function PlannerSurface({
                         aria-label='Previous dates'
                         size='icon-sm'
                         variant='outline'
-                        onClick={() =>
-                            onSelectDate(
-                                format(
-                                    addDays(parseISO(anchorDate), -navigationStep),
-                                    'yyyy-MM-dd',
-                                ),
-                            )
-                        }>
-                        <span aria-hidden='true' className='text-sm'>
-                            ←
-                        </span>
+                        onClick={() => handleNavigate(-1)}>
+                        <HugeiconsIcon icon={ArrowLeft02Icon} strokeWidth={2} />
                     </Button>
                     <Button
                         aria-label='Next dates'
                         size='icon-sm'
                         variant='outline'
-                        onClick={() =>
-                            onSelectDate(
-                                format(addDays(parseISO(anchorDate), navigationStep), 'yyyy-MM-dd'),
-                            )
-                        }>
-                        <span aria-hidden='true' className='text-sm'>
-                            →
-                        </span>
+                        onClick={() => handleNavigate(1)}>
+                        <HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} />
                     </Button>
                 </div>
 
-                <div className='min-w-0 sm:text-right'>
+                <div aria-live='polite' className='min-w-0 sm:text-right'>
                     <p className='text-sm font-medium tracking-tight'>{rangeLabel}</p>
                     <p className='text-xs text-muted-foreground'>{helperLabel}</p>
                 </div>
             </div>
 
-            <div className='overflow-hidden border bg-background'>
+            <div className='max-w-full min-w-0 overflow-hidden border bg-background'>
                 <div
-                    className='max-h-[calc(100vh-19rem)] min-h-[30rem] overflow-auto overscroll-contain'
+                    className='max-h-[calc(100vh-19rem)] min-h-[30rem] max-w-full min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain'
+                    data-testid='planner-scroll-area'
                     ref={scrollAreaRef}>
                     <div
-                        className='relative min-w-full'
-                        style={
-                            {
-                                '--calendar-cell-size': `${CALENDAR_CELL_SIZE}px`,
-                                '--calendar-time-gutter': `${CALENDAR_TIME_GUTTER}px`,
-                                minWidth: `${CALENDAR_TIME_GUTTER + renderedDates.length * CALENDAR_CELL_SIZE}px`,
-                            } as CSSProperties
-                        }>
-                        <div
-                            className='sticky top-0 z-30 grid bg-background'
-                            style={{ gridTemplateColumns }}>
-                            <div className='sticky left-0 z-40 h-16 border-r border-b bg-background' />
-                            {renderedDates.map((date) => {
-                                const isoDate = getIsoDate(date);
-                                const isTodayColumn = isoDate === todayIsoDate;
+                        ref={viewportRef}
+                        className='relative max-w-full min-w-0 overflow-hidden'
+                        data-planner-drag-target='true'
+                        onClickCapture={(event) => {
+                            if (!suppressClickRef.current) {
+                                return;
+                            }
 
-                                return (
-                                    <button
-                                        key={isoDate}
-                                        className={cn(
-                                            'flex h-16 min-w-[var(--calendar-cell-size)] flex-col items-start justify-center border-r border-b bg-background px-4 text-left transition-colors hover:bg-muted/50',
-                                            isTodayColumn &&
-                                                'border-t border-l border-t-highlight border-r-highlight border-b-highlight border-l-highlight bg-muted/50',
-                                        )}
-                                        data-date-column={isoDate}
-                                        type='button'
-                                        onClick={() => onSelectDate(isoDate)}>
-                                        <span className='text-sm font-medium tracking-tight'>
-                                            {getDateHeaderLabel(date)}
-                                        </span>
-                                        <span className='text-xs text-muted-foreground'>
-                                            {getDateHeaderSubLabel(date)}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
+                            suppressClickRef.current = false;
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }}
+                        onPointerDown={handlePointerDown}
+                        style={{ touchAction: prefersReducedMotion ? 'auto' : 'pan-y' }}>
                         <div
-                            className='relative grid bg-background'
-                            style={{ gridTemplateColumns }}>
-                            {hourRows.map((hour) => (
-                                <FragmentRow
-                                    hour={hour}
-                                    isLastHourRow={hour === hourRows[hourRows.length - 1]}
-                                    key={hour}
-                                    renderedDates={renderedDates}
+                            className='flex will-change-transform'
+                            data-planner-snap-target={activeSnapTarget}
+                            data-testid='planner-track'
+                            style={{
+                                transform: `translateX(${trackTranslatePx}px)`,
+                                transition: transitionEnabled
+                                    ? `transform ${TRACK_TRANSITION_MS}ms ease`
+                                    : undefined,
+                                width:
+                                    pageWidth > 0
+                                        ? `${pageWidth * pageDateGroups.length}px`
+                                        : undefined,
+                            }}>
+                            {pageDateGroups.map((pageDates) => (
+                                <PlannerPageGrid
+                                    eventsByDate={eventsByDate}
+                                    key={getIsoDate(pageDates[0])}
+                                    minWidth={pageMinWidth}
+                                    pageWidth={pageWidth}
+                                    pageDates={pageDates}
                                     todayIsoDate={todayIsoDate}
+                                    onOpenEvent={onOpenEvent}
+                                    onSelectDate={onSelectDate}
                                 />
                             ))}
-
-                            <div
-                                className='pointer-events-none absolute inset-y-0 right-0 left-[var(--calendar-time-gutter)] grid'
-                                style={{
-                                    gridTemplateColumns: `repeat(${renderedDates.length}, minmax(var(--calendar-cell-size), 1fr))`,
-                                }}>
-                                {renderedDates.map((date) => {
-                                    const isoDate = getIsoDate(date);
-                                    const dateEvents = eventsByDate.get(isoDate) ?? [];
-                                    const isTodayColumn = isoDate === todayIsoDate;
-
-                                    return (
-                                        <div
-                                            key={isoDate}
-                                            className={cn(
-                                                'relative border-r last:border-r-0',
-                                                isTodayColumn &&
-                                                    'border-l border-r-highlight border-l-highlight',
-                                            )}>
-                                            {dateEvents.map((event) => {
-                                                const topOffset =
-                                                    (parseTimeToMinutes(event.startTime) / 60) *
-                                                    CALENDAR_CELL_SIZE;
-                                                const height =
-                                                    (getEventDurationMinutes(event) / 60) *
-                                                    CALENDAR_CELL_SIZE;
-
-                                                return (
-                                                    <button
-                                                        key={event.id}
-                                                        aria-label={`Open event ${event.title}`}
-                                                        className='pointer-events-auto absolute inset-x-1.5 overflow-hidden rounded-sm border bg-primary/10 px-2 py-1.5 text-left shadow-sm transition-colors hover:bg-primary/14'
-                                                        style={{
-                                                            height: `${Math.max(height - 4, 28)}px`,
-                                                            top: `${topOffset + 2}px`,
-                                                        }}
-                                                        type='button'
-                                                        onClick={() => onOpenEvent(event)}>
-                                                        <p className='truncate text-xs font-medium tracking-tight'>
-                                                            {event.title}
-                                                        </p>
-                                                        <p className='mt-1 truncate text-[11px] text-muted-foreground'>
-                                                            {event.startTime} - {event.endTime}
-                                                        </p>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    );
-                                })}
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
+    );
+}
+
+function PlannerPageGrid({
+    eventsByDate,
+    minWidth,
+    onOpenEvent,
+    onSelectDate,
+    pageDates,
+    pageWidth,
+    todayIsoDate,
+}: {
+    eventsByDate: Map<string, MockEvent[]>;
+    minWidth: number;
+    onOpenEvent(this: void, event: MockEvent): void;
+    onSelectDate(this: void, date: string): void;
+    pageDates: Date[];
+    pageWidth: number;
+    todayIsoDate: string;
+}) {
+    const gridTemplateColumns = `var(--calendar-time-gutter) repeat(${pageDates.length}, minmax(var(--calendar-cell-size), 1fr))`;
+
+    return (
+        <div
+            className='relative shrink-0'
+            style={
+                {
+                    '--calendar-cell-size': `${CALENDAR_CELL_SIZE}px`,
+                    '--calendar-time-gutter': `${CALENDAR_TIME_GUTTER}px`,
+                    minWidth: `${minWidth}px`,
+                    width: pageWidth > 0 ? `${pageWidth}px` : '100%',
+                } as CSSProperties
+            }>
+            <div className='sticky top-0 z-30 grid bg-background' style={{ gridTemplateColumns }}>
+                <div className='sticky left-0 z-40 h-16 border-r border-b bg-background' />
+                {pageDates.map((date) => {
+                    const isoDate = getIsoDate(date);
+                    const isTodayColumn = isoDate === todayIsoDate;
+
+                    return (
+                        <button
+                            key={isoDate}
+                            className={cn(
+                                'flex h-16 min-w-[var(--calendar-cell-size)] flex-col items-start justify-center border-r border-b bg-background px-4 text-left transition-colors hover:bg-muted/50',
+                                isTodayColumn &&
+                                    'border-t border-l border-t-highlight border-r-highlight border-b-highlight border-l-highlight bg-muted/50',
+                            )}
+                            data-date-column={isoDate}
+                            type='button'
+                            onClick={() => onSelectDate(isoDate)}>
+                            <span className='text-sm font-medium tracking-tight'>
+                                {getDateHeaderLabel(date)}
+                            </span>
+                            <span className='text-xs text-muted-foreground'>
+                                {getDateHeaderSubLabel(date)}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+
+            <div className='relative grid bg-background' style={{ gridTemplateColumns }}>
+                {hourRows.map((hour) => (
+                    <FragmentRow
+                        hour={hour}
+                        isLastHourRow={hour === hourRows[hourRows.length - 1]}
+                        key={hour}
+                        renderedDates={pageDates}
+                        todayIsoDate={todayIsoDate}
+                    />
+                ))}
+
+                <div
+                    className='pointer-events-none absolute inset-y-0 right-0 left-[var(--calendar-time-gutter)] grid'
+                    style={{
+                        gridTemplateColumns: `repeat(${pageDates.length}, minmax(var(--calendar-cell-size), 1fr))`,
+                    }}>
+                    {pageDates.map((date) => {
+                        const isoDate = getIsoDate(date);
+                        const dateEvents = eventsByDate.get(isoDate) ?? [];
+                        const isTodayColumn = isoDate === todayIsoDate;
+
+                        return (
+                            <div
+                                key={isoDate}
+                                className={cn(
+                                    'relative border-r last:border-r-0',
+                                    isTodayColumn &&
+                                        'border-l border-r-highlight border-l-highlight',
+                                )}>
+                                {dateEvents.map((event) => {
+                                    const topOffset =
+                                        (parseTimeToMinutes(event.startTime) / 60) *
+                                        CALENDAR_CELL_SIZE;
+                                    const height =
+                                        (getEventDurationMinutes(event) / 60) * CALENDAR_CELL_SIZE;
+
+                                    return (
+                                        <button
+                                            key={event.id}
+                                            aria-label={`Open event ${event.title}`}
+                                            className='pointer-events-auto absolute inset-x-1.5 overflow-hidden rounded-sm border bg-primary/10 px-2 py-1.5 text-left shadow-sm transition-colors hover:bg-primary/14'
+                                            type='button'
+                                            style={{
+                                                height: `${Math.max(height - 4, 28)}px`,
+                                                top: `${topOffset + 2}px`,
+                                            }}
+                                            onClick={() => onOpenEvent(event)}>
+                                            <p className='truncate text-xs font-medium tracking-tight'>
+                                                {event.title}
+                                            </p>
+                                            <p className='mt-1 truncate text-[11px] text-muted-foreground'>
+                                                {event.startTime} - {event.endTime}
+                                            </p>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -274,4 +601,49 @@ function FragmentRow({
             })}
         </>
     );
+}
+
+function clamp(value: number, minimum: number, maximum: number) {
+    return Math.min(Math.max(value, minimum), maximum);
+}
+
+function isInteractiveElement(target: EventTarget | null): boolean {
+    return (
+        target instanceof HTMLElement &&
+        target.closest('button, a, input, textarea, select, label, [role="button"]') !== null
+    );
+}
+
+function teardownDragSession(dragStateRef: MutableRefObject<PlannerDragState | null>) {
+    dragStateRef.current?.cleanup?.();
+    dragStateRef.current = null;
+}
+
+function stopAnimationTimer(animationTimerRef: MutableRefObject<number | null>) {
+    if (animationTimerRef.current === null) {
+        return;
+    }
+
+    window.clearTimeout(animationTimerRef.current);
+    animationTimerRef.current = null;
+}
+
+function usePrefersReducedMotion() {
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const updatePreference = () => {
+            setPrefersReducedMotion(mediaQuery.matches);
+        };
+
+        updatePreference();
+        mediaQuery.addEventListener('change', updatePreference);
+
+        return () => {
+            mediaQuery.removeEventListener('change', updatePreference);
+        };
+    }, []);
+
+    return prefersReducedMotion;
 }

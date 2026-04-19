@@ -57,7 +57,7 @@ function CalendarPage() {
     }, [selectedDate]);
 
     return (
-        <section className='flex flex-col gap-6'>
+        <section className='flex min-w-0 flex-col gap-6'>
             <div className='flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between'>
                 <div className='flex max-w-3xl flex-col gap-2'>
                     <h2 className='font-heading text-3xl font-semibold tracking-tight sm:text-4xl'>
