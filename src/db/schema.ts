@@ -160,9 +160,10 @@ export const calendarEventsTable = sqliteTable(
         updatedAt: text('updated_at').notNull(),
     },
     (table) => [
-        uniqueIndex('calendar_events_provider_connection_external_idx').on(
+        uniqueIndex('calendar_events_provider_connection_calendar_external_idx').on(
             table.provider,
             table.connectionId,
+            table.calendarId,
             table.externalEventId,
         ),
         index('calendar_events_calendar_idx').on(table.calendarId),

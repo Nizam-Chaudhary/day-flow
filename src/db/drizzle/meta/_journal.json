@@ -15,6 +15,13 @@
             "when": 1776579630000,
             "tag": "0001_google_calendar_integration",
             "breakpoints": true
+        },
+        {
+            "idx": 2,
+            "version": "6",
+            "when": 1776590000000,
+            "tag": "0002_calendar_events_identity_scope",
+            "breakpoints": true
         }
     ]
 }
