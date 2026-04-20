@@ -1,0 +1,31 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "noEmit": true,
+        "target": "ES2023",
+        "lib": ["ES2023", "DOM", "DOM.Iterable"],
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "jsx": "react-jsx",
+        "types": ["vite/client", "node"],
+        "isolatedModules": true,
+        "moduleDetection": "force",
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "paths": {
+            "@/*": ["./src/*"]
+        }
+    },
+    "include": [
+        "forge.config.ts",
+        "vitest.config.ts",
+        "vite.config.ts",
+        "vite.main.config.ts",
+        "vite.preload.config.ts",
+        "drizzle.config.ts",
+        "commitlint.config.ts",
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "src/**/*.d.ts"
+    ]
+}

@@ -14,7 +14,7 @@
         ]
     },
     "sortTailwindcss": {
-        "stylesheet": "./apps/desktop/src/index.css",
+        "stylesheet": "./src/index.css",
         "attributes": ["class", "className"],
         "functions": ["clsx", "cn", "cva"],
         "preserveWhitespace": true

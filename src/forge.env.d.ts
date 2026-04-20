@@ -1,0 +1,26 @@
+/// <reference types="vite/client" />
+
+import type { DayFlowApi } from '@/preload/create-day-flow-api';
+import type { AppHealth } from '@/schemas/contracts/health';
+import type { AppPreferences, UpdateAppPreferencesInput } from '@/schemas/contracts/settings';
+
+interface ElectronAppInfo {
+    platform: NodeJS.Platform;
+    versions: {
+        electron: string;
+        chrome: string;
+        node: string;
+    };
+}
+
+declare global {
+    const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
+    const MAIN_WINDOW_VITE_NAME: string;
+
+    interface Window {
+        dayFlowApi: DayFlowApi;
+        electronApp: ElectronAppInfo;
+    }
+}
+
+export {};
