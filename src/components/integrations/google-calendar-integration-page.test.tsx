@@ -5,39 +5,44 @@ import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/rea
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from 'next-themes';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { DayFlowApi } from '@/preload/create-day-flow-api';
+import type {
+    GoogleCalendarSummary,
+    GoogleConnectionDetail,
+} from '@/schemas/contracts/google-calendar';
 
 import { Toaster } from '@/components/ui/sonner';
 import { createQueryClient } from '@/lib/query/create-query-client';
 import { routeTree } from '@/routeTree.gen';
 
-const googleConnectionFixture = {
-    calendars: [
-        {
-            accessRole: 'owner' as const,
-            colorOverride: '#22c55e',
-            connectionId: 'google:user-1',
-            effectiveColor: '#22c55e',
-            externalCalendarId: 'primary',
-            googleBackgroundColor: '#1a73e8',
-            googleForegroundColor: '#ffffff',
-            id: 'google:user-1:primary',
-            isPrimary: true,
-            isSelected: true,
-            lastSyncAt: '2026-04-18T00:00:00.000Z',
-            lastSyncError: null,
-            lastSyncStatus: 'success' as const,
-            name: 'Primary',
-            reminderChannel: 'in_app' as const,
-            reminderEnabled: false,
-            reminderLeadMinutes: 15 as const,
-            syncEnabled: true,
-            syncIntervalMinutes: 15 as const,
-            type: 'default' as const,
-        },
-    ],
+const baseCalendarFixture: GoogleCalendarSummary = {
+    accessRole: 'owner' as const,
+    calendarColorType: 'custom' as const,
+    colorOverride: '#22c55e',
+    connectionId: 'google:user-1',
+    effectiveColor: '#22c55e',
+    externalCalendarId: 'primary',
+    googleBackgroundColor: '#1a73e8',
+    googleForegroundColor: '#ffffff',
+    id: 'google:user-1:primary',
+    isPrimary: true,
+    isSelected: true,
+    lastSyncAt: '2026-04-18T00:00:00.000Z',
+    lastSyncError: null,
+    lastSyncStatus: 'success' as const,
+    name: 'Primary',
+    reminderChannel: 'in_app' as const,
+    reminderEnabled: false,
+    reminderLeadMinutes: 15 as const,
+    syncEnabled: true,
+    syncIntervalMinutes: 15 as const,
+    type: 'default' as const,
+};
+
+const baseConnectionFixture: GoogleConnectionDetail = {
+    calendars: [baseCalendarFixture],
     credentialStorageMode: 'sqlite_plaintext' as const,
     displayName: 'Nizam Chaudhary',
     email: 'nizam@example.com',
@@ -55,6 +60,11 @@ type DayFlowApiOverrides = {
     settings?: Partial<DayFlowApi['settings']>;
 };
 
+afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+});
+
 describe('GoogleCalendarIntegrationPage', () => {
     it('renders the empty state when no account is linked', async () => {
         window.dayFlowApi = createDayFlowApi({
@@ -71,61 +81,234 @@ describe('GoogleCalendarIntegrationPage', () => {
     });
 
     it('renders accounts and warns when plaintext token fallback is active', async () => {
+        vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-04-21T00:00:00.000Z').getTime());
+
         window.dayFlowApi = createDayFlowApi({
             googleCalendar: {
                 listConnections: vi
                     .fn<DayFlowApi['googleCalendar']['listConnections']>()
-                    .mockResolvedValue([googleConnectionFixture]),
+                    .mockResolvedValue([createGoogleConnectionFixture()]),
             },
         });
 
         renderApp('/integrations/google');
 
         expect(await screen.findAllByText('Nizam Chaudhary')).toHaveLength(2);
-        expect(await screen.findAllByText('Google Calendar')).toHaveLength(4);
+        expect(await screen.findAllByText('Google Calendar')).toHaveLength(2);
         expect(await screen.findAllByTestId('google-calendar-provider-avatar')).toHaveLength(1);
         expect(await screen.findByText('1 calendar')).toBeTruthy();
-        expect(await screen.findByText('Synced 2026-04-18T00:00:00.000Z')).toBeTruthy();
-        expect(await screen.findAllByText('Unencrypted storage')).toHaveLength(2);
-        expect(await screen.findByText('4 OAuth scopes')).toBeTruthy();
+        expect(await screen.findByText('Synced 3 days ago')).toBeTruthy();
+        expect(await screen.findAllByText('Unencrypted storage')).toHaveLength(1);
+        expect(await screen.findByText('In-app reminders')).toBeTruthy();
+        expect(screen.queryByText('4 OAuth scopes')).toBeNull();
+        expect(
+            screen.queryByText('openid, email, profile, https://www.googleapis.com/auth/calendar'),
+        ).toBeNull();
+        expect(
+            screen.queryByText(
+                'Secure credential storage is unavailable on this machine. Tokens are stored unencrypted in SQLite for this account.',
+            ),
+        ).toBeNull();
+        expect(screen.queryByText('Reminder channel')).toBeNull();
         expect((await screen.findAllByRole('button', { name: 'Sync now' })).length).toBeGreaterThan(
             0,
         );
         expect(await screen.findByRole('button', { name: 'Disconnect account' })).toBeTruthy();
     });
 
-    it('updates per-calendar controls through the preload API', async () => {
+    it('hides detail sections when the calendar is disabled', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture({
+                            calendars: [
+                                createGoogleCalendarFixture({
+                                    calendarColorType: 'curated',
+                                    colorOverride: null,
+                                    effectiveColor: '#1a73e8',
+                                    isSelected: false,
+                                }),
+                            ],
+                            selectedCalendarCount: 0,
+                        }),
+                    ]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        expect((await screen.findAllByText('Primary')).length).toBeGreaterThan(0);
+        expect(screen.queryByText('Sync enabled')).toBeNull();
+        expect(screen.queryByText('Default reminder time')).toBeNull();
+        expect(screen.queryByText('Calendar color type')).toBeNull();
+    });
+
+    it('falls back to not synced when the last sync timestamp is invalid', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture({
+                            lastSyncAt: 'not-a-date',
+                        }),
+                    ]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        expect(await screen.findByText('Not synced')).toBeTruthy();
+    });
+
+    it('shows a sync error badge when the last sync failed and no timestamp is present', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture({
+                            lastSyncAt: null,
+                            lastSyncStatus: 'error',
+                        }),
+                    ]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        expect(await screen.findByText('Sync error')).toBeTruthy();
+    });
+
+    it('disables dependent controls based on the parent toggles', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture({
+                            calendars: [
+                                createGoogleCalendarFixture({
+                                    reminderEnabled: false,
+                                    syncEnabled: false,
+                                }),
+                            ],
+                        }),
+                    ]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        expect((await screen.findByLabelText('Sync interval')).matches(':disabled')).toBe(true);
+        expect((await screen.findByLabelText('Default reminder time')).matches(':disabled')).toBe(
+            true,
+        );
+    });
+
+    it('autosaves reminder changes through the preload API after the debounce window', async () => {
         const updateCalendar = vi
             .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
-            .mockResolvedValue(googleConnectionFixture);
+            .mockResolvedValue(createGoogleConnectionFixture());
 
         window.dayFlowApi = createDayFlowApi({
             googleCalendar: {
                 listConnections: vi
                     .fn<DayFlowApi['googleCalendar']['listConnections']>()
-                    .mockResolvedValue([googleConnectionFixture]),
+                    .mockResolvedValue([createGoogleConnectionFixture()]),
                 updateCalendar,
             },
         });
 
         renderApp('/integrations/google');
 
-        expect(await screen.findAllByText('Nizam Chaudhary')).toHaveLength(2);
-        expect(await screen.findAllByText('Primary')).toHaveLength(2);
+        const user = userEvent.setup();
 
-        await userEvent.click(screen.getByRole('switch', { name: 'Reminder enabled' }));
+        expect((await screen.findAllByText('Primary')).length).toBeGreaterThan(0);
+        await user.click(screen.getByRole('switch', { name: 'Reminder enabled' }));
 
-        await waitFor(() => {
-            expect(updateCalendar).toHaveBeenCalledWith({
-                calendarId: 'google:user-1:primary',
-                reminderEnabled: true,
-            });
+        expect(updateCalendar).not.toHaveBeenCalled();
+
+        await waitFor(
+            () => {
+                expect(updateCalendar).toHaveBeenCalledWith({
+                    calendarId: 'google:user-1:primary',
+                    reminderChannel: 'in_app',
+                    reminderEnabled: true,
+                });
+            },
+            { timeout: 1500 },
+        );
+    });
+
+    it('debounces rapid custom color edits into a single save', async () => {
+        const updateCalendar = vi
+            .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
+            .mockResolvedValue(createGoogleConnectionFixture());
+
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([createGoogleConnectionFixture()]),
+                updateCalendar,
+            },
         });
 
-        fireEvent.change(screen.getByLabelText('Hex override'), {
+        renderApp('/integrations/google');
+
+        const colorInput = (await screen.findByLabelText('Calendar color')) as HTMLInputElement;
+
+        fireEvent.change(colorInput, { target: { value: '#123456' } });
+        fireEvent.change(colorInput, { target: { value: '#234567' } });
+        fireEvent.change(colorInput, { target: { value: '#345678' } });
+
+        expect(updateCalendar).not.toHaveBeenCalled();
+
+        await waitFor(
+            () => {
+                expect(updateCalendar).toHaveBeenCalledTimes(1);
+                expect(updateCalendar).toHaveBeenCalledWith({
+                    calendarId: 'google:user-1:primary',
+                    colorOverride: '#345678',
+                });
+            },
+            { timeout: 1500 },
+        );
+    });
+
+    it('flushes custom color edits on blur without waiting for debounce', async () => {
+        const updatedConnection = createGoogleConnectionFixture({
+            calendars: [
+                createGoogleCalendarFixture({
+                    colorOverride: '#0f172a',
+                    effectiveColor: '#0f172a',
+                }),
+            ],
+        });
+        const updateCalendar = vi
+            .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
+            .mockResolvedValue(updatedConnection);
+
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([createGoogleConnectionFixture()]),
+                updateCalendar,
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        const colorInput = (await screen.findByLabelText('Calendar color')) as HTMLInputElement;
+
+        fireEvent.change(colorInput, {
             target: { value: '#0f172a' },
         });
-        fireEvent.blur(screen.getByLabelText('Hex override'));
+        fireEvent.blur(colorInput);
 
         await waitFor(() => {
             expect(updateCalendar).toHaveBeenCalledWith({
@@ -134,9 +317,77 @@ describe('GoogleCalendarIntegrationPage', () => {
             });
         });
     });
+
+    it('sends calendarColorType when the mode changes', async () => {
+        const updateCalendar = vi
+            .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
+            .mockResolvedValue(
+                createGoogleConnectionFixture({
+                    calendars: [
+                        createGoogleCalendarFixture({
+                            calendarColorType: 'custom',
+                            colorOverride: '#1a73e8',
+                            effectiveColor: '#1a73e8',
+                        }),
+                    ],
+                }),
+            );
+
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture({
+                            calendars: [
+                                createGoogleCalendarFixture({
+                                    calendarColorType: 'curated',
+                                    colorOverride: null,
+                                    effectiveColor: '#1a73e8',
+                                }),
+                            ],
+                        }),
+                    ]),
+                updateCalendar,
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        const user = userEvent.setup();
+
+        expect((await screen.findAllByText('Primary')).length).toBeGreaterThan(0);
+        await user.click(screen.getByRole('button', { name: 'Custom' }));
+
+        await waitFor(
+            () => {
+                expect(updateCalendar).toHaveBeenCalledWith({
+                    calendarColorType: 'custom',
+                    calendarId: 'google:user-1:primary',
+                });
+            },
+            { timeout: 1500 },
+        );
+    });
 });
 
+function createGoogleCalendarFixture(overrides: Partial<GoogleCalendarSummary> = {}) {
+    return {
+        ...baseCalendarFixture,
+        ...overrides,
+    };
+}
+
+function createGoogleConnectionFixture(overrides: Partial<GoogleConnectionDetail> = {}) {
+    return {
+        ...baseConnectionFixture,
+        ...overrides,
+    };
+}
+
 function createDayFlowApi(overrides: DayFlowApiOverrides = {}): DayFlowApi {
+    const defaultConnection = createGoogleConnectionFixture();
+
     return {
         app: {
             getHealth: vi.fn<DayFlowApi['app']['getHealth']>().mockResolvedValue({
@@ -152,10 +403,10 @@ function createDayFlowApi(overrides: DayFlowApiOverrides = {}): DayFlowApi {
                 .mockResolvedValue(undefined),
             getConnectionDetail: vi
                 .fn<DayFlowApi['googleCalendar']['getConnectionDetail']>()
-                .mockResolvedValue(googleConnectionFixture),
+                .mockResolvedValue(defaultConnection),
             listConnections: vi
                 .fn<DayFlowApi['googleCalendar']['listConnections']>()
-                .mockResolvedValue([googleConnectionFixture]),
+                .mockResolvedValue([defaultConnection]),
             startConnection: vi
                 .fn<DayFlowApi['googleCalendar']['startConnection']>()
                 .mockResolvedValue({
@@ -166,13 +417,13 @@ function createDayFlowApi(overrides: DayFlowApiOverrides = {}): DayFlowApi {
                 }),
             syncConnection: vi
                 .fn<DayFlowApi['googleCalendar']['syncConnection']>()
-                .mockResolvedValue(googleConnectionFixture),
+                .mockResolvedValue(defaultConnection),
             updateCalendar: vi
                 .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
-                .mockResolvedValue(googleConnectionFixture),
+                .mockResolvedValue(defaultConnection),
             updateConnection: vi
                 .fn<DayFlowApi['googleCalendar']['updateConnection']>()
-                .mockResolvedValue(googleConnectionFixture),
+                .mockResolvedValue(defaultConnection),
             ...overrides.googleCalendar,
         },
         settings: {

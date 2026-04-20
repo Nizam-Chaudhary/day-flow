@@ -1,24 +1,19 @@
 import { defineConfig } from 'drizzle-kit';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 
-function resolveAppDataPath(): string {
-    switch (process.platform) {
-        case 'darwin':
-            return join(homedir(), 'Library', 'Application Support');
-        case 'win32':
-            return process.env.APPDATA ?? join(homedir(), 'AppData', 'Roaming');
-        default:
-            return process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config');
-    }
-}
+import {
+    resolveAppDataDirectoryPath,
+    resolveAppDatabasePath,
+    resolvePlatformAppDataPath,
+} from './src/db/storage-paths';
 
-const appDatabasePath = join(resolveAppDataPath(), 'Day Flow', 'day-flow.sqlite');
+const appDatabasePath = resolveAppDatabasePath(
+    resolveAppDataDirectoryPath(resolvePlatformAppDataPath()),
+);
 
 export default defineConfig({
     dialect: 'sqlite',
     schema: './src/db/schema.ts',
-    out: './src/db/drizzle',
+    out: './src/db/migrations',
     dbCredentials: {
         url: `file:${appDatabasePath}`,
     },

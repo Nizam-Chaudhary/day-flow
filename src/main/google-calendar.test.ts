@@ -193,4 +193,36 @@ describe('createGoogleCalendarService', () => {
             message: 'Auth child failed to boot.',
         });
     });
+
+    it('passes calendar color type through updateCalendar', async () => {
+        const service = createGoogleCalendarService({
+            client: {
+                client: {} as never,
+                databasePath: '/tmp/day-flow-test.sqlite',
+                databaseUrl: 'file:/tmp/day-flow-test.sqlite',
+                db: {} as never,
+            },
+            fetchImpl: vi.fn<typeof fetch>(),
+            keychain: null,
+            oauthClientId: 'google-client-id',
+            oauthClientSecret: 'google-client-secret',
+            openExternal: vi
+                .fn<typeof import('electron').shell.openExternal>()
+                .mockResolvedValue(undefined),
+        });
+
+        await expect(
+            service.updateCalendar({
+                calendarColorType: 'custom',
+                calendarId: 'google:user-1:primary',
+            }),
+        ).resolves.toEqual({
+            connectionId: 'connection-for:google:user-1:primary',
+        });
+
+        expect(updateCalendar).toHaveBeenCalledWith({
+            calendarColorType: 'custom',
+            calendarId: 'google:user-1:primary',
+        });
+    });
 });

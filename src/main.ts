@@ -2,6 +2,7 @@ import '@/lib/env';
 import { app, BrowserWindow } from 'electron';
 import squirrelStartup from 'electron-squirrel-startup';
 
+import { configureUserDataPath } from '@/main/app-data';
 import { bootstrapMainProcess } from '@/main/bootstrap';
 import { configureLinuxGraphicsPlatform } from '@/main/platform';
 import { createMainWindow } from '@/main/windows';
@@ -11,6 +12,7 @@ if (squirrelStartup) {
 }
 
 configureLinuxGraphicsPlatform();
+configureUserDataPath();
 
 void app.whenReady().then(async () => {
     await bootstrapMainProcess();

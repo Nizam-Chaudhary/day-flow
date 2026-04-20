@@ -25,20 +25,8 @@ Long term maintainability is a core priority. Duplicate logic across multiple fi
 
 ## Repository Structure
 
-- Keep application code under `src/`.
-- Use `src/components` for UI components.
-- Use `src/components/ui` for shadcn and atomic reusable components.
-- Use `src/lib` for core libraries, integrations, and environment/runtime helpers.
-- Use `src/utils` for mostly pure utility functions.
-- Use `src/hooks` for React custom hooks.
-- Use `src/pages` for TanStack Router route files and page composition.
-- Use `src/db` for Drizzle schema, repositories, migrations, and DB paths/bootstrap.
-- Use `src/main` for Electron main-process code only.
-- Use `src/stores` for Zustand stores.
-- Use `src/services` for TanStack Query queries and mutations plus renderer API adapters.
-- Use `src/schemas` for Zod-first contracts and derived types.
-- Use `src/server` for Hono server code and routes.
-
+- uses type based folders like `components`, `lib`, `pages`, etc...
+- keep related code together and inside same file if it belongs there.
 - Keep nesting shallow. Avoid creating extra nesting with directories unless they remove real duplication.
 
 ## Types and Schemas

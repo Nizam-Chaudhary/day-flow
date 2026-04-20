@@ -152,6 +152,7 @@ export class GoogleRepository {
                     reminderEnabled: existingCalendar?.reminderEnabled ?? false,
                     reminderChannel: existingCalendar?.reminderChannel ?? 'in_app',
                     reminderLeadMinutes: existingCalendar?.reminderLeadMinutes ?? 15,
+                    calendarColorType: existingCalendar?.calendarColorType ?? 'curated',
                     colorOverride: existingCalendar?.colorOverride ?? null,
                     lastSyncStatus: existingCalendar?.lastSyncStatus ?? 'idle',
                     lastSyncError: existingCalendar?.lastSyncError ?? null,
@@ -191,6 +192,9 @@ export class GoogleRepository {
         await this.client.db
             .update(integrationCalendarsTable)
             .set({
+                ...(input.calendarColorType !== undefined
+                    ? { calendarColorType: input.calendarColorType }
+                    : {}),
                 ...(input.colorOverride !== undefined
                     ? { colorOverride: input.colorOverride }
                     : {}),
@@ -342,6 +346,7 @@ export class GoogleRepository {
     private mapCalendarSummary(row: IntegrationCalendarRow): GoogleCalendarSummary {
         return {
             accessRole: row.accessRole,
+            calendarColorType: row.calendarColorType,
             colorOverride: row.colorOverride,
             connectionId: row.connectionId,
             effectiveColor: row.colorOverride ?? row.googleBackgroundColor ?? '#9ca3af',

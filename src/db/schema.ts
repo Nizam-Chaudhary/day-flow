@@ -3,6 +3,7 @@ import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-o
 
 import {
     GOOGLE_ACCESS_ROLES,
+    GOOGLE_CALENDAR_COLOR_TYPES,
     GOOGLE_CALENDAR_TYPES,
     GOOGLE_CREDENTIAL_STORAGE_MODES,
     GOOGLE_REMINDER_CHANNELS,
@@ -112,6 +113,11 @@ export const integrationCalendarsTable = sqliteTable(
             .notNull()
             .default('in_app'),
         reminderLeadMinutes: integer('reminder_lead_minutes').notNull().default(15),
+        calendarColorType: text('calendar_color_type', {
+            enum: GOOGLE_CALENDAR_COLOR_TYPES,
+        })
+            .notNull()
+            .default('curated'),
         colorOverride: text('color_override'),
         lastSyncAt: text('last_sync_at'),
         lastSyncStatus: text('last_sync_status', {

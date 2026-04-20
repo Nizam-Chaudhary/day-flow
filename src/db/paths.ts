@@ -1,6 +1,8 @@
 import { app } from 'electron';
 import { join } from 'node:path';
 
+import { resolveAppDatabasePath } from '@/db/storage-paths';
+
 export interface DatabasePathContext {
     appPath: string;
     isPackaged: boolean;
@@ -9,7 +11,7 @@ export interface DatabasePathContext {
 }
 
 export function resolveDatabasePath(userDataPath: string): string {
-    return join(userDataPath, 'day-flow.sqlite');
+    return resolveAppDatabasePath(userDataPath);
 }
 
 export function resolveMigrationsPath({
@@ -17,7 +19,9 @@ export function resolveMigrationsPath({
     isPackaged,
     resourcesPath,
 }: Pick<DatabasePathContext, 'appPath' | 'isPackaged' | 'resourcesPath'>): string {
-    return isPackaged ? join(resourcesPath, 'drizzle') : join(appPath, 'src', 'db', 'drizzle');
+    return isPackaged
+        ? join(resourcesPath, 'migrations')
+        : join(appPath, 'src', 'db', 'migrations');
 }
 
 export function getDatabasePathContext(): DatabasePathContext {

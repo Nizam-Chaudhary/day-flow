@@ -217,3 +217,139 @@ describe('GoogleRepository.replaceCalendarEvents', () => {
         client.client.close();
     });
 });
+
+describe('GoogleRepository calendar color type', () => {
+    it('defaults new calendars to curated and preserves saved color type on provider refresh', async () => {
+        const tempDirectory = mkdtempSync(join(tmpdir(), 'day-flow-google-repo-'));
+        const databasePath = join(tempDirectory, 'google-repository.sqlite');
+        const client = await createDatabaseClient({ databasePath });
+
+        cleanupPaths.add(tempDirectory);
+
+        await runDatabaseMigrations(client, migrationsFolder);
+
+        const repository = new GoogleRepository(client);
+        const initialConnection = await repository.persistConnection({
+            avatarUrl: null,
+            calendars: [
+                {
+                    accessRole: 'owner',
+                    calendarType: 'default',
+                    externalCalendarId: 'primary',
+                    googleBackgroundColor: '#1f2937',
+                    googleForegroundColor: '#f9fafb',
+                    isPrimary: true,
+                    name: 'Primary',
+                },
+            ],
+            credentialStorageMode: 'sqlite_plaintext',
+            displayName: 'Test User',
+            email: 'user@example.com',
+            externalAccountId: 'account-3',
+            scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar'],
+            secretRef: null,
+            tokens: {
+                accessToken: 'access-token',
+                expiresAt: null,
+                refreshToken: 'refresh-token',
+                scope: 'openid email https://www.googleapis.com/auth/calendar',
+            },
+        });
+
+        expect(initialConnection.calendars[0]?.calendarColorType).toBe('curated');
+
+        await repository.updateCalendar({
+            calendarColorType: 'custom',
+            calendarId: initialConnection.calendars[0]!.id,
+            colorOverride: '#22c55e',
+        });
+
+        const refreshedConnection = await repository.persistConnection({
+            avatarUrl: null,
+            calendars: [
+                {
+                    accessRole: 'owner',
+                    calendarType: 'default',
+                    externalCalendarId: 'primary',
+                    googleBackgroundColor: '#2563eb',
+                    googleForegroundColor: '#ffffff',
+                    isPrimary: true,
+                    name: 'Primary calendar',
+                },
+            ],
+            credentialStorageMode: 'sqlite_plaintext',
+            displayName: 'Test User',
+            email: 'user@example.com',
+            externalAccountId: 'account-3',
+            scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar'],
+            secretRef: null,
+            tokens: {
+                accessToken: 'access-token',
+                expiresAt: null,
+                refreshToken: 'refresh-token',
+                scope: 'openid email https://www.googleapis.com/auth/calendar',
+            },
+        });
+
+        expect(refreshedConnection.calendars[0]).toMatchObject({
+            calendarColorType: 'custom',
+            colorOverride: '#22c55e',
+            effectiveColor: '#22c55e',
+            name: 'Primary calendar',
+        });
+
+        client.client.close();
+    });
+
+    it('persists calendarColorType updates', async () => {
+        const tempDirectory = mkdtempSync(join(tmpdir(), 'day-flow-google-repo-'));
+        const databasePath = join(tempDirectory, 'google-repository.sqlite');
+        const client = await createDatabaseClient({ databasePath });
+
+        cleanupPaths.add(tempDirectory);
+
+        await runDatabaseMigrations(client, migrationsFolder);
+
+        const repository = new GoogleRepository(client);
+        const connection = await repository.persistConnection({
+            avatarUrl: null,
+            calendars: [
+                {
+                    accessRole: 'owner',
+                    calendarType: 'default',
+                    externalCalendarId: 'primary',
+                    googleBackgroundColor: '#1a73e8',
+                    googleForegroundColor: '#ffffff',
+                    isPrimary: true,
+                    name: 'Primary',
+                },
+            ],
+            credentialStorageMode: 'sqlite_plaintext',
+            displayName: 'Test User',
+            email: 'user@example.com',
+            externalAccountId: 'account-4',
+            scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar'],
+            secretRef: null,
+            tokens: {
+                accessToken: 'access-token',
+                expiresAt: null,
+                refreshToken: 'refresh-token',
+                scope: 'openid email https://www.googleapis.com/auth/calendar',
+            },
+        });
+
+        await expect(
+            repository.updateCalendar({
+                calendarColorType: 'custom',
+                calendarId: connection.calendars[0]!.id,
+                colorOverride: '#0f172a',
+            }),
+        ).resolves.toMatchObject({
+            calendarColorType: 'custom',
+            colorOverride: '#0f172a',
+            effectiveColor: '#0f172a',
+        });
+
+        client.client.close();
+    });
+});

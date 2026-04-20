@@ -4,6 +4,7 @@ export const GOOGLE_PROVIDERS = ['google'] as const;
 export const GOOGLE_CREDENTIAL_STORAGE_MODES = ['keychain', 'sqlite_plaintext'] as const;
 export const GOOGLE_SYNC_STATUS_VALUES = ['idle', 'success', 'error'] as const;
 export const GOOGLE_REMINDER_CHANNELS = ['in_app', 'email', 'slack'] as const;
+export const GOOGLE_CALENDAR_COLOR_TYPES = ['curated', 'custom'] as const;
 export const GOOGLE_CALENDAR_TYPES = [
     'default',
     'holiday',
@@ -20,6 +21,7 @@ export const googleProviderSchema = z.enum(GOOGLE_PROVIDERS);
 export const googleCredentialStorageModeSchema = z.enum(GOOGLE_CREDENTIAL_STORAGE_MODES);
 export const googleSyncStatusSchema = z.enum(GOOGLE_SYNC_STATUS_VALUES);
 export const googleReminderChannelSchema = z.enum(GOOGLE_REMINDER_CHANNELS);
+export const googleCalendarColorTypeSchema = z.enum(GOOGLE_CALENDAR_COLOR_TYPES);
 export const googleCalendarTypeSchema = z.enum(GOOGLE_CALENDAR_TYPES);
 export const googleCalendarAccessRoleSchema = z.enum(GOOGLE_ACCESS_ROLES);
 export const googleSyncIntervalMinutesSchema = z.union(
@@ -43,6 +45,7 @@ export const googleCalendarReminderConfigSchema = z.object({
 
 export const googleCalendarSummarySchema = googleCalendarReminderConfigSchema.extend({
     accessRole: googleCalendarAccessRoleSchema,
+    calendarColorType: googleCalendarColorTypeSchema,
     colorOverride: z.string().nullable(),
     connectionId: z.string(),
     effectiveColor: z.string(),
@@ -90,6 +93,7 @@ export const updateGoogleConnectionInputSchema = z.object({
 
 export const updateGoogleCalendarInputSchema = z.object({
     calendarId: z.string(),
+    calendarColorType: googleCalendarColorTypeSchema.optional(),
     colorOverride: z.string().nullable().optional(),
     isSelected: z.boolean().optional(),
     reminderChannel: googleReminderChannelSchema.optional(),
@@ -180,6 +184,7 @@ export type GoogleProvider = z.infer<typeof googleProviderSchema>;
 export type GoogleCredentialStorageMode = z.infer<typeof googleCredentialStorageModeSchema>;
 export type GoogleSyncStatus = z.infer<typeof googleSyncStatusSchema>;
 export type GoogleReminderChannel = z.infer<typeof googleReminderChannelSchema>;
+export type GoogleCalendarColorType = z.infer<typeof googleCalendarColorTypeSchema>;
 export type GoogleCalendarType = z.infer<typeof googleCalendarTypeSchema>;
 export type GoogleCalendarAccessRole = z.infer<typeof googleCalendarAccessRoleSchema>;
 export type GoogleSyncIntervalMinutes = z.infer<typeof googleSyncIntervalMinutesSchema>;

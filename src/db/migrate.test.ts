@@ -114,4 +114,145 @@ describe('runDatabaseMigrations', () => {
 
         upgradedClient.client.close();
     });
+
+    it('backfills calendar color type for existing integration calendars', async () => {
+        const tempDirectory = mkdtempSync(join(tmpdir(), 'day-flow-migrate-'));
+        const databasePath = join(tempDirectory, 'app.sqlite');
+        const legacyMigrationsFolder = join(tempDirectory, 'legacy-migrations');
+
+        cleanupPaths.add(tempDirectory);
+
+        cpSync(migrationsFolder, legacyMigrationsFolder, { recursive: true });
+        rmSync(join(legacyMigrationsFolder, '0003_calendar_color_type.sql'));
+        writeFileSync(
+            join(legacyMigrationsFolder, 'meta', '_journal.json'),
+            JSON.stringify(
+                {
+                    dialect: 'sqlite',
+                    entries: [
+                        {
+                            breakpoints: true,
+                            idx: 0,
+                            tag: '0000_concerned_madripoor',
+                            version: '6',
+                            when: 1776524502673,
+                        },
+                        {
+                            breakpoints: true,
+                            idx: 1,
+                            tag: '0001_google_calendar_integration',
+                            version: '6',
+                            when: 1776579630000,
+                        },
+                        {
+                            breakpoints: true,
+                            idx: 2,
+                            tag: '0002_calendar_events_identity_scope',
+                            version: '6',
+                            when: 1776590000000,
+                        },
+                    ],
+                    version: '7',
+                },
+                null,
+                4,
+            ),
+        );
+
+        const legacyClient = await createDatabaseClient({ databasePath });
+        await runDatabaseMigrations(legacyClient, legacyMigrationsFolder);
+        await legacyClient.client.execute(`
+            INSERT INTO integration_connections (
+                id, provider, external_account_id, email, display_name, avatar_url,
+                credential_storage_mode, secret_ref, access_token, refresh_token,
+                token_expires_at, scopes_json, last_sync_at, last_sync_status,
+                last_sync_error, created_at, updated_at
+            ) VALUES (
+                'google:user-1', 'google', 'user-1', 'user@example.com', 'User', NULL,
+                'sqlite_plaintext', NULL, 'access-token', 'refresh-token',
+                NULL, '["openid","email"]', NULL, 'idle',
+                NULL, '2026-04-18T00:00:00.000Z', '2026-04-18T00:00:00.000Z'
+            );
+        `);
+        await legacyClient.client.execute(`
+            INSERT INTO integration_calendars (
+                id, connection_id, external_calendar_id, name, description, calendar_type,
+                access_role, google_background_color, google_foreground_color, is_primary,
+                is_selected, sync_enabled, sync_interval_minutes, reminder_enabled,
+                reminder_channel, reminder_lead_minutes, color_override, last_sync_at,
+                last_sync_status, last_sync_error, created_at, updated_at
+            ) VALUES
+            (
+                'google:user-1:primary',
+                'google:user-1',
+                'primary',
+                'Primary',
+                NULL,
+                'default',
+                'owner',
+                '#1a73e8',
+                '#ffffff',
+                1,
+                1,
+                1,
+                15,
+                0,
+                'in_app',
+                15,
+                NULL,
+                NULL,
+                'idle',
+                NULL,
+                '2026-04-18T00:00:00.000Z',
+                '2026-04-18T00:00:00.000Z'
+            ),
+            (
+                'google:user-1:secondary',
+                'google:user-1',
+                'secondary',
+                'Secondary',
+                NULL,
+                'secondary',
+                'owner',
+                '#7cb342',
+                '#ffffff',
+                0,
+                1,
+                1,
+                15,
+                0,
+                'in_app',
+                15,
+                '#22c55e',
+                NULL,
+                'idle',
+                NULL,
+                '2026-04-18T00:00:00.000Z',
+                '2026-04-18T00:00:00.000Z'
+            );
+        `);
+        legacyClient.client.close();
+
+        const upgradedClient = await createDatabaseClient({ databasePath });
+        await runDatabaseMigrations(upgradedClient, migrationsFolder);
+
+        await expect(
+            upgradedClient.client.execute(
+                'SELECT id, calendar_color_type FROM integration_calendars ORDER BY id',
+            ),
+        ).resolves.toMatchObject({
+            rows: [
+                {
+                    calendar_color_type: 'curated',
+                    id: 'google:user-1:primary',
+                },
+                {
+                    calendar_color_type: 'custom',
+                    id: 'google:user-1:secondary',
+                },
+            ],
+        });
+
+        upgradedClient.client.close();
+    });
 });
