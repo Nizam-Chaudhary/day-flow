@@ -29,7 +29,7 @@ export function createBooleanEnvSchema(defaultValue: boolean) {
 export const env = createEnv({
     server: {
         GOOGLE_CLIENT_ID: z.string().min(1),
-        GOOGLE_CLIENT_SECRET: z.string().min(1),
+        GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
         DAY_FLOW_AUTH_HOST: z.string().default('127.0.0.1'),
         DAY_FLOW_AUTH_PORT: z.coerce.number().int().min(0).default(0),
         DAY_FLOW_OPEN_DEVTOOLS: createBooleanEnvSchema(false),

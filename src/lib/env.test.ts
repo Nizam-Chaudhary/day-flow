@@ -22,9 +22,9 @@ afterEach(() => {
 });
 
 describe('env', () => {
-    it('parses required Google credentials and applies defaults', async () => {
+    it('parses required Google client ID and applies defaults', async () => {
         process.env.GOOGLE_CLIENT_ID = 'client-id';
-        process.env.GOOGLE_CLIENT_SECRET = 'client-secret';
+        delete process.env.GOOGLE_CLIENT_SECRET;
         delete process.env.DAY_FLOW_AUTH_HOST;
         delete process.env.DAY_FLOW_AUTH_PORT;
         delete process.env.DAY_FLOW_OPEN_DEVTOOLS;
@@ -33,7 +33,7 @@ describe('env', () => {
         const { env } = await import('./env');
 
         expect(env.GOOGLE_CLIENT_ID).toBe('client-id');
-        expect(env.GOOGLE_CLIENT_SECRET).toBe('client-secret');
+        expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
         expect(env.DAY_FLOW_AUTH_HOST).toBe('127.0.0.1');
         expect(env.DAY_FLOW_AUTH_PORT).toBe(0);
         expect(env.DAY_FLOW_OPEN_DEVTOOLS).toBe(false);
@@ -49,7 +49,6 @@ describe('env', () => {
         ['0', false],
     ])('parses boolean value %s', async (value, expected) => {
         process.env.GOOGLE_CLIENT_ID = 'client-id';
-        process.env.GOOGLE_CLIENT_SECRET = 'client-secret';
         process.env.DAY_FLOW_OPEN_DEVTOOLS = value;
 
         const { env } = await import('./env');
@@ -59,7 +58,6 @@ describe('env', () => {
 
     it('treats empty strings as undefined and applies defaults', async () => {
         process.env.GOOGLE_CLIENT_ID = 'client-id';
-        process.env.GOOGLE_CLIENT_SECRET = 'client-secret';
         process.env.DAY_FLOW_AUTH_HOST = '';
         process.env.DAY_FLOW_AUTH_PORT = '';
         process.env.DAY_FLOW_OPEN_DEVTOOLS = '';
@@ -73,7 +71,6 @@ describe('env', () => {
 
     it('rejects invalid boolean values', async () => {
         process.env.GOOGLE_CLIENT_ID = 'client-id';
-        process.env.GOOGLE_CLIENT_SECRET = 'client-secret';
         process.env.DAY_FLOW_OPEN_DEVTOOLS = 'yes';
 
         await expect(import('./env')).rejects.toThrow('Invalid environment variables');

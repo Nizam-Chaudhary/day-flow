@@ -57,7 +57,7 @@ export function createGoogleCalendarService({
     oauthClientId = env.GOOGLE_CLIENT_ID,
     oauthClientSecret = env.GOOGLE_CLIENT_SECRET,
 }: CreateGoogleCalendarServiceOptions = {}): GoogleCalendarService {
-    if (!oauthClientId || !oauthClientSecret) {
+    if (!oauthClientId) {
         return createUnavailableGoogleCalendarService();
     }
 
@@ -254,7 +254,7 @@ function createUnavailableGoogleCalendarService(): GoogleCalendarService {
     const fail = () => {
         throw createDayFlowError(
             'AUTH_ERROR',
-            'Google Calendar is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.',
+            'Google Calendar is not configured. Set GOOGLE_CLIENT_ID. GOOGLE_CLIENT_SECRET is optional for Desktop app OAuth clients.',
         );
     };
 

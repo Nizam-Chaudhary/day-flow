@@ -45,7 +45,7 @@ export interface GoogleTokenStoreResult {
 
 export interface GoogleOAuthClientConfig {
     clientId: string;
-    clientSecret: string;
+    clientSecret?: string;
 }
 
 export interface GoogleOAuthFlowStartResult {
@@ -178,11 +178,15 @@ export class GoogleOAuthService {
         const response = await this.fetchImpl('https://oauth2.googleapis.com/token', {
             body: buildUrlEncodedBody({
                 client_id: this.config.clientId,
-                client_secret: this.config.clientSecret,
                 code,
                 code_verifier: codeVerifier,
                 grant_type: 'authorization_code',
                 redirect_uri: redirectUri,
+                ...(this.config.clientSecret
+                    ? {
+                          client_secret: this.config.clientSecret,
+                      }
+                    : {}),
             }),
             headers: {
                 'content-type': 'application/x-www-form-urlencoded',
