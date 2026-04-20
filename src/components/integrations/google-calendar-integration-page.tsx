@@ -8,12 +8,14 @@ import type {
     GoogleReminderChannel,
 } from '@/schemas/contracts/google-calendar';
 
+import googleLogo from '@/assets/integration-logos/google-color.svg';
 import {
     Accordion,
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
     Breadcrumb,
@@ -33,6 +35,14 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemHeader,
+    ItemTitle,
+} from '@/components/ui/item';
 import {
     Select,
     SelectContent,
@@ -97,9 +107,12 @@ export function GoogleCalendarIntegrationPage() {
 
             <div className='flex flex-col gap-3'>
                 <div className='flex flex-col gap-2'>
-                    <h2 className='font-heading text-3xl font-semibold tracking-tight sm:text-4xl'>
-                        Google Calendar
-                    </h2>
+                    <div className='flex items-center gap-3'>
+                        <ProviderAvatar size='default' />
+                        <h2 className='font-heading text-3xl font-semibold tracking-tight sm:text-4xl'>
+                            Google Calendar
+                        </h2>
+                    </div>
                     <p className='max-w-3xl text-sm leading-6 text-muted-foreground'>
                         Link multiple Google accounts, control sync and reminder behavior per
                         calendar, and keep event colors aligned with your planning surface.
@@ -113,7 +126,7 @@ export function GoogleCalendarIntegrationPage() {
                 ) : null}
             </div>
 
-            <Card>
+            <Card className='border border-border/70 bg-card/95'>
                 <CardHeader className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
                     <div className='space-y-1'>
                         <CardTitle>Connection summary</CardTitle>
@@ -124,6 +137,7 @@ export function GoogleCalendarIntegrationPage() {
                         </CardDescription>
                     </div>
                     <Button
+                        className='w-full sm:w-auto'
                         disabled={startConnection.isPending}
                         onClick={() => {
                             void handleAsyncAction(async () => {
@@ -139,10 +153,10 @@ export function GoogleCalendarIntegrationPage() {
                             Linked accounts:{' '}
                             {connectionsQuery.isPending ? '...' : connections.length}
                         </Badge>
-                        <Badge variant='outline'>Per-calendar sync settings</Badge>
-                        <Badge variant='outline'>Per-calendar reminder settings</Badge>
+                        <Badge variant='outline'>Sync controls</Badge>
+                        <Badge variant='outline'>Reminder controls</Badge>
                     </div>
-                    <p className='text-sm text-muted-foreground'>
+                    <p className='max-w-2xl text-sm leading-6 text-muted-foreground'>
                         Secure token storage is preferred. If the OS credential store is
                         unavailable, Day Flow falls back to unencrypted SQLite storage and marks
                         that account visibly below.
@@ -164,35 +178,53 @@ export function GoogleCalendarIntegrationPage() {
             ) : (
                 <Accordion
                     defaultValue={connections[0] ? [connections[0].id] : undefined}
-                    className='rounded-2xl border px-4'>
+                    className='rounded-2xl border border-border/70 px-4'>
                     {connections.map((connection) => (
                         <AccordionItem key={connection.id} value={connection.id}>
                             <AccordionTrigger className='py-4'>
-                                <div className='flex w-full flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between'>
-                                    <div className='flex flex-col gap-1'>
-                                        <span className='font-medium'>
-                                            {connection.displayName}
-                                        </span>
-                                        <span className='text-sm text-muted-foreground'>
-                                            {connection.email}
-                                        </span>
-                                    </div>
-                                    <div className='flex flex-wrap gap-2'>
-                                        <Badge variant='secondary'>
-                                            {connection.selectedCalendarCount} calendars
-                                        </Badge>
-                                        <Badge variant='outline'>
-                                            Last sync: {connection.lastSyncAt ?? 'Not synced yet'}
-                                        </Badge>
-                                        {connection.credentialStorageMode === 'sqlite_plaintext' ? (
-                                            <Badge variant='destructive'>
-                                                Unencrypted SQLite token storage
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant='outline'>OS keychain</Badge>
-                                        )}
-                                    </div>
-                                </div>
+                                <Item
+                                    variant='default'
+                                    className='min-w-0 flex-1 gap-3 rounded-none border-0 bg-transparent p-0 text-left shadow-none'>
+                                    <ItemContent className='min-w-0 gap-2'>
+                                        <ItemHeader className='flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between'>
+                                            <div className='min-w-0 space-y-1'>
+                                                <ItemTitle className='w-full min-w-0 text-base'>
+                                                    Google Calendar
+                                                </ItemTitle>
+                                                <ItemDescription className='line-clamp-none'>
+                                                    <span className='font-medium text-foreground'>
+                                                        {connection.displayName}
+                                                    </span>
+                                                    <span className='mx-2 text-muted-foreground/70'>
+                                                        ·
+                                                    </span>
+                                                    <span className='inline-block max-w-full truncate align-bottom'>
+                                                        {connection.email}
+                                                    </span>
+                                                </ItemDescription>
+                                            </div>
+                                            <div className='flex max-w-full flex-wrap gap-2 sm:justify-end'>
+                                                <Badge variant='secondary'>
+                                                    {connection.selectedCalendarCount} calendar
+                                                    {connection.selectedCalendarCount === 1
+                                                        ? ''
+                                                        : 's'}
+                                                </Badge>
+                                                <Badge variant='outline'>
+                                                    {getConnectionSyncBadgeLabel(connection)}
+                                                </Badge>
+                                                {connection.credentialStorageMode ===
+                                                'sqlite_plaintext' ? (
+                                                    <Badge variant='destructive'>
+                                                        Unencrypted storage
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant='outline'>OS keychain</Badge>
+                                                )}
+                                            </div>
+                                        </ItemHeader>
+                                    </ItemContent>
+                                </Item>
                             </AccordionTrigger>
                             <AccordionContent className='pb-6'>
                                 <GoogleConnectionPanel
@@ -228,32 +260,70 @@ function GoogleConnectionPanel({
 }) {
     return (
         <div className='flex flex-col gap-4'>
-            <Card>
-                <CardContent className='flex flex-col gap-4 pt-6 lg:flex-row lg:items-center lg:justify-between'>
-                    <div className='flex flex-col gap-2'>
-                        <div className='flex flex-wrap gap-2'>
-                            <Badge variant='secondary'>{connection.email}</Badge>
-                            <Badge variant='outline'>{connection.scopes.join(', ')}</Badge>
-                        </div>
-                        {connection.credentialStorageMode === 'sqlite_plaintext' ? (
-                            <p className='text-sm text-destructive'>
-                                Secure credential storage is unavailable on this machine. Tokens are
-                                stored unencrypted in SQLite for this account.
-                            </p>
-                        ) : (
-                            <p className='text-sm text-muted-foreground'>
-                                Tokens for this account are stored in the system keychain.
-                            </p>
-                        )}
-                    </div>
-                    <div className='flex flex-wrap gap-2'>
-                        <Button variant='outline' onClick={onSync}>
-                            Sync now
-                        </Button>
-                        <Button variant='destructive' onClick={onDisconnect}>
-                            Disconnect account
-                        </Button>
-                    </div>
+            <Card className='border border-border/70 bg-card/95'>
+                <CardContent className='pt-6'>
+                    <Item
+                        variant='default'
+                        className='gap-4 rounded-none border-0 bg-transparent p-0 sm:flex-nowrap'>
+                        <ItemContent className='min-w-0 gap-3'>
+                            <ItemHeader className='flex-col items-start gap-3 xl:flex-row xl:items-start xl:justify-between'>
+                                <div className='min-w-0 space-y-2'>
+                                    <ItemTitle className='w-full min-w-0 text-base'>
+                                        Google Calendar
+                                    </ItemTitle>
+                                    <ItemDescription className='line-clamp-none'>
+                                        <span className='font-medium text-foreground'>
+                                            {connection.displayName}
+                                        </span>
+                                        <span className='mx-2 text-muted-foreground/70'>·</span>
+                                        <span className='inline-block max-w-full truncate align-bottom'>
+                                            {connection.email}
+                                        </span>
+                                    </ItemDescription>
+                                    <div className='flex flex-wrap gap-2'>
+                                        <Badge variant='outline'>
+                                            {connection.scopes.length} OAuth scope
+                                            {connection.scopes.length === 1 ? '' : 's'}
+                                        </Badge>
+                                        {connection.credentialStorageMode === 'sqlite_plaintext' ? (
+                                            <Badge variant='destructive'>Unencrypted storage</Badge>
+                                        ) : (
+                                            <Badge variant='outline'>OS keychain</Badge>
+                                        )}
+                                    </div>
+                                </div>
+                                <ItemActions className='w-full flex-col items-stretch sm:flex-row sm:justify-end xl:w-auto'>
+                                    <Button
+                                        variant='outline'
+                                        className='w-full sm:w-auto'
+                                        onClick={onSync}>
+                                        Sync now
+                                    </Button>
+                                    <Button
+                                        variant='destructive'
+                                        className='w-full sm:w-auto'
+                                        onClick={onDisconnect}>
+                                        Disconnect account
+                                    </Button>
+                                </ItemActions>
+                            </ItemHeader>
+                            <div className='space-y-2'>
+                                <p className='text-sm text-muted-foreground'>
+                                    {connection.scopes.join(', ')}
+                                </p>
+                                {connection.credentialStorageMode === 'sqlite_plaintext' ? (
+                                    <p className='max-w-3xl text-sm text-destructive'>
+                                        Secure credential storage is unavailable on this machine.
+                                        Tokens are stored unencrypted in SQLite for this account.
+                                    </p>
+                                ) : (
+                                    <p className='text-sm text-muted-foreground'>
+                                        Tokens for this account are stored in the system keychain.
+                                    </p>
+                                )}
+                            </div>
+                        </ItemContent>
+                    </Item>
                 </CardContent>
             </Card>
 
@@ -292,10 +362,10 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
     };
 
     return (
-        <Card>
-            <CardHeader className='gap-3'>
-                <div className='flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between'>
-                    <div className='space-y-2'>
+        <Card className='border border-border/70 bg-card/95'>
+            <CardHeader className='gap-4'>
+                <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
+                    <div className='min-w-0 space-y-3'>
                         <CardTitle className='text-base'>{calendar.name}</CardTitle>
                         <div className='flex flex-wrap gap-2'>
                             <Badge variant='secondary'>{calendar.type}</Badge>
@@ -303,21 +373,24 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
                             {calendar.isPrimary ? <Badge variant='outline'>Primary</Badge> : null}
                         </div>
                     </div>
-                    <div className='flex items-center gap-3'>
+                    <div className='flex items-center gap-3 rounded-xl border border-border/70 bg-muted/30 px-3 py-2 lg:justify-end'>
                         <span
                             aria-hidden='true'
                             className='size-4 rounded-full border'
                             style={{ backgroundColor: calendar.effectiveColor }}
                         />
-                        <span className='text-sm text-muted-foreground'>
-                            Effective color {calendar.effectiveColor}
-                        </span>
+                        <div className='flex flex-col'>
+                            <span className='text-xs font-medium tracking-wide text-muted-foreground uppercase'>
+                                Effective color
+                            </span>
+                            <span className='text-sm font-medium'>{calendar.effectiveColor}</span>
+                        </div>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className='flex flex-col gap-4'>
-                <FieldGroup className='grid gap-4 lg:grid-cols-2'>
-                    <Field orientation='horizontal'>
+            <CardContent className='flex flex-col gap-5'>
+                <FieldGroup className='grid gap-4 md:grid-cols-2'>
+                    <Field orientation='responsive'>
                         <FieldLabel htmlFor={`${calendar.id}-selected`}>Enabled</FieldLabel>
                         <FieldContent>
                             <Switch
@@ -331,7 +404,7 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
                         </FieldContent>
                     </Field>
 
-                    <Field orientation='horizontal'>
+                    <Field orientation='responsive'>
                         <FieldLabel htmlFor={`${calendar.id}-sync-enabled`}>
                             Sync enabled
                         </FieldLabel>
@@ -353,7 +426,7 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
 
                 <Separator />
 
-                <FieldGroup className='grid gap-4 xl:grid-cols-4'>
+                <FieldGroup className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
                     <Field orientation='vertical'>
                         <FieldLabel htmlFor={`${calendar.id}-sync-interval`}>
                             Sync interval
@@ -385,7 +458,7 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
                         </FieldContent>
                     </Field>
 
-                    <Field orientation='horizontal'>
+                    <Field orientation='responsive'>
                         <FieldLabel htmlFor={`${calendar.id}-reminder-enabled`}>
                             Reminder enabled
                         </FieldLabel>
@@ -469,7 +542,7 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
 
                 <Separator />
 
-                <FieldGroup className='grid gap-4 xl:grid-cols-[120px_1fr_160px]'>
+                <FieldGroup className='grid gap-4 md:grid-cols-2 xl:grid-cols-[120px_minmax(0,1fr)_180px]'>
                     <Field orientation='vertical'>
                         <FieldLabel htmlFor={`${calendar.id}-color-picker`}>
                             Calendar color
@@ -511,13 +584,13 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
                     <Field orientation='vertical'>
                         <FieldLabel>Preview</FieldLabel>
                         <FieldContent>
-                            <div className='flex h-9 items-center gap-3 rounded-lg border px-3'>
+                            <div className='flex h-11 items-center gap-3 rounded-xl border border-border/70 bg-muted/20 px-3'>
                                 <span
                                     aria-hidden='true'
                                     className='size-4 rounded-full border'
                                     style={{ backgroundColor: colorDraft }}
                                 />
-                                <span className='text-sm'>{colorDraft}</span>
+                                <span className='text-sm font-medium'>{colorDraft}</span>
                             </div>
                         </FieldContent>
                     </Field>
@@ -525,6 +598,34 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
             </CardContent>
         </Card>
     );
+}
+
+function ProviderAvatar({ size = 'sm' }: { size?: 'default' | 'sm' | 'lg' }) {
+    return (
+        <Avatar
+            size={size}
+            className='border border-border/70 bg-background shadow-sm'
+            data-testid='google-calendar-provider-avatar'>
+            <AvatarImage
+                alt='Google Calendar logo'
+                className='object-contain p-1'
+                src={googleLogo}
+            />
+            <AvatarFallback>G</AvatarFallback>
+        </Avatar>
+    );
+}
+
+function getConnectionSyncBadgeLabel(connection: GoogleConnectionDetail) {
+    if (connection.lastSyncAt) {
+        return `Synced ${connection.lastSyncAt}`;
+    }
+
+    if (connection.lastSyncStatus === 'error') {
+        return 'Sync error';
+    }
+
+    return 'Not synced';
 }
 
 function GoogleConnectionSkeleton() {

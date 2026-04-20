@@ -81,8 +81,17 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         renderApp('/integrations/google');
 
-        expect(await screen.findByText('Nizam Chaudhary')).toBeTruthy();
-        expect(await screen.findByText('Unencrypted SQLite token storage')).toBeTruthy();
+        expect(await screen.findAllByText('Nizam Chaudhary')).toHaveLength(2);
+        expect(await screen.findAllByText('Google Calendar')).toHaveLength(4);
+        expect(await screen.findAllByTestId('google-calendar-provider-avatar')).toHaveLength(1);
+        expect(await screen.findByText('1 calendar')).toBeTruthy();
+        expect(await screen.findByText('Synced 2026-04-18T00:00:00.000Z')).toBeTruthy();
+        expect(await screen.findAllByText('Unencrypted storage')).toHaveLength(2);
+        expect(await screen.findByText('4 OAuth scopes')).toBeTruthy();
+        expect((await screen.findAllByRole('button', { name: 'Sync now' })).length).toBeGreaterThan(
+            0,
+        );
+        expect(await screen.findByRole('button', { name: 'Disconnect account' })).toBeTruthy();
     });
 
     it('updates per-calendar controls through the preload API', async () => {
@@ -101,7 +110,7 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         renderApp('/integrations/google');
 
-        await screen.findByText('Nizam Chaudhary');
+        expect(await screen.findAllByText('Nizam Chaudhary')).toHaveLength(2);
         expect(await screen.findAllByText('Primary')).toHaveLength(2);
 
         await userEvent.click(screen.getByRole('switch', { name: 'Reminder enabled' }));
