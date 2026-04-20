@@ -3,6 +3,12 @@ import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import { PassThrough } from 'node:stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@day-flow/env/index', () => ({
+    env: {
+        DAY_FLOW_AUTH_HOST: '127.0.0.1',
+    },
+}));
+
 import { createAuthServerProcessManager } from '@/main/auth/auth-server-process-manager';
 
 function createChildProcessStub() {
@@ -112,6 +118,19 @@ describe('createAuthServerProcessManager', () => {
             port: 8787,
         });
         expect(spawnProcess).toHaveBeenCalledTimes(1);
+        expect(spawnProcess).toHaveBeenCalledWith(
+            expect.any(String),
+            ['auth-server.ts'],
+            expect.objectContaining({
+                cwd: '/tmp/auth-server',
+                env: expect.objectContaining({
+                    DAY_FLOW_AUTH_HOST: '127.0.0.1',
+                    DAY_FLOW_AUTH_PORT: '0',
+                    ELECTRON_RUN_AS_NODE: '1',
+                }),
+                stdio: 'pipe',
+            }),
+        );
         expect(fetchImpl).toHaveBeenCalledWith('http://127.0.0.1:8787/healthz');
     });
 

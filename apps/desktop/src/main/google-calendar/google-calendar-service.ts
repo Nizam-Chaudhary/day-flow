@@ -7,6 +7,7 @@ import type {
 
 import { createDayFlowError, normalizeDayFlowError } from '@day-flow/contracts/errors';
 import { getOrCreateDatabaseClient, type DatabaseClient } from '@day-flow/db/client';
+import { env } from '@day-flow/env/index';
 import {
     GoogleCalendarCatalogService,
     GoogleCalendarSyncService,
@@ -54,8 +55,8 @@ export function createGoogleCalendarService({
     fetchImpl = fetch,
     keychain = null,
     openExternal = (url) => shell.openExternal(url),
-    oauthClientId = process.env.GOOGLE_CLIENT_ID,
-    oauthClientSecret = process.env.GOOGLE_CLIENT_SECRET,
+    oauthClientId = env.GOOGLE_CLIENT_ID,
+    oauthClientSecret = env.GOOGLE_CLIENT_SECRET,
 }: CreateGoogleCalendarServiceOptions = {}): GoogleCalendarService {
     if (!oauthClientId || !oauthClientSecret) {
         return createUnavailableGoogleCalendarService();

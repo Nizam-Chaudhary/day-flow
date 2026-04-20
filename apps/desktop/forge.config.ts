@@ -1,5 +1,6 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
 
+import '@day-flow/env/index';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerFlatpak } from '@electron-forge/maker-flatpak';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';

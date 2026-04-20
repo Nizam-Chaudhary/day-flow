@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '@day-flow/env/index';
 import { app, BrowserWindow } from 'electron';
 import squirrelStartup from 'electron-squirrel-startup';
 

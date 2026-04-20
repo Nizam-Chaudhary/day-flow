@@ -1,10 +1,10 @@
+import { env } from '@day-flow/env/index';
 import { app } from 'electron';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { access } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
-const AUTH_SERVER_HOST = '127.0.0.1';
 const AUTH_SERVER_PORT = '0';
 const AUTH_SERVER_READY_PATTERN = /Day Flow auth server listening on (http:\/\/\S+)/;
 const AUTH_SERVER_START_TIMEOUT_MS = 10_000;
@@ -150,7 +150,7 @@ async function startAuthServerProcess({
         cwd,
         env: {
             ...process.env,
-            DAY_FLOW_AUTH_HOST: AUTH_SERVER_HOST,
+            DAY_FLOW_AUTH_HOST: env.DAY_FLOW_AUTH_HOST,
             DAY_FLOW_AUTH_PORT: AUTH_SERVER_PORT,
             ELECTRON_RUN_AS_NODE: '1',
         },

@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { AppPreferences, UpdateAppPreferencesInput } from '@/shared/contracts/settings';
 
-import { createIpcHandlers } from '@/main/ipc/register-ipc';
 import {
     APP_GET_HEALTH_CHANNEL,
     GOOGLE_CALENDAR_DISCONNECT_CONNECTION_CHANNEL,
@@ -12,8 +11,16 @@ import {
 } from '@/shared/channels';
 import { createDayFlowError } from '@/shared/errors';
 
+async function loadCreateIpcHandlers() {
+    process.env.GOOGLE_CLIENT_ID = 'google-client-id';
+    process.env.GOOGLE_CLIENT_SECRET = 'google-client-secret';
+
+    return (await import('@/main/ipc/register-ipc')).createIpcHandlers;
+}
+
 describe('createIpcHandlers', () => {
     it('wraps successful responses in the shared IPC result shape', async () => {
+        const createIpcHandlers = await loadCreateIpcHandlers();
         const handlers = createIpcHandlers({
             getHealth: () => ({
                 databasePath: '/tmp/day-flow.sqlite',
@@ -102,6 +109,7 @@ describe('createIpcHandlers', () => {
     });
 
     it('serializes service failures into safe errors', async () => {
+        const createIpcHandlers = await loadCreateIpcHandlers();
         const handlers = createIpcHandlers({
             settingsService: {
                 getPreferences: vi.fn<() => Promise<AppPreferences>>(async () => {

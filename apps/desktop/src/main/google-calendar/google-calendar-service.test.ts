@@ -16,6 +16,13 @@ const disconnectConnection = vi.fn<(connectionId: string) => Promise<void>>();
 const shouldSyncCalendar = vi.fn<(calendar: unknown) => boolean>(() => false);
 const syncConnection = vi.fn<(connectionId: string) => Promise<never>>();
 
+vi.mock('@day-flow/env/index', () => ({
+    env: {
+        GOOGLE_CLIENT_ID: 'google-client-id',
+        GOOGLE_CLIENT_SECRET: 'google-client-secret',
+    },
+}));
+
 vi.mock('@day-flow/db/client', () => ({
     getOrCreateDatabaseClient: vi.fn<
         () => Promise<{ client: object; databasePath: string; databaseUrl: string; db: object }>

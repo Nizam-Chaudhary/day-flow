@@ -6,12 +6,12 @@ export type {
     CreateGoogleAuthServerOptions,
     RunningGoogleAuthServer,
 } from '@day-flow/auth-server/google-auth-server';
-
 import { startGoogleAuthServer } from '@day-flow/auth-server/google-auth-server';
+import { env } from '@day-flow/env/index';
 
 const server = await startGoogleAuthServer({
-    host: process.env.DAY_FLOW_AUTH_HOST ?? '127.0.0.1',
-    port: process.env.DAY_FLOW_AUTH_PORT ? Number(process.env.DAY_FLOW_AUTH_PORT) : 8787,
+    host: env.DAY_FLOW_AUTH_HOST,
+    port: env.DAY_FLOW_AUTH_PORT,
 });
 
 console.log(`Day Flow auth server listening on ${server.baseUrl}`);

@@ -1,7 +1,6 @@
+import { env } from '@day-flow/env/index';
 import { BrowserWindow } from 'electron';
 import { join } from 'node:path';
-
-const OPEN_DEVTOOLS_ON_STARTUP_ENV = 'DAY_FLOW_OPEN_DEVTOOLS';
 
 export async function createMainWindow(): Promise<void> {
     const iconPath = getWindowIconPath();
@@ -84,7 +83,5 @@ function isDevToolsShortcut(input: Electron.Input): boolean {
 }
 
 function shouldOpenDevToolsOnStartup(): boolean {
-    const value = process.env[OPEN_DEVTOOLS_ON_STARTUP_ENV];
-
-    return value === '1' || value === 'true';
+    return env.DAY_FLOW_OPEN_DEVTOOLS;
 }
