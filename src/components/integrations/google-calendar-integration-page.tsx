@@ -9,12 +9,6 @@ import type {
 } from '@/schemas/contracts/google-calendar';
 
 import googleLogo from '@/assets/integration-logos/google-color.svg';
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -27,6 +21,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
     Field,
     FieldContent,
@@ -176,17 +171,18 @@ export function GoogleCalendarIntegrationPage() {
                     </CardHeader>
                 </Card>
             ) : (
-                <Accordion
-                    defaultValue={connections[0] ? [connections[0].id] : undefined}
-                    className='rounded-2xl border border-border/70 px-4'>
+                <div className='rounded-2xl border border-border/70 px-4'>
                     {connections.map((connection) => (
-                        <AccordionItem key={connection.id} value={connection.id}>
-                            <AccordionTrigger className='py-4'>
+                        <Collapsible
+                            key={connection.id}
+                            className='not-last:border-b'
+                            defaultOpen={connection.id === connections[0]?.id}>
+                            <CollapsibleTrigger className='py-4'>
                                 <Item
                                     variant='default'
                                     className='min-w-0 flex-1 gap-3 rounded-none border-0 bg-transparent p-0 text-left shadow-none'>
                                     <ItemContent className='min-w-0 gap-2'>
-                                        <ItemHeader className='flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between'>
+                                        <ItemHeader className='flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between'>
                                             <div className='min-w-0 space-y-1'>
                                                 <ItemTitle className='w-full min-w-0 text-base'>
                                                     Google Calendar
@@ -203,7 +199,7 @@ export function GoogleCalendarIntegrationPage() {
                                                     </span>
                                                 </ItemDescription>
                                             </div>
-                                            <div className='flex max-w-full flex-wrap gap-2 sm:justify-end'>
+                                            <div className='flex max-w-full flex-wrap items-center gap-2 sm:justify-end'>
                                                 <Badge variant='secondary'>
                                                     {connection.selectedCalendarCount} calendar
                                                     {connection.selectedCalendarCount === 1
@@ -225,8 +221,8 @@ export function GoogleCalendarIntegrationPage() {
                                         </ItemHeader>
                                     </ItemContent>
                                 </Item>
-                            </AccordionTrigger>
-                            <AccordionContent className='pb-6'>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className='pb-6'>
                                 <GoogleConnectionPanel
                                     connection={connection}
                                     onDisconnect={() =>
@@ -240,10 +236,10 @@ export function GoogleCalendarIntegrationPage() {
                                         })
                                     }
                                 />
-                            </AccordionContent>
-                        </AccordionItem>
+                            </CollapsibleContent>
+                        </Collapsible>
                     ))}
-                </Accordion>
+                </div>
             )}
         </section>
     );
