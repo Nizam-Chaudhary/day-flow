@@ -86,7 +86,6 @@ describe('GoogleCalendarIntegrationPage', () => {
     });
 
     it('updates per-calendar controls through the preload API', async () => {
-        const user = userEvent.setup();
         const updateCalendar = vi
             .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
             .mockResolvedValue(googleConnectionFixture);
@@ -103,10 +102,9 @@ describe('GoogleCalendarIntegrationPage', () => {
         renderApp('/integrations/google');
 
         await screen.findByText('Nizam Chaudhary');
-        await user.click(screen.getByRole('button', { name: /Nizam Chaudhary/i }));
         expect(await screen.findAllByText('Primary')).toHaveLength(2);
 
-        await user.click(screen.getByRole('switch', { name: 'Reminder enabled' }));
+        await userEvent.click(screen.getByRole('switch', { name: 'Reminder enabled' }));
 
         await waitFor(() => {
             expect(updateCalendar).toHaveBeenCalledWith({

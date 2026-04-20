@@ -463,7 +463,7 @@ export const recentPages = [
 const integrationProviderSummaries = [
     {
         category: 'calendar',
-        connectedAccountCount: 2,
+        connectedAccountCount: 0,
         description: 'Primary work calendar and background event sync.',
         id: 'google',
         isConfigured: false,

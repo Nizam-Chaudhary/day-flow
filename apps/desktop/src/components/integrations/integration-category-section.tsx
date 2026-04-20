@@ -6,7 +6,7 @@ import type {
 } from '@/features/app-shell/mock-data';
 
 import { IntegrationLogo } from '@/components/integrations/integration-logo';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
     Item,
     ItemActions,
@@ -45,7 +45,9 @@ export function IntegrationCategorySection({ category }: IntegrationCategorySect
 function IntegrationProviderItem({ provider }: { provider: MockIntegrationProviderSummary }) {
     const metadata =
         provider.category === 'calendar'
-            ? `${provider.connectedAccountCount ?? 0} accounts linked`
+            ? `${provider.connectedAccountCount ?? 0} account${
+                  provider.connectedAccountCount === 1 ? '' : 's'
+              } linked`
             : `Connected: ${provider.isConnected ? 'Yes' : 'No'} · Configured: ${
                   provider.isConfigured ? 'Yes' : 'No'
               }`;
@@ -76,14 +78,13 @@ function IntegrationProviderItem({ provider }: { provider: MockIntegrationProvid
 
             <ItemActions className='w-full justify-end sm:w-auto'>
                 {provider.status === 'available' && provider.configurePath ? (
-                    <Link
-                        to={provider.configurePath}
-                        className={buttonVariants({
-                            className: 'w-full sm:w-auto',
-                            variant: 'outline',
-                        })}>
+                    <Button
+                        nativeButton={false}
+                        variant='outline'
+                        className='w-full sm:w-auto'
+                        render={<Link to={provider.configurePath} />}>
                         Configure
-                    </Link>
+                    </Button>
                 ) : (
                     <Button
                         disabled
