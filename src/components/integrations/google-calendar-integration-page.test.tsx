@@ -36,7 +36,7 @@ const baseCalendarFixture: GoogleCalendarSummary = {
     name: 'Primary',
     reminderChannel: 'in_app' as const,
     reminderEnabled: false,
-    reminderLeadMinutes: 15 as const,
+    reminderLeadMinutesList: [15] as const,
     syncEnabled: true,
     syncIntervalMinutes: 15 as const,
     type: 'default' as const,
@@ -403,7 +403,7 @@ describe('GoogleCalendarIntegrationPage', () => {
         const updatedConnection = createGoogleConnectionFixture({
             calendars: [
                 createGoogleCalendarFixture({
-                    reminderLeadMinutes: 30,
+                    reminderLeadMinutesList: [15, 30],
                 }),
             ],
         });
@@ -433,17 +433,20 @@ describe('GoogleCalendarIntegrationPage', () => {
         const user = userEvent.setup();
 
         await expandPrimaryAccount(user);
-        await user.click(screen.getByRole('combobox', { name: 'Default reminder time' }));
-        await user.click(await screen.findByText('30 min before'));
+        await user.click(screen.getByLabelText('Default reminder time'));
+        await user.click((await screen.findAllByRole('option', { name: '30 min before' }))[0]!);
 
         await waitFor(() => {
             expect(updateCalendar).toHaveBeenCalledTimes(1);
             expect(updateCalendar).toHaveBeenCalledWith({
                 calendarId: 'google:user-1:primary',
                 reminderChannel: 'in_app',
-                reminderLeadMinutes: 30,
+                reminderLeadMinutesList: [15, 30],
             });
         });
+        expect(
+            screen.getByRole('combobox', { name: 'Default reminder time' }).textContent,
+        ).toContain('15 min before, 30 min before');
     });
 
     it('keeps toggle changes stable when stale connection data is pushed during an in-flight save', async () => {
@@ -699,7 +702,9 @@ describe('GoogleCalendarIntegrationPage', () => {
         await expandPrimaryAccount();
 
         expect(await screen.findByRole('switch', { name: 'Enable Primary' })).toBeTruthy();
-        expect(await screen.findByText('15 min before')).toBeTruthy();
+        expect(
+            (await screen.findByRole('combobox', { name: 'Default reminder time' })).textContent,
+        ).toContain('15 min before');
         expect(screen.queryByText('Enabled')).toBeNull();
         expect(screen.queryByText('Sync enabled')).toBeNull();
         expect(screen.queryByText('Reminder enabled')).toBeNull();
@@ -708,6 +713,171 @@ describe('GoogleCalendarIntegrationPage', () => {
         expect(screen.queryByText('Runs only while this calendar is enabled.')).toBeNull();
         expect(screen.queryByText('In-app reminders only in this build.')).toBeNull();
         expect(screen.queryByText('#22c55e')).toBeNull();
+    });
+
+    it('keeps the reminder multiselect trigger single-line and fixed height', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture({
+                            calendars: [
+                                createGoogleCalendarFixture({
+                                    reminderEnabled: true,
+                                    reminderLeadMinutesList: [15, 30, 60],
+                                }),
+                            ],
+                        }),
+                    ]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        await expandPrimaryAccount();
+
+        const trigger = await screen.findByRole('combobox', { name: 'Default reminder time' });
+
+        expect(trigger.className).toContain('h-9');
+        expect(trigger.className).toContain('min-h-9');
+        expect(trigger.className).toContain('max-h-9');
+        expect(trigger.textContent).toContain('15 min before, 30 min before, 1 hr before');
+    });
+
+    it('applies explicit top separator spacing between the calendar header and configuration', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([createGoogleConnectionFixture()]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        await expandPrimaryAccount();
+
+        const separator = await screen.findByTestId(
+            'calendar-card-header-separator-google:user-1:primary',
+        );
+        const separatorWrapper = separator.parentElement;
+
+        expect(separatorWrapper?.className).toContain('pt-1');
+        expect(separatorWrapper?.className).toContain('pb-3');
+    });
+
+    it('shows the 1 minute sync option and hour-formatted sync labels', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture({
+                            calendars: [
+                                createGoogleCalendarFixture({
+                                    syncIntervalMinutes: 60,
+                                }),
+                            ],
+                        }),
+                    ]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        const user = userEvent.setup();
+
+        await expandPrimaryAccount(user);
+
+        expect(await screen.findByText('1 hr')).toBeTruthy();
+
+        await user.click(screen.getByRole('combobox', { name: 'Sync interval' }));
+
+        expect(await screen.findByText('1 min')).toBeTruthy();
+        expect(await screen.findByText('3 hr')).toBeTruthy();
+        expect(await screen.findByText('6 hr')).toBeTruthy();
+        expect(await screen.findByText('12 hr')).toBeTruthy();
+        expect(await screen.findByText('24 hr')).toBeTruthy();
+    });
+
+    it('saves the new 1 minute sync interval option', async () => {
+        const updatedConnection = createGoogleConnectionFixture({
+            calendars: [
+                createGoogleCalendarFixture({
+                    syncIntervalMinutes: 1,
+                }),
+            ],
+        });
+        const updateCalendar = vi
+            .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
+            .mockResolvedValue(updatedConnection);
+
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([createGoogleConnectionFixture()]),
+                updateCalendar,
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        const user = userEvent.setup();
+
+        await expandPrimaryAccount(user);
+        await user.click(screen.getByRole('combobox', { name: 'Sync interval' }));
+        await user.click(await screen.findByText('1 min'));
+
+        await waitFor(() => {
+            expect(updateCalendar).toHaveBeenCalledWith({
+                calendarId: 'google:user-1:primary',
+                syncIntervalMinutes: 1,
+            });
+        });
+    });
+
+    it('does not allow removing the final reminder selection', async () => {
+        const updateCalendar = vi
+            .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
+            .mockResolvedValue(createGoogleConnectionFixture());
+
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture({
+                            calendars: [
+                                createGoogleCalendarFixture({
+                                    reminderEnabled: true,
+                                    reminderLeadMinutesList: [15],
+                                }),
+                            ],
+                        }),
+                    ]),
+                updateCalendar,
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        await expandPrimaryAccount();
+
+        expect(
+            screen.getByRole('combobox', { name: 'Default reminder time' }).textContent,
+        ).toContain('15 min before');
+
+        const user = userEvent.setup();
+
+        await user.click(screen.getByRole('combobox', { name: 'Default reminder time' }));
+        await user.click((await screen.findAllByRole('option', { name: '15 min before' }))[0]!);
+
+        expect(updateCalendar).not.toHaveBeenCalled();
+        expect(
+            screen.getByRole('combobox', { name: 'Default reminder time' }).textContent,
+        ).toContain('15 min before');
     });
 });
 

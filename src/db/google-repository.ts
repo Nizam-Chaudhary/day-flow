@@ -151,7 +151,8 @@ export class GoogleRepository {
                     syncIntervalMinutes: existingCalendar?.syncIntervalMinutes ?? 15,
                     reminderEnabled: existingCalendar?.reminderEnabled ?? false,
                     reminderChannel: existingCalendar?.reminderChannel ?? 'in_app',
-                    reminderLeadMinutes: existingCalendar?.reminderLeadMinutes ?? 15,
+                    reminderLeadMinutesJson:
+                        existingCalendar?.reminderLeadMinutesJson ?? JSON.stringify([15]),
                     calendarColorType: existingCalendar?.calendarColorType ?? 'curated',
                     colorOverride: existingCalendar?.colorOverride ?? null,
                     lastSyncStatus: existingCalendar?.lastSyncStatus ?? 'idle',
@@ -205,8 +206,8 @@ export class GoogleRepository {
                 ...(input.reminderEnabled !== undefined
                     ? { reminderEnabled: input.reminderEnabled }
                     : {}),
-                ...(input.reminderLeadMinutes !== undefined
-                    ? { reminderLeadMinutes: input.reminderLeadMinutes }
+                ...(input.reminderLeadMinutesList !== undefined
+                    ? { reminderLeadMinutesJson: JSON.stringify(input.reminderLeadMinutesList) }
                     : {}),
                 ...(input.syncEnabled !== undefined ? { syncEnabled: input.syncEnabled } : {}),
                 ...(input.syncIntervalMinutes !== undefined
@@ -362,11 +363,7 @@ export class GoogleRepository {
             name: row.name,
             reminderChannel: row.reminderChannel,
             reminderEnabled: row.reminderEnabled,
-            reminderLeadMinutes: GOOGLE_REMINDER_LEAD_OPTIONS.includes(
-                row.reminderLeadMinutes as (typeof GOOGLE_REMINDER_LEAD_OPTIONS)[number],
-            )
-                ? (row.reminderLeadMinutes as GoogleCalendarSummary['reminderLeadMinutes'])
-                : 15,
+            reminderLeadMinutesList: parseReminderLeadMinutesList(row.reminderLeadMinutesJson),
             syncEnabled: row.syncEnabled,
             syncIntervalMinutes: GOOGLE_SYNC_INTERVAL_OPTIONS.includes(
                 row.syncIntervalMinutes as (typeof GOOGLE_SYNC_INTERVAL_OPTIONS)[number],
@@ -375,5 +372,28 @@ export class GoogleRepository {
                 : 15,
             type: row.calendarType,
         };
+    }
+}
+
+function parseReminderLeadMinutesList(
+    value: IntegrationCalendarRow['reminderLeadMinutesJson'],
+): GoogleCalendarSummary['reminderLeadMinutesList'] {
+    try {
+        const parsed = JSON.parse(value) as unknown;
+
+        if (!Array.isArray(parsed)) {
+            return [15];
+        }
+
+        const normalized = parsed.filter(
+            (entry): entry is GoogleCalendarSummary['reminderLeadMinutesList'][number] =>
+                GOOGLE_REMINDER_LEAD_OPTIONS.includes(
+                    entry as (typeof GOOGLE_REMINDER_LEAD_OPTIONS)[number],
+                ),
+        );
+
+        return normalized.length > 0 ? normalized : [15];
+    } catch {
+        return [15];
     }
 }

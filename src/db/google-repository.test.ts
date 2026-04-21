@@ -8,7 +8,7 @@ import { GoogleRepository } from '@/db/google-repository';
 import { runDatabaseMigrations } from '@/db/migrate';
 import { calendarEventsTable } from '@/db/schema';
 
-const migrationsFolder = join(process.cwd(), 'src', 'db', 'drizzle');
+const migrationsFolder = join(process.cwd(), 'src', 'db', 'migrations');
 const cleanupPaths = new Set<string>();
 
 afterEach(() => {

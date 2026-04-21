@@ -112,7 +112,7 @@ export const integrationCalendarsTable = sqliteTable(
         })
             .notNull()
             .default('in_app'),
-        reminderLeadMinutes: integer('reminder_lead_minutes').notNull().default(15),
+        reminderLeadMinutesJson: text('reminder_lead_minutes_json').notNull().default('[15]'),
         calendarColorType: text('calendar_color_type', {
             enum: GOOGLE_CALENDAR_COLOR_TYPES,
         })

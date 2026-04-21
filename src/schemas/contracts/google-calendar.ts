@@ -14,7 +14,7 @@ export const GOOGLE_CALENDAR_TYPES = [
     'other',
 ] as const;
 export const GOOGLE_ACCESS_ROLES = ['owner', 'writer', 'reader', 'freeBusyReader'] as const;
-export const GOOGLE_SYNC_INTERVAL_OPTIONS = [5, 15, 30, 60, 180, 360, 720, 1440] as const;
+export const GOOGLE_SYNC_INTERVAL_OPTIONS = [1, 5, 15, 30, 60, 180, 360, 720, 1440] as const;
 export const GOOGLE_REMINDER_LEAD_OPTIONS = [0, 5, 10, 15, 30, 60, 120, 1440] as const;
 
 export const googleProviderSchema = z.enum(GOOGLE_PROVIDERS);
@@ -40,7 +40,7 @@ export const googleReminderLeadMinutesSchema = z.union(
 export const googleCalendarReminderConfigSchema = z.object({
     reminderChannel: googleReminderChannelSchema,
     reminderEnabled: z.boolean(),
-    reminderLeadMinutes: googleReminderLeadMinutesSchema,
+    reminderLeadMinutesList: z.array(googleReminderLeadMinutesSchema).min(1),
 });
 
 export const googleCalendarSummarySchema = googleCalendarReminderConfigSchema.extend({
@@ -98,7 +98,7 @@ export const updateGoogleCalendarInputSchema = z.object({
     isSelected: z.boolean().optional(),
     reminderChannel: googleReminderChannelSchema.optional(),
     reminderEnabled: z.boolean().optional(),
-    reminderLeadMinutes: googleReminderLeadMinutesSchema.optional(),
+    reminderLeadMinutesList: z.array(googleReminderLeadMinutesSchema).min(1).optional(),
     syncEnabled: z.boolean().optional(),
     syncIntervalMinutes: googleSyncIntervalMinutesSchema.optional(),
 });

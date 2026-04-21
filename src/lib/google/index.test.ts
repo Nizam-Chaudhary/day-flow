@@ -15,7 +15,7 @@ import { calendarEventsTable } from '@/db/schema';
 
 import { GoogleCalendarSyncService, GoogleTokenStore } from './index';
 
-const migrationsFolder = join(process.cwd(), 'src', 'db', 'drizzle');
+const migrationsFolder = join(process.cwd(), 'src', 'db', 'migrations');
 const cleanupPaths = new Set<string>();
 
 afterEach(() => {

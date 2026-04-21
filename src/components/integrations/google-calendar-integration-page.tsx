@@ -36,6 +36,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Field, FieldContent, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
+    MultiSelect,
+    MultiSelectContent,
+    MultiSelectGroup,
+    MultiSelectItem,
+    MultiSelectTrigger,
+} from '@/components/ui/multi-select';
+import {
     Select,
     SelectContent,
     SelectGroup,
@@ -77,7 +84,7 @@ interface CalendarFormValues {
     colorOverride: string;
     isSelected: boolean;
     reminderEnabled: boolean;
-    reminderLeadMinutes: GoogleCalendarSummary['reminderLeadMinutes'];
+    reminderLeadMinutesList: GoogleCalendarSummary['reminderLeadMinutesList'];
     syncEnabled: boolean;
     syncIntervalMinutes: GoogleCalendarSummary['syncIntervalMinutes'];
 }
@@ -489,9 +496,11 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
             </CardHeader>
 
             {isCalendarEnabled ? (
-                <CardContent className='px-4 pt-4 pb-0 sm:px-5'>
-                    <Separator />
-                    <div className='mt-4 flex flex-col gap-4 rounded-2xl bg-muted/20 px-3 pt-3 pb-0 sm:px-4'>
+                <CardContent className='px-4 pt-2 pb-0 sm:px-5'>
+                    <div className='pt-1 pb-3'>
+                        <Separator data-testid={`calendar-card-header-separator-${calendar.id}`} />
+                    </div>
+                    <div className='flex flex-col gap-4 rounded-2xl bg-muted/20 px-3 pt-3 pb-0 sm:px-4'>
                         <div className='grid gap-4 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)]'>
                             <CalendarSyncSection
                                 calendarId={calendar.id}
@@ -697,8 +706,8 @@ function CalendarReminderSection({
                 )}
             </form.Field>
 
-            <form.Field name='reminderLeadMinutes'>
-                {(field: CalendarFieldState<CalendarFormValues['reminderLeadMinutes']>) => (
+            <form.Field name='reminderLeadMinutesList'>
+                {(field: CalendarFieldState<CalendarFormValues['reminderLeadMinutesList']>) => (
                     <Field className={CALENDAR_ROW_CLASS} orientation='horizontal'>
                         <FieldLabel
                             className={CALENDAR_ROW_LABEL_CLASS}
@@ -706,35 +715,18 @@ function CalendarReminderSection({
                             Default reminder time
                         </FieldLabel>
                         <FieldContent className={CALENDAR_ROW_CONTENT_CLASS}>
-                            <Select
+                            <ReminderLeadTimeMultiSelect
                                 disabled={!isCalendarEnabled || !isReminderEnabled}
-                                value={String(field.state.value)}
-                                onValueChange={(value) => {
-                                    const nextValue = Number(
-                                        value,
-                                    ) as CalendarFormValues['reminderLeadMinutes'];
-
+                                inputId={`${calendarId}-reminder-lead`}
+                                value={field.state.value}
+                                onValueChange={(nextValue) => {
                                     field.handleChange(nextValue);
-                                    onSavePatchedValues({ reminderLeadMinutes: nextValue }, true);
-                                }}>
-                                <SelectTrigger
-                                    className='h-9 w-48 max-w-full bg-background/70'
-                                    id={`${calendarId}-reminder-lead`}
-                                    data-testid={`calendar-reminder-lead-${calendarId}`}>
-                                    <SelectValue>
-                                        {formatReminderLeadLabel(field.state.value)}
-                                    </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        {GOOGLE_REMINDER_LEAD_OPTIONS.map((option) => (
-                                            <SelectItem key={option} value={String(option)}>
-                                                {formatReminderLeadLabel(option)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
+                                    onSavePatchedValues(
+                                        { reminderLeadMinutesList: nextValue },
+                                        true,
+                                    );
+                                }}
+                            />
                         </FieldContent>
                     </Field>
                 )}
@@ -927,6 +919,66 @@ function CalendarColorSection({
     );
 }
 
+function ReminderLeadTimeMultiSelect({
+    disabled,
+    inputId,
+    onValueChange,
+    value,
+}: {
+    disabled: boolean;
+    inputId: string;
+    onValueChange: (value: GoogleCalendarSummary['reminderLeadMinutesList']) => void;
+    value: GoogleCalendarSummary['reminderLeadMinutesList'];
+}) {
+    const normalizedValue = normalizeReminderLeadMinutesList(value);
+    const selectedValues = normalizedValue.map(String);
+
+    return (
+        <MultiSelect
+            values={selectedValues}
+            onValuesChange={(nextValue) => {
+                if (disabled) {
+                    return;
+                }
+
+                const normalizedNextValue = normalizeReminderLeadMinutesList(
+                    nextValue
+                        .map((entry) => Number(entry))
+                        .filter((entry) =>
+                            GOOGLE_REMINDER_LEAD_OPTIONS.includes(
+                                entry as (typeof GOOGLE_REMINDER_LEAD_OPTIONS)[number],
+                            ),
+                        ) as GoogleCalendarSummary['reminderLeadMinutesList'],
+                );
+
+                if (normalizedNextValue.length === 0) {
+                    return;
+                }
+
+                onValueChange(normalizedNextValue);
+            }}>
+            <MultiSelectTrigger
+                aria-label='Default reminder time'
+                className='h-9 max-h-9 min-h-9 w-48 max-w-full bg-background/70 px-3 py-0'
+                disabled={disabled}
+                id={inputId}>
+                <span className='min-w-0 flex-1 overflow-hidden text-left text-sm text-ellipsis whitespace-nowrap'>
+                    {formatReminderLeadSummary(normalizedValue)}
+                </span>
+            </MultiSelectTrigger>
+            <MultiSelectContent search={false}>
+                <MultiSelectGroup>
+                    {GOOGLE_REMINDER_LEAD_OPTIONS.map((option) => (
+                        <MultiSelectItem key={option} value={String(option)}>
+                            {formatReminderLeadLabel(option)}
+                        </MultiSelectItem>
+                    ))}
+                </MultiSelectGroup>
+            </MultiSelectContent>
+        </MultiSelect>
+    );
+}
+
 function ProviderAvatar({ size = 'sm' }: { size?: 'default' | 'sm' | 'lg' }) {
     return (
         <Avatar
@@ -951,7 +1003,7 @@ function getCalendarFormValues(calendar: GoogleCalendarSummary): CalendarFormVal
         ),
         isSelected: calendar.isSelected,
         reminderEnabled: calendar.reminderEnabled,
-        reminderLeadMinutes: calendar.reminderLeadMinutes,
+        reminderLeadMinutesList: normalizeReminderLeadMinutesList(calendar.reminderLeadMinutesList),
         syncEnabled: calendar.syncEnabled,
         syncIntervalMinutes: calendar.syncIntervalMinutes,
     };
@@ -983,8 +1035,15 @@ export function buildGoogleCalendarUpdateInput(
         updateInput.reminderChannel = 'in_app';
     }
 
-    if (previousValues.reminderLeadMinutes !== nextValues.reminderLeadMinutes) {
-        updateInput.reminderLeadMinutes = nextValues.reminderLeadMinutes;
+    if (
+        !areReminderLeadMinutesListsEqual(
+            previousValues.reminderLeadMinutesList,
+            nextValues.reminderLeadMinutesList,
+        )
+    ) {
+        updateInput.reminderLeadMinutesList = normalizeReminderLeadMinutesList(
+            nextValues.reminderLeadMinutesList,
+        );
         updateInput.reminderChannel = 'in_app';
     }
 
@@ -1003,7 +1062,10 @@ export function buildGoogleCalendarUpdateInput(
 }
 
 function serializeCalendarFormValues(values: CalendarFormValues) {
-    return JSON.stringify(values);
+    return JSON.stringify({
+        ...values,
+        reminderLeadMinutesList: normalizeReminderLeadMinutesList(values.reminderLeadMinutesList),
+    });
 }
 
 function areCalendarFormValuesEqual(left: CalendarFormValues, right: CalendarFormValues) {
@@ -1027,11 +1089,53 @@ function getConnectionSyncBadgeLabel(connection: GoogleConnectionDetail) {
 }
 
 function formatSyncIntervalLabel(value: GoogleCalendarSummary['syncIntervalMinutes']) {
+    if (value >= 60 && value % 60 === 0) {
+        const hours = value / 60;
+
+        return `${hours} hr`;
+    }
+
     return `${value} min`;
 }
 
-function formatReminderLeadLabel(value: GoogleCalendarSummary['reminderLeadMinutes']) {
-    return value === 0 ? 'At time of event' : `${value} min before`;
+function formatReminderLeadLabel(value: GoogleCalendarSummary['reminderLeadMinutesList'][number]) {
+    if (value === 0) {
+        return 'At time of event';
+    }
+
+    if (value >= 60 && value % 60 === 0) {
+        return `${value / 60} hr before`;
+    }
+
+    return `${value} min before`;
+}
+
+function formatReminderLeadSummary(value: GoogleCalendarSummary['reminderLeadMinutesList']) {
+    return normalizeReminderLeadMinutesList(value).map(formatReminderLeadLabel).join(', ');
+}
+
+function normalizeReminderLeadMinutesList(
+    value: GoogleCalendarSummary['reminderLeadMinutesList'],
+): GoogleCalendarSummary['reminderLeadMinutesList'] {
+    const normalized = [...new Set(value)]
+        .filter((entry): entry is GoogleCalendarSummary['reminderLeadMinutesList'][number] =>
+            GOOGLE_REMINDER_LEAD_OPTIONS.includes(
+                entry as (typeof GOOGLE_REMINDER_LEAD_OPTIONS)[number],
+            ),
+        )
+        .sort((left, right) => left - right);
+
+    return normalized.length > 0 ? normalized : [15];
+}
+
+function areReminderLeadMinutesListsEqual(
+    left: GoogleCalendarSummary['reminderLeadMinutesList'],
+    right: GoogleCalendarSummary['reminderLeadMinutesList'],
+) {
+    return (
+        JSON.stringify(normalizeReminderLeadMinutesList(left)) ===
+        JSON.stringify(normalizeReminderLeadMinutesList(right))
+    );
 }
 
 function GoogleConnectionSkeleton() {

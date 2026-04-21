@@ -7,7 +7,7 @@ import { createDatabaseClient } from '@/db/client';
 import { runDatabaseMigrations } from '@/db/migrate';
 import { createSettingsService } from '@/main/settings';
 
-const migrationsFolder = join(process.cwd(), 'src', 'db', 'drizzle');
+const migrationsFolder = join(process.cwd(), 'src', 'db', 'migrations');
 const cleanupPaths = new Set<string>();
 
 afterEach(() => {
