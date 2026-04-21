@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
-import { useAppShellActions } from '@/components/app-shell/app-shell-layout';
+import { useAppShellActions } from '@/components/app-shell/app-shell-actions';
 import { mockTasks, type MockTask } from '@/components/app-shell/mock-data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

@@ -19,8 +19,8 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    useSidebar,
 } from '@/components/ui/sidebar';
+import { useSidebar } from '@/components/ui/sidebar.lib';
 import { cn } from '@/lib/utils';
 
 function isActiveRoute(pathname: string, to: ShellNavItem['to']): boolean {

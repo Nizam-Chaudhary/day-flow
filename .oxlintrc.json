@@ -19,6 +19,7 @@
     ],
     "categories": {},
     "rules": {
+        "react/only-export-components": "error",
         "react/no-children-prop": "off"
     },
     "settings": {

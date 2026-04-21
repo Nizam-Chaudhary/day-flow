@@ -3,7 +3,8 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import * as React from 'react';
 import { DayPicker, getDefaultClassNames, type DayButton, type Locale } from 'react-day-picker';
 
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button.variants';
 import { cn } from '@/lib/utils';
 
 function Calendar({

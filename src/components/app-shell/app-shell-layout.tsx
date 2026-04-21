@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
-import { createContext, type CSSProperties, useContext, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { AppShellActionsContext } from '@/components/app-shell/app-shell-actions';
 import { AppTopbar } from '@/components/app-shell/app-topbar';
 import { GlobalSearchDialog } from '@/components/app-shell/global-search-dialog';
 import { runMockAction } from '@/components/app-shell/mock-actions';
@@ -13,30 +14,6 @@ import { appPreferencesQueryOptions } from '@/services/settings';
 import { useAppShellStore } from '@/stores/app-shell-store';
 
 type QuickAddType = 'event' | 'task';
-
-interface AppShellActions {
-    openCommandPalette(): void;
-    openQuickAdd(type?: QuickAddType): void;
-    syncNow(): Promise<void>;
-}
-
-const AppShellActionsContext = createContext<AppShellActions | null>(null);
-
-const fallbackActions: AppShellActions = {
-    openCommandPalette() {
-        useAppShellStore.getState().setCommandPaletteOpen(true);
-    },
-    openQuickAdd() {
-        useAppShellStore.getState().setQuickAddOpen(true);
-    },
-    async syncNow() {
-        await runMockAction('Manual sync finished.');
-    },
-};
-
-export function useAppShellActions(): AppShellActions {
-    return useContext(AppShellActionsContext) ?? fallbackActions;
-}
 
 const sidebarStyle = {
     '--sidebar-width': '15rem',

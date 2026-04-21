@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
-import { useAppShellActions } from '@/components/app-shell/app-shell-layout';
+import { useAppShellActions } from '@/components/app-shell/app-shell-actions';
 import { mockEvents, type MockEvent } from '@/components/app-shell/mock-data';
 import { MonthPlannerSurface } from '@/components/calendar/month-planner-surface';
 import { PlannerSurface } from '@/components/calendar/planner-surface';

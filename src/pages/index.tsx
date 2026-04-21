@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { format } from 'date-fns';
 
-import { useAppShellActions } from '@/components/app-shell/app-shell-layout';
+import { useAppShellActions } from '@/components/app-shell/app-shell-actions';
 import {
     todayEvents,
     todayReminders,

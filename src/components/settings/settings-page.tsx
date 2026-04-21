@@ -4,7 +4,7 @@ import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { useAppShellActions } from '@/components/app-shell/app-shell-layout';
+import { useAppShellActions } from '@/components/app-shell/app-shell-actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
