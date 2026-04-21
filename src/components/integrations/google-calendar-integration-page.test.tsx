@@ -99,7 +99,9 @@ describe('GoogleCalendarIntegrationPage', () => {
         expect(await screen.findByText('1 calendar')).toBeTruthy();
         expect(await screen.findByText('Synced 3 days ago')).toBeTruthy();
         expect(await screen.findAllByText('Unencrypted storage')).toHaveLength(1);
-        expect(await screen.findByText('In-app reminders')).toBeTruthy();
+        const accountTrigger = await screen.findByLabelText('Toggle Nizam Chaudhary calendars');
+
+        expect(accountTrigger.getAttribute('aria-expanded')).toBe('false');
         expect(screen.queryByText('4 OAuth scopes')).toBeNull();
         expect(
             screen.queryByText('openid, email, profile, https://www.googleapis.com/auth/calendar'),
@@ -114,6 +116,10 @@ describe('GoogleCalendarIntegrationPage', () => {
             0,
         );
         expect(await screen.findByRole('button', { name: 'Disconnect account' })).toBeTruthy();
+
+        await userEvent.setup().click(accountTrigger);
+
+        expect(await screen.findByText('In-app reminders')).toBeTruthy();
     });
 
     it('toggles a calendar account when the full row is clicked', async () => {
@@ -239,10 +245,16 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         renderApp('/integrations/google');
 
-        expect((await screen.findAllByText('Primary')).length).toBeGreaterThan(0);
+        const accountTrigger = await screen.findByLabelText('Toggle Nizam Chaudhary calendars');
+
+        expect(accountTrigger.getAttribute('aria-expanded')).toBe('false');
         expect(screen.queryByText('Sync enabled')).toBeNull();
         expect(screen.queryByText('Default reminder time')).toBeNull();
         expect(screen.queryByText('Calendar color type')).toBeNull();
+
+        await userEvent.setup().click(accountTrigger);
+
+        expect((await screen.findAllByText('Primary')).length).toBeGreaterThan(0);
     });
 
     it('falls back to not synced when the last sync timestamp is invalid', async () => {
@@ -302,6 +314,8 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         renderApp('/integrations/google');
 
+        await expandPrimaryAccount();
+
         expect((await screen.findByLabelText('Sync interval')).matches(':disabled')).toBe(true);
         expect((await screen.findByLabelText('Default reminder time')).matches(':disabled')).toBe(
             true,
@@ -326,7 +340,7 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         const user = userEvent.setup();
 
-        expect((await screen.findAllByText('Primary')).length).toBeGreaterThan(0);
+        await expandPrimaryAccount(user);
         await user.click(screen.getByRole('switch', { name: 'Reminder enabled' }));
 
         expect(updateCalendar).not.toHaveBeenCalled();
@@ -358,6 +372,8 @@ describe('GoogleCalendarIntegrationPage', () => {
         });
 
         renderApp('/integrations/google');
+
+        await expandPrimaryAccount();
 
         const colorInput = (await screen.findByLabelText('Calendar color')) as HTMLInputElement;
 
@@ -402,6 +418,8 @@ describe('GoogleCalendarIntegrationPage', () => {
         });
 
         renderApp('/integrations/google');
+
+        await expandPrimaryAccount();
 
         const colorInput = (await screen.findByLabelText('Calendar color')) as HTMLInputElement;
 
@@ -456,7 +474,7 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         const user = userEvent.setup();
 
-        expect((await screen.findAllByText('Primary')).length).toBeGreaterThan(0);
+        await expandPrimaryAccount(user);
         await user.click(screen.getByRole('button', { name: 'Custom' }));
 
         await waitFor(
@@ -566,4 +584,12 @@ function renderApp(initialPath: string) {
             </QueryClientProvider>
         </ThemeProvider>,
     );
+}
+
+async function expandPrimaryAccount(user = userEvent.setup()) {
+    const accountTrigger = await screen.findByLabelText('Toggle Nizam Chaudhary calendars');
+
+    await user.click(accountTrigger);
+
+    expect(accountTrigger.getAttribute('aria-expanded')).toBe('true');
 }

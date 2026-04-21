@@ -218,9 +218,7 @@ export function GoogleCalendarIntegrationPage() {
                 </Card>
             ) : (
                 <div className='rounded-2xl border border-border/70 p-4'>
-                    <Accordion
-                        defaultValue={connections[0]?.id ? [connections[0].id] : undefined}
-                        className='gap-0'>
+                    <Accordion className='gap-0'>
                         {connections.map((connection) => (
                             <AccordionItem
                                 key={connection.id}
