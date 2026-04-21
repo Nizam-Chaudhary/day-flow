@@ -34,7 +34,7 @@ function AccordionTrigger({ className, children, ...props }: AccordionPrimitive.
                     className,
                 )}
                 {...props}>
-                <span className='min-w-0 flex-1'>{children}</span>
+                {children}
                 <HugeiconsIcon
                     icon={ArrowDown01Icon}
                     strokeWidth={2}

@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Plan Mode
+
+Make the plan extremely concise. Sacrifice grammar for the sake of concision.
+
 ## Task Completion Requirements
 
 - All of `bun run format`, `bun run lint` must pass before considering tasks completed.

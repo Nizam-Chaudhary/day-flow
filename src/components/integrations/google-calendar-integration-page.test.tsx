@@ -2,7 +2,7 @@
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from 'next-themes';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -93,7 +93,7 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         renderApp('/integrations/google');
 
-        expect(await screen.findAllByText('Nizam Chaudhary')).toHaveLength(2);
+        expect(await screen.findAllByText('Nizam Chaudhary')).toHaveLength(1);
         expect(await screen.findAllByText('Google Calendar')).toHaveLength(2);
         expect(await screen.findAllByTestId('google-calendar-provider-avatar')).toHaveLength(1);
         expect(await screen.findByText('1 calendar')).toBeTruthy();
@@ -114,6 +114,106 @@ describe('GoogleCalendarIntegrationPage', () => {
             0,
         );
         expect(await screen.findByRole('button', { name: 'Disconnect account' })).toBeTruthy();
+    });
+
+    it('toggles a calendar account when the full row is clicked', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture(),
+                        createGoogleConnectionFixture({
+                            calendars: [
+                                createGoogleCalendarFixture({
+                                    connectionId: 'google:user-2',
+                                    id: 'google:user-2:work',
+                                    name: 'Work',
+                                }),
+                            ],
+                            displayName: 'Secondary Account',
+                            email: 'secondary@example.com',
+                            id: 'google:user-2',
+                            selectedCalendarCount: 1,
+                        }),
+                    ]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        const user = userEvent.setup();
+        const rowTrigger = await screen.findByLabelText('Toggle Secondary Account calendars');
+
+        expect(rowTrigger.getAttribute('aria-expanded')).toBe('false');
+
+        await user.click(rowTrigger);
+
+        expect(rowTrigger.getAttribute('aria-expanded')).toBe('true');
+        expect(await screen.findByText('Work')).toBeTruthy();
+
+        await user.click(rowTrigger);
+
+        expect(rowTrigger.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('does not toggle a collapsed account when sync or disconnect actions are clicked', async () => {
+        const syncConnection = vi
+            .fn<DayFlowApi['googleCalendar']['syncConnection']>()
+            .mockResolvedValue(createGoogleConnectionFixture());
+        const disconnectConnection = vi
+            .fn<DayFlowApi['googleCalendar']['disconnectConnection']>()
+            .mockResolvedValue(undefined);
+
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                disconnectConnection,
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture(),
+                        createGoogleConnectionFixture({
+                            calendars: [
+                                createGoogleCalendarFixture({
+                                    connectionId: 'google:user-2',
+                                    id: 'google:user-2:work',
+                                    name: 'Work',
+                                }),
+                            ],
+                            displayName: 'Secondary Account',
+                            email: 'secondary@example.com',
+                            id: 'google:user-2',
+                            selectedCalendarCount: 1,
+                        }),
+                    ]),
+                syncConnection,
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        const user = userEvent.setup();
+        const rowTrigger = await screen.findByLabelText('Toggle Secondary Account calendars');
+        const item = rowTrigger.closest('[data-slot="accordion-item"]');
+
+        expect(item).toBeTruthy();
+        expect(rowTrigger.getAttribute('aria-expanded')).toBe('false');
+
+        await user.click(within(item as HTMLElement).getByRole('button', { name: 'Sync now' }));
+
+        await waitFor(() => {
+            expect(syncConnection).toHaveBeenCalledWith('google:user-2');
+        });
+        expect(rowTrigger.getAttribute('aria-expanded')).toBe('false');
+
+        await user.click(
+            within(item as HTMLElement).getByRole('button', { name: 'Disconnect account' }),
+        );
+
+        await waitFor(() => {
+            expect(disconnectConnection).toHaveBeenCalledWith('google:user-2');
+        });
+        expect(rowTrigger.getAttribute('aria-expanded')).toBe('false');
     });
 
     it('hides detail sections when the calendar is disabled', async () => {

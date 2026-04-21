@@ -15,6 +15,12 @@ import type {
 } from '@/schemas/contracts/google-calendar';
 
 import googleLogo from '@/assets/integration-logos/google-color.svg';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -27,7 +33,6 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
     Field,
     FieldContent,
@@ -212,105 +217,101 @@ export function GoogleCalendarIntegrationPage() {
                     </CardHeader>
                 </Card>
             ) : (
-                <div className='rounded-2xl border border-border/70 px-4'>
-                    {connections.map((connection) => (
-                        <Collapsible
-                            key={connection.id}
-                            className='not-last:border-b'
-                            defaultOpen={connection.id === connections[0]?.id}>
-                            <CollapsibleTrigger className='my-2 rounded-xl border border-transparent px-3 py-3.5 transition-[background-color,border-color,box-shadow,transform,color] duration-200 ease-out not-data-[panel-open]:hover:-translate-y-0.5 not-data-[panel-open]:hover:border-border not-data-[panel-open]:hover:bg-muted/55 not-data-[panel-open]:hover:shadow-sm data-[panel-open]:border-border/80 data-[panel-open]:bg-muted/40 data-[panel-open]:shadow-none'>
-                                <div className='flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2 lg:flex-nowrap'>
-                                    <div className='flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden'>
-                                        <p className='truncate text-sm font-medium text-foreground sm:text-base'>
-                                            {connection.displayName}
-                                        </p>
-                                        <span className='shrink-0 text-muted-foreground/70'>·</span>
-                                        <p className='min-w-0 truncate text-sm text-muted-foreground'>
-                                            {connection.email}
-                                        </p>
+                <div className='rounded-2xl border border-border/70 p-4'>
+                    <Accordion
+                        defaultValue={connections[0]?.id ? [connections[0].id] : undefined}
+                        className='gap-0'>
+                        {connections.map((connection) => (
+                            <AccordionItem
+                                key={connection.id}
+                                value={connection.id}
+                                className='not-last:mb-4 not-last:border-b not-last:pb-4'>
+                                <AccordionTrigger
+                                    aria-label={`Toggle ${connection.displayName} calendars`}
+                                    render={<div />}
+                                    nativeButton={false}
+                                    className='rounded-xl border border-transparent bg-muted/40 px-3 py-3.5 text-left transition-[background-color,border-color,box-shadow,transform,color] duration-200 ease-out hover:border-border hover:bg-muted/55 hover:shadow-sm aria-expanded:border-border aria-expanded:bg-muted/55 aria-expanded:shadow-sm'>
+                                    <div className='flex min-w-0 flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
+                                        <div className='min-w-0 flex-1'>
+                                            <div className='flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 overflow-hidden'>
+                                                <p className='truncate text-sm font-medium text-foreground sm:text-base'>
+                                                    {connection.displayName}
+                                                </p>
+                                                <span className='shrink-0 text-muted-foreground/70'>
+                                                    ·
+                                                </span>
+                                                <p className='min-w-0 truncate text-sm text-muted-foreground'>
+                                                    {connection.email}
+                                                </p>
+                                            </div>
+                                            <div className='mt-2 flex max-w-full flex-wrap items-center gap-2'>
+                                                <Badge variant='secondary'>
+                                                    {connection.selectedCalendarCount} calendar
+                                                    {connection.selectedCalendarCount === 1
+                                                        ? ''
+                                                        : 's'}
+                                                </Badge>
+                                                <Badge variant='outline'>
+                                                    {getConnectionSyncBadgeLabel(connection)}
+                                                </Badge>
+                                                {connection.credentialStorageMode ===
+                                                'sqlite_plaintext' ? (
+                                                    <Badge variant='destructive'>
+                                                        Unencrypted storage
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant='outline'>OS keychain</Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className='flex flex-wrap items-center gap-2 lg:justify-end'>
+                                            <Button
+                                                variant='outline'
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+
+                                                    void handleAsyncAction(async () => {
+                                                        await syncConnection.mutateAsync(
+                                                            connection.id,
+                                                        );
+                                                    });
+                                                }}>
+                                                Sync now
+                                            </Button>
+                                            <Button
+                                                variant='destructive'
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+
+                                                    void handleAsyncAction(async () => {
+                                                        await disconnectConnection.mutateAsync(
+                                                            connection.id,
+                                                        );
+                                                    });
+                                                }}>
+                                                Disconnect account
+                                            </Button>
+                                        </div>
                                     </div>
-                                    <div className='flex max-w-full shrink-0 flex-wrap items-center justify-end gap-2'>
-                                        <Badge variant='secondary'>
-                                            {connection.selectedCalendarCount} calendar
-                                            {connection.selectedCalendarCount === 1 ? '' : 's'}
-                                        </Badge>
-                                        <Badge variant='outline'>
-                                            {getConnectionSyncBadgeLabel(connection)}
-                                        </Badge>
-                                        {connection.credentialStorageMode === 'sqlite_plaintext' ? (
-                                            <Badge variant='destructive'>Unencrypted storage</Badge>
-                                        ) : (
-                                            <Badge variant='outline'>OS keychain</Badge>
-                                        )}
-                                    </div>
-                                </div>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent className='pb-6'>
-                                <GoogleConnectionPanel
-                                    connection={connection}
-                                    onDisconnect={() =>
-                                        handleAsyncAction(async () => {
-                                            await disconnectConnection.mutateAsync(connection.id);
-                                        })
-                                    }
-                                    onSync={() =>
-                                        handleAsyncAction(async () => {
-                                            await syncConnection.mutateAsync(connection.id);
-                                        })
-                                    }
-                                />
-                            </CollapsibleContent>
-                        </Collapsible>
-                    ))}
+                                </AccordionTrigger>
+                                <AccordionContent className='pt-4 pb-2'>
+                                    <GoogleConnectionPanel connection={connection} />
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
                 </div>
             )}
         </section>
     );
 }
 
-function GoogleConnectionPanel({
-    connection,
-    onDisconnect,
-    onSync,
-}: {
-    connection: GoogleConnectionDetail;
-    onDisconnect: () => void;
-    onSync: () => void;
-}) {
+function GoogleConnectionPanel({ connection }: { connection: GoogleConnectionDetail }) {
     return (
         <div className='flex flex-col gap-4'>
-            <Card className='border border-border/70 bg-card/95'>
-                <CardContent className='pt-6'>
-                    <div className='flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap'>
-                        <div className='flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden'>
-                            <p className='truncate text-sm font-medium text-foreground sm:text-base'>
-                                {connection.displayName}
-                            </p>
-                            <span className='shrink-0 text-muted-foreground/70'>·</span>
-                            <p className='min-w-0 truncate text-sm text-muted-foreground'>
-                                {connection.email}
-                            </p>
-                        </div>
-                        <div className='flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:justify-end'>
-                            <Button variant='outline' className='w-full sm:w-auto' onClick={onSync}>
-                                Sync now
-                            </Button>
-                            <Button
-                                variant='destructive'
-                                className='w-full sm:w-auto'
-                                onClick={onDisconnect}>
-                                Disconnect account
-                            </Button>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <div className='flex flex-col gap-4'>
-                {connection.calendars.map((calendar) => (
-                    <GoogleCalendarSettingsCard key={calendar.id} calendar={calendar} />
-                ))}
-            </div>
+            {connection.calendars.map((calendar) => (
+                <GoogleCalendarSettingsCard key={calendar.id} calendar={calendar} />
+            ))}
         </div>
     );
 }
