@@ -479,7 +479,7 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
         <Card
             className='overflow-hidden border border-border/70 bg-card/95 shadow-sm'
             data-testid={`calendar-card-${calendar.id}`}>
-            <CardHeader className='gap-3 px-4 pt-4 pb-0 sm:px-5'>
+            <CardHeader className='gap-3 px-4 pt-2 pb-0 sm:px-5'>
                 <CalendarCardHeader
                     calendar={calendar}
                     effectiveColor={effectiveColor}
@@ -489,9 +489,9 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
             </CardHeader>
 
             {isCalendarEnabled ? (
-                <CardContent className='px-4 pt-4 pb-3 sm:px-5'>
+                <CardContent className='px-4 pt-4 pb-0 sm:px-5'>
                     <Separator />
-                    <div className='mt-4 flex flex-col gap-4 rounded-2xl bg-muted/20 px-3 pt-3 pb-2 sm:px-4'>
+                    <div className='mt-4 flex flex-col gap-4 rounded-2xl bg-muted/20 px-3 pt-3 pb-0 sm:px-4'>
                         <div className='grid gap-4 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)]'>
                             <CalendarSyncSection
                                 calendarId={calendar.id}

@@ -698,7 +698,7 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         await expandPrimaryAccount();
 
-        expect(await screen.findByRole('switch', { name: 'Enable Primary Calendar' })).toBeTruthy();
+        expect(await screen.findByRole('switch', { name: 'Enable Primary' })).toBeTruthy();
         expect(await screen.findByText('15 min before')).toBeTruthy();
         expect(screen.queryByText('Enabled')).toBeNull();
         expect(screen.queryByText('Sync enabled')).toBeNull();
