@@ -120,7 +120,7 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         await userEvent.setup().click(accountTrigger);
 
-        expect(await screen.findByText('In-app reminders')).toBeTruthy();
+        expect(screen.queryByText('In-app reminders only in this build.')).toBeNull();
     });
 
     it('toggles a calendar account when the full row is clicked', async () => {
@@ -495,7 +495,6 @@ describe('GoogleCalendarIntegrationPage', () => {
         });
 
         expect(reminderSwitch.getAttribute('aria-checked')).toBe('true');
-        expect(await screen.findByText('Saving...')).toBeTruthy();
 
         act(() => {
             queryClient.setQueryData(queryKeys.googleCalendar.connections(), [staleConnection]);
@@ -508,7 +507,6 @@ describe('GoogleCalendarIntegrationPage', () => {
         await waitFor(() => {
             expect(updateCalendar).toHaveBeenCalledTimes(1);
             expect(reminderSwitch.getAttribute('aria-checked')).toBe('true');
-            expect(screen.getByText('Saved')).toBeTruthy();
         });
     });
 
@@ -630,7 +628,8 @@ describe('GoogleCalendarIntegrationPage', () => {
         const user = userEvent.setup();
 
         await expandPrimaryAccount(user);
-        await user.click(screen.getByRole('button', { name: 'Custom' }));
+        await user.click(screen.getByRole('combobox', { name: 'Color source' }));
+        await user.click(await screen.findByRole('option', { name: 'Custom' }));
 
         await waitFor(
             () => {
@@ -641,6 +640,49 @@ describe('GoogleCalendarIntegrationPage', () => {
             },
             { timeout: 1500 },
         );
+    });
+
+    it('swaps curated and custom color controls while keeping labels stable', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture({
+                            calendars: [
+                                createGoogleCalendarFixture({
+                                    calendarColorType: 'curated',
+                                    colorOverride: null,
+                                    effectiveColor: '#1a73e8',
+                                }),
+                            ],
+                        }),
+                    ]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        const user = userEvent.setup();
+
+        await expandPrimaryAccount(user);
+
+        const colorSourceTrigger = await screen.findByRole('combobox', { name: 'Color source' });
+
+        expect(colorSourceTrigger).toBeTruthy();
+        expect(colorSourceTrigger.textContent).toContain('Curated');
+        expect(await screen.findByRole('combobox', { name: 'Color value' })).toBeTruthy();
+        expect(screen.queryByLabelText('Picker')).toBeNull();
+        expect(screen.queryByText('Preview')).toBeNull();
+
+        await user.click(colorSourceTrigger);
+        await user.click(await screen.findByRole('option', { name: 'Custom' }));
+
+        expect(
+            (await screen.findByRole('combobox', { name: 'Color source' })).textContent,
+        ).toContain('Custom');
+        expect(await screen.findByLabelText('Picker')).toBeTruthy();
+        expect(await screen.findByLabelText('Color value')).toBeTruthy();
     });
 
     it('renders the compact header row and human-readable reminder trigger value', async () => {
@@ -656,11 +698,16 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         await expandPrimaryAccount();
 
-        expect(await screen.findByRole('switch', { name: 'Enabled' })).toBeTruthy();
+        expect(await screen.findByRole('switch', { name: 'Enable Primary Calendar' })).toBeTruthy();
         expect(await screen.findByText('15 min before')).toBeTruthy();
+        expect(screen.queryByText('Enabled')).toBeNull();
         expect(screen.queryByText('Sync enabled')).toBeNull();
         expect(screen.queryByText('Reminder enabled')).toBeNull();
         expect(screen.queryByText('Calendar color type')).toBeNull();
+        expect(screen.queryByText('Preview')).toBeNull();
+        expect(screen.queryByText('Runs only while this calendar is enabled.')).toBeNull();
+        expect(screen.queryByText('In-app reminders only in this build.')).toBeNull();
+        expect(screen.queryByText('#22c55e')).toBeNull();
     });
 });
 

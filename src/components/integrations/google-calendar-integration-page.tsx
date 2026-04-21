@@ -33,13 +33,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldGroup,
-    FieldLabel,
-} from '@/components/ui/field';
+import { Field, FieldContent, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -49,9 +43,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
     GOOGLE_CALENDAR_CURATED_COLORS,
     findGoogleCalendarCuratedColor,
@@ -72,6 +66,9 @@ import {
 
 const CALENDAR_AUTOSAVE_DEBOUNCE_MS = 350;
 const CALENDAR_AUTOSAVE_SAVED_MS = 1500;
+const CALENDAR_ROW_LABEL_CLASS = 'w-44 shrink-0 text-sm font-medium';
+const CALENDAR_ROW_CLASS = 'gap-3 has-[>[data-slot=field-content]]:items-center';
+const CALENDAR_ROW_CONTENT_CLASS = 'min-w-0 flex-row items-center justify-end';
 
 type CalendarAutosaveState = 'error' | 'idle' | 'saved' | 'saving';
 
@@ -106,6 +103,23 @@ type CalendarFieldState<TValue> = {
         value: TValue;
     };
 };
+
+function formatCalendarColorTypeLabel(colorType: GoogleCalendarColorType) {
+    return colorType === 'curated' ? 'Curated' : 'Custom';
+}
+
+function CalendarColorOptionContent({ color, label }: { color: string; label: string }) {
+    return (
+        <div className='flex min-w-0 items-center gap-2'>
+            <span
+                aria-hidden='true'
+                className='size-3 shrink-0 rounded-full border border-border/70'
+                style={{ backgroundColor: color }}
+            />
+            <span className='truncate'>{label}</span>
+        </div>
+    );
+}
 
 export function GoogleCalendarIntegrationPage() {
     const connectionsQuery = useQuery(googleCalendarConnectionsQueryOptions);
@@ -187,21 +201,6 @@ export function GoogleCalendarIntegrationPage() {
                         Link Google account
                     </Button>
                 </CardHeader>
-                <CardContent className='flex flex-col gap-4'>
-                    <div className='flex flex-wrap gap-2'>
-                        <Badge variant='secondary'>
-                            Linked accounts:{' '}
-                            {connectionsQuery.isPending ? '...' : connections.length}
-                        </Badge>
-                        <Badge variant='outline'>Sync controls</Badge>
-                        <Badge variant='outline'>Reminder controls</Badge>
-                    </div>
-                    <p className='max-w-2xl text-sm leading-6 text-muted-foreground'>
-                        Secure token storage is preferred. If the OS credential store is
-                        unavailable, Day Flow falls back to unencrypted SQLite storage and marks
-                        that account visibly below.
-                    </p>
-                </CardContent>
             </Card>
 
             {connectionsQuery.isPending ? (
@@ -316,7 +315,6 @@ function GoogleConnectionPanel({ connection }: { connection: GoogleConnectionDet
 function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSummary }) {
     const updateCalendar = useUpdateGoogleCalendar();
     const [saveState, setSaveState] = useState<CalendarAutosaveState>('idle');
-    const [saveError, setSaveError] = useState<string | null>(null);
     const initialValuesRef = useRef(getCalendarFormValues(calendar));
     const form = useForm({
         defaultValues: initialValuesRef.current,
@@ -375,8 +373,6 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
             );
 
             if (!updateInput) {
-                setSaveError(null);
-
                 if (saveState !== 'error') {
                     setSaveState('idle');
                 }
@@ -386,7 +382,6 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
 
             isSavingRef.current = true;
             clearSavedStateTimer();
-            setSaveError(null);
             setSaveState('saving');
 
             let didSaveSucceed = false;
@@ -403,15 +398,9 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
                 persistedValuesRef.current = canonicalValues;
                 didSaveSucceed = true;
 
-                setSaveError(null);
                 setSavedState();
-            } catch (error) {
+            } catch {
                 setSaveState('error');
-                setSaveError(
-                    error instanceof Error
-                        ? error.message
-                        : 'Calendar settings could not be saved.',
-                );
             } finally {
                 isSavingRef.current = false;
 
@@ -490,41 +479,48 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
         <Card
             className='overflow-hidden border border-border/70 bg-card/95 shadow-sm'
             data-testid={`calendar-card-${calendar.id}`}>
-            <CardHeader className='gap-3 border-b border-border/70 px-4 pt-4 pb-3 sm:px-5'>
+            <CardHeader className='gap-3 px-4 pt-4 pb-0 sm:px-5'>
                 <CalendarCardHeader
                     calendar={calendar}
                     effectiveColor={effectiveColor}
                     form={form}
                     onSavePatchedValues={savePatchedValues}
-                    saveError={saveError}
-                    saveState={saveState}
                 />
             </CardHeader>
 
             {isCalendarEnabled ? (
-                <CardContent className='flex flex-col gap-3 px-4 pt-3 pb-4 sm:px-5'>
-                    <div className='grid gap-3 lg:grid-cols-2'>
-                        <CalendarSyncSection
+                <CardContent className='px-4 pt-4 pb-3 sm:px-5'>
+                    <Separator />
+                    <div className='mt-4 flex flex-col gap-4 rounded-2xl bg-muted/20 px-3 pt-3 pb-2 sm:px-4'>
+                        <div className='grid gap-4 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)]'>
+                            <CalendarSyncSection
+                                calendarId={calendar.id}
+                                form={form}
+                                onSavePatchedValues={savePatchedValues}
+                            />
+                            <Separator
+                                aria-hidden='true'
+                                className='hidden lg:block'
+                                orientation='vertical'
+                            />
+                            <CalendarReminderSection
+                                calendarId={calendar.id}
+                                form={form}
+                                onSavePatchedValues={savePatchedValues}
+                            />
+                        </div>
+
+                        <Separator />
+
+                        <CalendarColorSection
                             calendarId={calendar.id}
+                            colorOptions={curatedColorOptions}
                             form={form}
                             onSavePatchedValues={savePatchedValues}
-                        />
-                        <CalendarReminderSection
-                            calendarId={calendar.id}
-                            form={form}
-                            onSavePatchedValues={savePatchedValues}
+                            selectedCuratedColor={selectedCuratedColor}
+                            onColorBlur={flushAutosave}
                         />
                     </div>
-
-                    <CalendarColorSection
-                        calendarId={calendar.id}
-                        colorOptions={curatedColorOptions}
-                        effectiveColor={effectiveColor}
-                        form={form}
-                        onSavePatchedValues={savePatchedValues}
-                        selectedCuratedColor={selectedCuratedColor}
-                        onColorBlur={flushAutosave}
-                    />
                 </CardContent>
             ) : null}
         </Card>
@@ -536,19 +532,15 @@ function CalendarCardHeader({
     effectiveColor,
     form,
     onSavePatchedValues,
-    saveError,
-    saveState,
 }: {
     calendar: GoogleCalendarSummary;
     effectiveColor: string;
     form: CalendarFormApi;
     onSavePatchedValues: (patch: Partial<CalendarFormValues>, immediate?: boolean) => void;
-    saveError: string | null;
-    saveState: CalendarAutosaveState;
 }) {
     return (
-        <div className='flex flex-col gap-2.5'>
-            <div className='flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center sm:justify-between sm:text-left'>
+        <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+            <div className='min-w-0 flex-1'>
                 <div className='flex min-w-0 items-center gap-3'>
                     <span
                         aria-hidden='true'
@@ -559,41 +551,28 @@ function CalendarCardHeader({
                     <CardTitle className='truncate text-base'>{calendar.name}</CardTitle>
                 </div>
 
-                <form.Field name='isSelected'>
-                    {(field: CalendarFieldState<boolean>) => (
-                        <Field
-                            className='w-auto items-center gap-2.5 rounded-full bg-muted/35 px-3 py-1.5'
-                            orientation='horizontal'>
-                            <FieldLabel
-                                className='w-auto text-sm font-medium'
-                                htmlFor={`${calendar.id}-selected`}>
-                                Enabled
-                            </FieldLabel>
-                            <Switch
-                                aria-label='Enabled'
-                                checked={field.state.value}
-                                id={`${calendar.id}-selected`}
-                                onCheckedChange={(checked) => {
-                                    field.handleChange(checked);
-                                    onSavePatchedValues({ isSelected: checked }, true);
-                                }}
-                            />
-                        </Field>
-                    )}
-                </form.Field>
-            </div>
-
-            <div className='flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground sm:justify-between'>
-                <div className='flex flex-wrap items-center justify-center gap-2 sm:justify-start'>
+                <div className='mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
                     <Badge variant='secondary'>{calendar.type}</Badge>
                     <Badge variant='outline'>{calendar.accessRole}</Badge>
                     {calendar.isPrimary ? <Badge variant='outline'>Primary</Badge> : null}
-                    <span>{effectiveColor}</span>
-                    <span aria-hidden='true'>·</span>
-                    <span>In-app reminders</span>
                 </div>
-                <CalendarSaveState saveError={saveError} saveState={saveState} />
             </div>
+
+            <form.Field name='isSelected'>
+                {(field: CalendarFieldState<boolean>) => (
+                    <Field className='w-auto shrink-0' orientation='horizontal'>
+                        <Switch
+                            aria-label={`Enable ${calendar.name}`}
+                            checked={field.state.value}
+                            id={`${calendar.id}-selected`}
+                            onCheckedChange={(checked) => {
+                                field.handleChange(checked);
+                                onSavePatchedValues({ isSelected: checked }, true);
+                            }}
+                        />
+                    </Field>
+                )}
+            </form.Field>
         </div>
     );
 }
@@ -611,18 +590,16 @@ function CalendarSyncSection({
     const isSyncEnabled = useStore(form.store, (state) => state.values.syncEnabled);
 
     return (
-        <div className='grid gap-3 rounded-2xl border border-border/60 bg-muted/10 p-3 sm:grid-cols-[minmax(0,160px)_minmax(0,1fr)]'>
+        <FieldGroup className='gap-3'>
             <form.Field name='syncEnabled'>
                 {(field: CalendarFieldState<boolean>) => (
-                    <Field
-                        className='rounded-xl bg-background/60 px-3 py-2'
-                        orientation='horizontal'>
+                    <Field className={CALENDAR_ROW_CLASS} orientation='horizontal'>
                         <FieldLabel
-                            className='w-auto text-sm font-medium'
+                            className={CALENDAR_ROW_LABEL_CLASS}
                             htmlFor={`${calendarId}-sync-enabled`}>
                             Sync
                         </FieldLabel>
-                        <FieldContent className='flex-row items-center justify-end'>
+                        <FieldContent className={CALENDAR_ROW_CONTENT_CLASS}>
                             <Switch
                                 checked={field.state.value}
                                 disabled={!isCalendarEnabled}
@@ -639,11 +616,13 @@ function CalendarSyncSection({
 
             <form.Field name='syncIntervalMinutes'>
                 {(field: CalendarFieldState<CalendarFormValues['syncIntervalMinutes']>) => (
-                    <Field orientation='vertical'>
-                        <FieldLabel htmlFor={`${calendarId}-sync-interval`}>
+                    <Field className={CALENDAR_ROW_CLASS} orientation='horizontal'>
+                        <FieldLabel
+                            className={CALENDAR_ROW_LABEL_CLASS}
+                            htmlFor={`${calendarId}-sync-interval`}>
                             Sync interval
                         </FieldLabel>
-                        <FieldContent>
+                        <FieldContent className={CALENDAR_ROW_CONTENT_CLASS}>
                             <Select
                                 disabled={!isCalendarEnabled || !isSyncEnabled}
                                 value={String(field.state.value)}
@@ -656,7 +635,7 @@ function CalendarSyncSection({
                                     onSavePatchedValues({ syncIntervalMinutes: nextValue }, true);
                                 }}>
                                 <SelectTrigger
-                                    className='w-full'
+                                    className='h-9 w-40 max-w-full bg-background/70'
                                     id={`${calendarId}-sync-interval`}
                                     data-testid={`calendar-sync-interval-${calendarId}`}>
                                     <SelectValue>
@@ -673,14 +652,11 @@ function CalendarSyncSection({
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
-                            <FieldDescription>
-                                Scheduled and manual sync only run for enabled calendars.
-                            </FieldDescription>
                         </FieldContent>
                     </Field>
                 )}
             </form.Field>
-        </div>
+        </FieldGroup>
     );
 }
 
@@ -697,18 +673,16 @@ function CalendarReminderSection({
     const isReminderEnabled = useStore(form.store, (state) => state.values.reminderEnabled);
 
     return (
-        <div className='grid gap-3 rounded-2xl border border-border/60 bg-muted/10 p-3 sm:grid-cols-[minmax(0,160px)_minmax(0,1fr)]'>
+        <FieldGroup className='gap-3'>
             <form.Field name='reminderEnabled'>
                 {(field: CalendarFieldState<boolean>) => (
-                    <Field
-                        className='rounded-xl bg-background/60 px-3 py-2'
-                        orientation='horizontal'>
+                    <Field className={CALENDAR_ROW_CLASS} orientation='horizontal'>
                         <FieldLabel
-                            className='w-auto text-sm font-medium'
+                            className={CALENDAR_ROW_LABEL_CLASS}
                             htmlFor={`${calendarId}-reminder-enabled`}>
                             Reminder
                         </FieldLabel>
-                        <FieldContent className='flex-row items-center justify-end'>
+                        <FieldContent className={CALENDAR_ROW_CONTENT_CLASS}>
                             <Switch
                                 checked={field.state.value}
                                 disabled={!isCalendarEnabled}
@@ -725,11 +699,13 @@ function CalendarReminderSection({
 
             <form.Field name='reminderLeadMinutes'>
                 {(field: CalendarFieldState<CalendarFormValues['reminderLeadMinutes']>) => (
-                    <Field orientation='vertical'>
-                        <FieldLabel htmlFor={`${calendarId}-reminder-lead`}>
+                    <Field className={CALENDAR_ROW_CLASS} orientation='horizontal'>
+                        <FieldLabel
+                            className={CALENDAR_ROW_LABEL_CLASS}
+                            htmlFor={`${calendarId}-reminder-lead`}>
                             Default reminder time
                         </FieldLabel>
-                        <FieldContent>
+                        <FieldContent className={CALENDAR_ROW_CONTENT_CLASS}>
                             <Select
                                 disabled={!isCalendarEnabled || !isReminderEnabled}
                                 value={String(field.state.value)}
@@ -742,7 +718,7 @@ function CalendarReminderSection({
                                     onSavePatchedValues({ reminderLeadMinutes: nextValue }, true);
                                 }}>
                                 <SelectTrigger
-                                    className='w-full'
+                                    className='h-9 w-48 max-w-full bg-background/70'
                                     id={`${calendarId}-reminder-lead`}
                                     data-testid={`calendar-reminder-lead-${calendarId}`}>
                                     <SelectValue>
@@ -759,21 +735,17 @@ function CalendarReminderSection({
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
-                            <FieldDescription>
-                                In-app reminder delivery only in this build.
-                            </FieldDescription>
                         </FieldContent>
                     </Field>
                 )}
             </form.Field>
-        </div>
+        </FieldGroup>
     );
 }
 
 function CalendarColorSection({
     calendarId,
     colorOptions,
-    effectiveColor,
     form,
     onSavePatchedValues,
     onColorBlur,
@@ -781,7 +753,6 @@ function CalendarColorSection({
 }: {
     calendarId: string;
     colorOptions: ReturnType<typeof getGoogleCalendarColorOptions>;
-    effectiveColor: string;
     form: CalendarFormApi;
     onSavePatchedValues: (patch: Partial<CalendarFormValues>, immediate?: boolean) => void;
     onColorBlur: () => void;
@@ -790,27 +761,21 @@ function CalendarColorSection({
     const calendarColorType = useStore(form.store, (state) => state.values.calendarColorType);
 
     return (
-        <div className='grid gap-3 rounded-2xl border border-border/60 bg-muted/10 p-3 lg:grid-cols-[minmax(0,190px)_minmax(0,1fr)_auto]'>
+        <div className='grid gap-4 lg:grid-cols-[minmax(0,188px)_minmax(0,1fr)]'>
             <form.Field name='calendarColorType'>
                 {(field: CalendarFieldState<CalendarFormValues['calendarColorType']>) => (
-                    <Field orientation='vertical'>
+                    <Field className='gap-2' orientation='vertical'>
                         <FieldLabel htmlFor={`${calendarId}-color-type`}>Color source</FieldLabel>
                         <FieldContent>
-                            <ToggleGroup
-                                aria-label='Calendar color type'
-                                id={`${calendarId}-color-type`}
-                                className='w-full rounded-xl bg-background/60 p-1'
-                                variant='default'>
-                                <ToggleGroupItem
-                                    className='flex-1 rounded-lg data-[state=on]:bg-foreground data-[state=on]:text-background'
-                                    pressed={field.state.value === 'curated'}
-                                    value='curated'
-                                    onPressedChange={(pressed) => {
-                                        if (!pressed) {
-                                            return;
-                                        }
+                            <Select
+                                value={field.state.value}
+                                onValueChange={(value) => {
+                                    const nextValue =
+                                        value as CalendarFormValues['calendarColorType'];
 
-                                        field.handleChange('curated');
+                                    field.handleChange(nextValue);
+
+                                    if (nextValue === 'curated') {
                                         form.setFieldValue('colorOverride', selectedCuratedColor);
                                         onSavePatchedValues(
                                             {
@@ -819,194 +784,147 @@ function CalendarColorSection({
                                             },
                                             true,
                                         );
-                                    }}>
-                                    Curated
-                                </ToggleGroupItem>
-                                <ToggleGroupItem
-                                    className='flex-1 rounded-lg data-[state=on]:bg-foreground data-[state=on]:text-background'
-                                    pressed={field.state.value === 'custom'}
-                                    value='custom'
-                                    onPressedChange={(pressed) => {
-                                        if (pressed) {
-                                            field.handleChange('custom');
-                                            onSavePatchedValues(
-                                                { calendarColorType: 'custom' },
-                                                true,
-                                            );
-                                        }
-                                    }}>
-                                    Custom
-                                </ToggleGroupItem>
-                            </ToggleGroup>
+                                        return;
+                                    }
+
+                                    onSavePatchedValues({ calendarColorType: 'custom' }, true);
+                                }}>
+                                <SelectTrigger
+                                    className='h-9 w-full bg-background/70'
+                                    id={`${calendarId}-color-type`}
+                                    aria-label='Color source'>
+                                    <SelectValue>
+                                        {formatCalendarColorTypeLabel(field.state.value)}
+                                    </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectItem value='curated'>Curated</SelectItem>
+                                        <SelectItem value='custom'>Custom</SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                         </FieldContent>
                     </Field>
                 )}
             </form.Field>
 
-            {calendarColorType === 'curated' ? (
-                <form.Field name='colorOverride'>
-                    {(field: CalendarFieldState<string>) => (
-                        <Field orientation='vertical'>
-                            <FieldLabel htmlFor={`${calendarId}-curated-color`}>
-                                Color value
-                            </FieldLabel>
-                            <FieldContent>
-                                <Select
-                                    value={selectedCuratedColor}
-                                    onValueChange={(value) => {
-                                        const nextValue = normalizeGoogleCalendarColor(value);
-
-                                        field.handleChange(nextValue);
-                                        onSavePatchedValues({ colorOverride: nextValue }, true);
-                                    }}>
-                                    <SelectTrigger
-                                        className='w-full'
-                                        id={`${calendarId}-curated-color`}
-                                        data-testid={`calendar-curated-color-${calendarId}`}>
-                                        <SelectValue>
-                                            <span
-                                                aria-hidden='true'
-                                                className='size-3 rounded-full border border-border/70'
-                                                style={{ backgroundColor: selectedCuratedColor }}
-                                            />
-                                            <span>
-                                                {findGoogleCalendarCuratedColor(
-                                                    selectedCuratedColor,
-                                                )?.label ?? 'Selected'}
-                                            </span>
-                                            <span className='text-xs text-muted-foreground'>
-                                                {normalizeGoogleCalendarColor(selectedCuratedColor)}
-                                            </span>
-                                        </SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            {colorOptions.map((option) => (
-                                                <SelectItem key={option.id} value={option.value}>
-                                                    <span
-                                                        aria-hidden='true'
-                                                        className='size-3 rounded-full border border-border/70'
-                                                        style={{ backgroundColor: option.value }}
-                                                    />
-                                                    <span>{option.label}</span>
-                                                    <span className='text-xs text-muted-foreground'>
-                                                        {option.value}
-                                                    </span>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-                            </FieldContent>
-                        </Field>
-                    )}
-                </form.Field>
-            ) : (
-                <form.Field name='colorOverride'>
-                    {(field: CalendarFieldState<string>) => (
-                        <FieldGroup className='grid gap-3 sm:grid-cols-[72px_minmax(0,1fr)]'>
+            <div className='flex flex-col gap-3'>
+                {calendarColorType === 'curated' ? (
+                    <form.Field name='colorOverride'>
+                        {(field: CalendarFieldState<string>) => (
                             <Field orientation='vertical'>
-                                <FieldLabel htmlFor={`${calendarId}-color-picker`}>
-                                    Picker
-                                </FieldLabel>
-                                <FieldContent>
-                                    <Input
-                                        className='h-9 w-full rounded-xl p-1'
-                                        id={`${calendarId}-color-picker`}
-                                        type='color'
-                                        value={normalizeGoogleCalendarColor(field.state.value)}
-                                        onBlur={() => {
-                                            field.handleBlur();
-                                            onColorBlur();
-                                        }}
-                                        onChange={(event) => {
-                                            const nextValue = normalizeGoogleCalendarColor(
-                                                event.currentTarget.value,
-                                            );
-
-                                            field.handleChange(nextValue);
-                                            onSavePatchedValues({ colorOverride: nextValue });
-                                        }}
-                                    />
-                                </FieldContent>
-                            </Field>
-
-                            <Field orientation='vertical'>
-                                <FieldLabel htmlFor={`${calendarId}-color-hex`}>
+                                <FieldLabel htmlFor={`${calendarId}-curated-color`}>
                                     Color value
                                 </FieldLabel>
                                 <FieldContent>
-                                    <Input
-                                        id={`${calendarId}-color-hex`}
-                                        value={field.state.value}
-                                        onBlur={(event) => {
-                                            const nextValue = normalizeGoogleCalendarColor(
-                                                event.currentTarget.value,
-                                            );
+                                    <Select
+                                        value={selectedCuratedColor}
+                                        onValueChange={(value) => {
+                                            const nextValue = normalizeGoogleCalendarColor(value);
 
                                             field.handleChange(nextValue);
-                                            field.handleBlur();
-                                            onSavePatchedValues({ colorOverride: nextValue });
-                                            onColorBlur();
-                                        }}
-                                        onChange={(event) => {
-                                            const nextValue = event.currentTarget.value;
-
-                                            field.handleChange(nextValue);
-                                            onSavePatchedValues({ colorOverride: nextValue });
-                                        }}
-                                    />
+                                            onSavePatchedValues({ colorOverride: nextValue }, true);
+                                        }}>
+                                        <SelectTrigger
+                                            className='h-9 w-full bg-background/70'
+                                            id={`${calendarId}-curated-color`}
+                                            data-testid={`calendar-curated-color-${calendarId}`}>
+                                            <SelectValue className='min-w-0'>
+                                                <CalendarColorOptionContent
+                                                    color={selectedCuratedColor}
+                                                    label={
+                                                        findGoogleCalendarCuratedColor(
+                                                            selectedCuratedColor,
+                                                        )?.label ?? 'Selected'
+                                                    }
+                                                />
+                                            </SelectValue>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                {colorOptions.map((option) => (
+                                                    <SelectItem
+                                                        key={option.id}
+                                                        value={option.value}>
+                                                        <CalendarColorOptionContent
+                                                            color={option.value}
+                                                            label={option.label}
+                                                        />
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
                                 </FieldContent>
                             </Field>
-                        </FieldGroup>
-                    )}
-                </form.Field>
-            )}
+                        )}
+                    </form.Field>
+                ) : (
+                    <form.Field name='colorOverride'>
+                        {(field: CalendarFieldState<string>) => (
+                            <FieldGroup className='grid gap-3 sm:grid-cols-[72px_minmax(0,1fr)]'>
+                                <Field orientation='vertical'>
+                                    <FieldLabel htmlFor={`${calendarId}-color-picker`}>
+                                        Picker
+                                    </FieldLabel>
+                                    <FieldContent>
+                                        <Input
+                                            className='h-9 w-full rounded-xl bg-background/70 p-1'
+                                            id={`${calendarId}-color-picker`}
+                                            type='color'
+                                            value={normalizeGoogleCalendarColor(field.state.value)}
+                                            onBlur={() => {
+                                                field.handleBlur();
+                                                onColorBlur();
+                                            }}
+                                            onChange={(event) => {
+                                                const nextValue = normalizeGoogleCalendarColor(
+                                                    event.currentTarget.value,
+                                                );
 
-            <Field orientation='vertical'>
-                <FieldLabel>Preview</FieldLabel>
-                <FieldContent>
-                    <div className='flex min-h-9 items-center justify-between gap-3 rounded-xl bg-background/60 px-3 py-2'>
-                        <div className='flex items-center gap-2.5'>
-                            <span
-                                aria-hidden='true'
-                                className='size-4 rounded-full border border-border/70 shadow-sm'
-                                style={{ backgroundColor: effectiveColor }}
-                            />
-                            <span className='text-sm font-medium'>{effectiveColor}</span>
-                        </div>
-                        <span
-                            aria-hidden='true'
-                            className='h-2.5 w-16 rounded-full'
-                            style={{ backgroundColor: effectiveColor }}
-                        />
-                    </div>
-                </FieldContent>
-            </Field>
+                                                field.handleChange(nextValue);
+                                                onSavePatchedValues({ colorOverride: nextValue });
+                                            }}
+                                        />
+                                    </FieldContent>
+                                </Field>
+
+                                <Field orientation='vertical'>
+                                    <FieldLabel htmlFor={`${calendarId}-color-hex`}>
+                                        Color value
+                                    </FieldLabel>
+                                    <FieldContent>
+                                        <Input
+                                            className='bg-background/70'
+                                            id={`${calendarId}-color-hex`}
+                                            value={field.state.value}
+                                            onBlur={(event) => {
+                                                const nextValue = normalizeGoogleCalendarColor(
+                                                    event.currentTarget.value,
+                                                );
+
+                                                field.handleChange(nextValue);
+                                                field.handleBlur();
+                                                onSavePatchedValues({ colorOverride: nextValue });
+                                                onColorBlur();
+                                            }}
+                                            onChange={(event) => {
+                                                const nextValue = event.currentTarget.value;
+
+                                                field.handleChange(nextValue);
+                                                onSavePatchedValues({ colorOverride: nextValue });
+                                            }}
+                                        />
+                                    </FieldContent>
+                                </Field>
+                            </FieldGroup>
+                        )}
+                    </form.Field>
+                )}
+            </div>
         </div>
     );
-}
-
-function CalendarSaveState({
-    saveError,
-    saveState,
-}: {
-    saveError: string | null;
-    saveState: CalendarAutosaveState;
-}) {
-    if (saveState === 'saving') {
-        return <span className='text-xs font-medium text-muted-foreground'>Saving...</span>;
-    }
-
-    if (saveState === 'saved') {
-        return <span className='text-xs font-medium text-emerald-600'>Saved</span>;
-    }
-
-    if (saveState === 'error') {
-        return <span className='text-xs font-medium text-destructive'>{saveError}</span>;
-    }
-
-    return null;
 }
 
 function ProviderAvatar({ size = 'sm' }: { size?: 'default' | 'sm' | 'lg' }) {
