@@ -2,7 +2,7 @@
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from 'next-themes';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -15,6 +15,7 @@ import type {
 
 import { Toaster } from '@/components/ui/sonner';
 import { createQueryClient } from '@/lib/query/create-query-client';
+import { queryKeys } from '@/lib/query/query-keys';
 import { routeTree } from '@/routeTree.gen';
 
 const baseCalendarFixture: GoogleCalendarSummary = {
@@ -322,10 +323,17 @@ describe('GoogleCalendarIntegrationPage', () => {
         );
     });
 
-    it('autosaves reminder changes through the preload API after the debounce window', async () => {
+    it('saves reminder changes immediately through the preload API', async () => {
+        const updatedConnection = createGoogleConnectionFixture({
+            calendars: [
+                createGoogleCalendarFixture({
+                    reminderEnabled: true,
+                }),
+            ],
+        });
         const updateCalendar = vi
             .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
-            .mockResolvedValue(createGoogleConnectionFixture());
+            .mockResolvedValue(updatedConnection);
 
         window.dayFlowApi = createDayFlowApi({
             googleCalendar: {
@@ -341,20 +349,167 @@ describe('GoogleCalendarIntegrationPage', () => {
         const user = userEvent.setup();
 
         await expandPrimaryAccount(user);
-        await user.click(screen.getByRole('switch', { name: 'Reminder enabled' }));
+        await user.click(screen.getByRole('switch', { name: 'Reminder' }));
 
-        expect(updateCalendar).not.toHaveBeenCalled();
+        await waitFor(() => {
+            expect(updateCalendar).toHaveBeenCalledTimes(1);
+            expect(updateCalendar).toHaveBeenCalledWith({
+                calendarId: 'google:user-1:primary',
+                reminderChannel: 'in_app',
+                reminderEnabled: true,
+            });
+        });
+    });
 
-        await waitFor(
-            () => {
-                expect(updateCalendar).toHaveBeenCalledWith({
-                    calendarId: 'google:user-1:primary',
-                    reminderChannel: 'in_app',
-                    reminderEnabled: true,
-                });
+    it('saves sync interval changes immediately through the preload API', async () => {
+        const updatedConnection = createGoogleConnectionFixture({
+            calendars: [
+                createGoogleCalendarFixture({
+                    syncIntervalMinutes: 30,
+                }),
+            ],
+        });
+        const updateCalendar = vi
+            .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
+            .mockResolvedValue(updatedConnection);
+
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([createGoogleConnectionFixture()]),
+                updateCalendar,
             },
-            { timeout: 1500 },
-        );
+        });
+
+        renderApp('/integrations/google');
+
+        const user = userEvent.setup();
+
+        await expandPrimaryAccount(user);
+        await user.click(screen.getByRole('combobox', { name: 'Sync interval' }));
+        await user.click(await screen.findByText('30 min'));
+
+        await waitFor(() => {
+            expect(updateCalendar).toHaveBeenCalledTimes(1);
+            expect(updateCalendar).toHaveBeenCalledWith({
+                calendarId: 'google:user-1:primary',
+                syncIntervalMinutes: 30,
+            });
+        });
+    });
+
+    it('saves reminder lead changes immediately through the preload API', async () => {
+        const updatedConnection = createGoogleConnectionFixture({
+            calendars: [
+                createGoogleCalendarFixture({
+                    reminderLeadMinutes: 30,
+                }),
+            ],
+        });
+        const updateCalendar = vi
+            .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
+            .mockResolvedValue(updatedConnection);
+
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture({
+                            calendars: [
+                                createGoogleCalendarFixture({
+                                    reminderEnabled: true,
+                                }),
+                            ],
+                        }),
+                    ]),
+                updateCalendar,
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        const user = userEvent.setup();
+
+        await expandPrimaryAccount(user);
+        await user.click(screen.getByRole('combobox', { name: 'Default reminder time' }));
+        await user.click(await screen.findByText('30 min before'));
+
+        await waitFor(() => {
+            expect(updateCalendar).toHaveBeenCalledTimes(1);
+            expect(updateCalendar).toHaveBeenCalledWith({
+                calendarId: 'google:user-1:primary',
+                reminderChannel: 'in_app',
+                reminderLeadMinutes: 30,
+            });
+        });
+    });
+
+    it('keeps toggle changes stable when stale connection data is pushed during an in-flight save', async () => {
+        const staleConnection = createGoogleConnectionFixture({
+            calendars: [
+                createGoogleCalendarFixture({
+                    reminderEnabled: false,
+                }),
+            ],
+        });
+        const canonicalConnection = createGoogleConnectionFixture({
+            calendars: [
+                createGoogleCalendarFixture({
+                    reminderEnabled: true,
+                }),
+            ],
+        });
+        const pendingSave = createDeferredPromise<GoogleConnectionDetail>();
+        const updateCalendar = vi
+            .fn<DayFlowApi['googleCalendar']['updateCalendar']>()
+            .mockReturnValue(pendingSave.promise);
+
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([staleConnection]),
+                updateCalendar,
+            },
+        });
+
+        const { queryClient } = renderApp('/integrations/google');
+        const user = userEvent.setup();
+
+        await expandPrimaryAccount(user);
+
+        const reminderSwitch = await screen.findByRole('switch', { name: 'Reminder' });
+
+        expect(reminderSwitch.getAttribute('aria-checked')).toBe('false');
+
+        await user.click(reminderSwitch);
+
+        await waitFor(() => {
+            expect(updateCalendar).toHaveBeenCalledWith({
+                calendarId: 'google:user-1:primary',
+                reminderChannel: 'in_app',
+                reminderEnabled: true,
+            });
+        });
+
+        expect(reminderSwitch.getAttribute('aria-checked')).toBe('true');
+        expect(await screen.findByText('Saving...')).toBeTruthy();
+
+        act(() => {
+            queryClient.setQueryData(queryKeys.googleCalendar.connections(), [staleConnection]);
+        });
+
+        expect(reminderSwitch.getAttribute('aria-checked')).toBe('true');
+
+        pendingSave.resolve(canonicalConnection);
+
+        await waitFor(() => {
+            expect(updateCalendar).toHaveBeenCalledTimes(1);
+            expect(reminderSwitch.getAttribute('aria-checked')).toBe('true');
+            expect(screen.getByText('Saved')).toBeTruthy();
+        });
     });
 
     it('debounces rapid custom color edits into a single save', async () => {
@@ -375,7 +530,7 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         await expandPrimaryAccount();
 
-        const colorInput = (await screen.findByLabelText('Calendar color')) as HTMLInputElement;
+        const colorInput = (await screen.findByLabelText('Color value')) as HTMLInputElement;
 
         fireEvent.change(colorInput, { target: { value: '#123456' } });
         fireEvent.change(colorInput, { target: { value: '#234567' } });
@@ -421,7 +576,7 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         await expandPrimaryAccount();
 
-        const colorInput = (await screen.findByLabelText('Calendar color')) as HTMLInputElement;
+        const colorInput = (await screen.findByLabelText('Color value')) as HTMLInputElement;
 
         fireEvent.change(colorInput, {
             target: { value: '#0f172a' },
@@ -486,6 +641,26 @@ describe('GoogleCalendarIntegrationPage', () => {
             },
             { timeout: 1500 },
         );
+    });
+
+    it('renders the compact header row and human-readable reminder trigger value', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([createGoogleConnectionFixture()]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        await expandPrimaryAccount();
+
+        expect(await screen.findByRole('switch', { name: 'Enabled' })).toBeTruthy();
+        expect(await screen.findByText('15 min before')).toBeTruthy();
+        expect(screen.queryByText('Sync enabled')).toBeNull();
+        expect(screen.queryByText('Reminder enabled')).toBeNull();
+        expect(screen.queryByText('Calendar color type')).toBeNull();
     });
 });
 
@@ -576,7 +751,7 @@ function renderApp(initialPath: string) {
         routeTree,
     });
 
-    return render(
+    const rendered = render(
         <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
             <QueryClientProvider client={queryClient}>
                 <RouterProvider router={router} />
@@ -584,6 +759,11 @@ function renderApp(initialPath: string) {
             </QueryClientProvider>
         </ThemeProvider>,
     );
+
+    return {
+        ...rendered,
+        queryClient,
+    };
 }
 
 async function expandPrimaryAccount(user = userEvent.setup()) {
@@ -592,4 +772,20 @@ async function expandPrimaryAccount(user = userEvent.setup()) {
     await user.click(accountTrigger);
 
     expect(accountTrigger.getAttribute('aria-expanded')).toBe('true');
+}
+
+function createDeferredPromise<T>() {
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    let reject!: (reason?: unknown) => void;
+
+    const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+    });
+
+    return {
+        promise,
+        reject,
+        resolve,
+    };
 }
