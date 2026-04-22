@@ -486,11 +486,13 @@ function GoogleCalendarSettingsCard({ calendar }: { calendar: GoogleCalendarSumm
             </CardHeader>
 
             {isCalendarEnabled ? (
-                <CardContent className='px-4 pt-2 pb-0 sm:px-5'>
+                <CardContent
+                    className='px-4 pt-2 pb-0 sm:px-5'
+                    data-testid={`calendar-card-content-${calendar.id}`}>
                     <div className='pt-1 pb-3'>
                         <Separator data-testid={`calendar-card-header-separator-${calendar.id}`} />
                     </div>
-                    <div className='flex flex-col gap-4 rounded-2xl bg-muted/20 px-3 pt-3 pb-0 sm:px-4'>
+                    <div className='flex flex-col gap-4'>
                         <div className='grid gap-4 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)]'>
                             <CalendarSyncSection
                                 calendarId={calendar.id}

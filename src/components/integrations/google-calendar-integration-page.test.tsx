@@ -829,6 +829,25 @@ describe('GoogleCalendarIntegrationPage', () => {
         expect(separatorWrapper?.className).toContain('pb-3');
     });
 
+    it('matches the calendar configuration horizontal gutter to the header section', async () => {
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([createGoogleConnectionFixture()]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        await expandPrimaryAccount();
+
+        const content = await screen.findByTestId('calendar-card-content-google:user-1:primary');
+
+        expect(content.className).toContain('px-4');
+        expect(content.className).toContain('sm:px-5');
+    });
+
     it('shows the 1 minute sync option and hour-formatted sync labels', async () => {
         window.dayFlowApi = createDayFlowApi({
             googleCalendar: {
