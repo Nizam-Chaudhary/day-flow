@@ -13,6 +13,7 @@ import type {
     GoogleConnectionDetail,
 } from '@/schemas/contracts/google-calendar';
 
+import { MultiSelect } from '@/components/ui/multi-select';
 import { Toaster } from '@/components/ui/sonner';
 import { createQueryClient } from '@/lib/query/create-query-client';
 import { queryKeys } from '@/lib/query/query-keys';
@@ -449,6 +450,38 @@ describe('GoogleCalendarIntegrationPage', () => {
         ).toContain('15 min before, 30 min before');
     });
 
+    it('opens the reminder multiselect without changing window scroll', async () => {
+        const startingScrollY = 180;
+
+        vi.spyOn(window, 'scrollY', 'get').mockReturnValue(startingScrollY);
+
+        window.dayFlowApi = createDayFlowApi({
+            googleCalendar: {
+                listConnections: vi
+                    .fn<DayFlowApi['googleCalendar']['listConnections']>()
+                    .mockResolvedValue([
+                        createGoogleConnectionFixture({
+                            calendars: [
+                                createGoogleCalendarFixture({
+                                    reminderEnabled: true,
+                                }),
+                            ],
+                        }),
+                    ]),
+            },
+        });
+
+        renderApp('/integrations/google');
+
+        await expandPrimaryAccount();
+        await userEvent
+            .setup()
+            .click(screen.getByRole('combobox', { name: 'Default reminder time' }));
+
+        expect(window.scrollY).toBe(startingScrollY);
+        expect(await screen.findByRole('option', { name: '30 min before' })).toBeTruthy();
+    });
+
     it('keeps toggle changes stable when stale connection data is pushed during an in-flight save', async () => {
         const staleConnection = createGoogleConnectionFixture({
             calendars: [
@@ -739,10 +772,39 @@ describe('GoogleCalendarIntegrationPage', () => {
 
         const trigger = await screen.findByRole('combobox', { name: 'Default reminder time' });
 
-        expect(trigger.className).toContain('h-9');
-        expect(trigger.className).toContain('min-h-9');
-        expect(trigger.className).toContain('max-h-9');
+        expect(trigger.className).toContain('h-8');
+        expect(trigger.className).toContain('min-h-8');
+        expect(trigger.className).toContain('max-h-8');
         expect(trigger.textContent).toContain('15 min before, 30 min before, 1 hr before');
+    });
+
+    it('does not change scroll container position when the multiselect opens', async () => {
+        render(
+            <div data-testid='scroll-wrapper' style={{ maxHeight: 160, overflow: 'auto' }}>
+                <div style={{ height: 640, paddingTop: 24 }}>
+                    <MultiSelect
+                        aria-label='Standalone multi select'
+                        options={[
+                            { value: '5', label: '5 min before' },
+                            { value: '15', label: '15 min before' },
+                            { value: '30', label: '30 min before' },
+                        ]}
+                        triggerClassName='w-48'
+                        value={['15']}
+                    />
+                </div>
+            </div>,
+        );
+
+        const scrollWrapper = screen.getByTestId('scroll-wrapper');
+        scrollWrapper.scrollTop = 96;
+
+        await userEvent
+            .setup()
+            .click(screen.getByRole('combobox', { name: 'Standalone multi select' }));
+
+        expect(scrollWrapper.scrollTop).toBe(96);
+        expect(await screen.findByRole('option', { name: '30 min before' })).toBeTruthy();
     });
 
     it('applies explicit top separator spacing between the calendar header and configuration', async () => {

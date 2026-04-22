@@ -41,13 +41,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldContent, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-    MultiSelect,
-    MultiSelectContent,
-    MultiSelectGroup,
-    MultiSelectItem,
-    MultiSelectTrigger,
-} from '@/components/ui/multi-select';
+import { MultiSelect } from '@/components/ui/multi-select';
 import {
     Select,
     SelectContent,
@@ -927,12 +921,15 @@ function ReminderLeadTimeMultiSelect({
     value: GoogleCalendarSummary['reminderLeadMinutesList'];
 }) {
     const normalizedValue = normalizeReminderLeadMinutesList(value);
-    const selectedValues = normalizedValue.map(String);
 
     return (
         <MultiSelect
-            values={selectedValues}
-            onValuesChange={(nextValue) => {
+            aria-label='Default reminder time'
+            className='h-8 max-h-8 min-h-8 w-48 max-w-full bg-background/70 px-3 py-0'
+            contentClassName='w-(--anchor-width)'
+            disabled={disabled}
+            id={inputId}
+            onValueChange={(nextValue) => {
                 if (disabled) {
                     return;
                 }
@@ -952,26 +949,13 @@ function ReminderLeadTimeMultiSelect({
                 }
 
                 onValueChange(normalizedNextValue);
-            }}>
-            <MultiSelectTrigger
-                aria-label='Default reminder time'
-                className='h-9 max-h-9 min-h-9 w-48 max-w-full bg-background/70 px-3 py-0'
-                disabled={disabled}
-                id={inputId}>
-                <span className='min-w-0 flex-1 overflow-hidden text-left text-sm text-ellipsis whitespace-nowrap'>
-                    {formatReminderLeadSummary(normalizedValue)}
-                </span>
-            </MultiSelectTrigger>
-            <MultiSelectContent search={false}>
-                <MultiSelectGroup>
-                    {GOOGLE_REMINDER_LEAD_OPTIONS.map((option) => (
-                        <MultiSelectItem key={option} value={String(option)}>
-                            {formatReminderLeadLabel(option)}
-                        </MultiSelectItem>
-                    ))}
-                </MultiSelectGroup>
-            </MultiSelectContent>
-        </MultiSelect>
+            }}
+            options={GOOGLE_REMINDER_LEAD_OPTIONS.map((option) => ({
+                value: String(option),
+                label: formatReminderLeadLabel(option),
+            }))}
+            value={normalizedValue.map(String)}
+        />
     );
 }
 
@@ -1027,10 +1011,6 @@ function formatReminderLeadLabel(value: GoogleCalendarSummary['reminderLeadMinut
     }
 
     return `${value} min before`;
-}
-
-function formatReminderLeadSummary(value: GoogleCalendarSummary['reminderLeadMinutesList']) {
-    return normalizeReminderLeadMinutesList(value).map(formatReminderLeadLabel).join(', ');
 }
 
 function GoogleConnectionSkeleton() {
