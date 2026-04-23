@@ -1,4 +1,6 @@
 import type {
+    GoogleCalendarEvent,
+    GoogleCalendarListEventsInput,
     GoogleConnectionDetail,
     StartGoogleConnectionResult,
     UpdateGoogleCalendarInput,
@@ -7,6 +9,12 @@ import type {
 
 export function listGoogleCalendarConnections(): Promise<GoogleConnectionDetail[]> {
     return window.dayFlowApi.googleCalendar.listConnections();
+}
+
+export function listGoogleCalendarEvents(
+    input: GoogleCalendarListEventsInput,
+): Promise<GoogleCalendarEvent[]> {
+    return window.dayFlowApi.googleCalendar.listEvents(input);
 }
 
 export function getGoogleCalendarConnectionDetail(

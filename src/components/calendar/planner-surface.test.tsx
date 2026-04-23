@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { mockEvents } from '@/components/app-shell/mock-data';
+import { mapMockEventToCalendarUiEvent } from '@/components/calendar/calendar-events';
 import { PlannerSurface } from '@/components/calendar/planner-surface';
 import {
     buildDayRange,
@@ -388,9 +389,11 @@ function renderPlannerSurface({
         return (
             <PlannerSurface
                 anchorDate={activeAnchorDate}
-                events={mockEvents}
+                events={mockEvents.map(mapMockEventToCalendarUiEvent)}
                 mode={mode}
-                onOpenEvent={vi.fn<(event: (typeof mockEvents)[number]) => void>()}
+                onOpenEvent={vi.fn<
+                    (event: ReturnType<typeof mapMockEventToCalendarUiEvent>) => void
+                >()}
                 onSelectDate={(date) => {
                     onSelectDate?.(date);
                     setAnchorDate(date);

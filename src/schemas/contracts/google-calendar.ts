@@ -180,6 +180,30 @@ export const googleEventListResponseSchema = z.object({
     ),
 });
 
+export const googleCalendarListEventsInputSchema = z.object({
+    rangeEnd: z.string(),
+    rangeStart: z.string(),
+});
+
+export const googleCalendarEventSchema = z.object({
+    calendarColor: z.string(),
+    calendarId: z.string(),
+    calendarName: z.string(),
+    connectionId: z.string(),
+    description: z.string().nullable(),
+    endAt: z.string(),
+    htmlLink: z.string().nullable(),
+    id: z.string(),
+    isAllDay: z.boolean(),
+    location: z.string().nullable(),
+    provider: googleProviderSchema,
+    startAt: z.string(),
+    status: z.string(),
+    title: z.string(),
+});
+
+export const googleCalendarListEventsResponseSchema = z.array(googleCalendarEventSchema);
+
 export type GoogleProvider = z.infer<typeof googleProviderSchema>;
 export type GoogleCredentialStorageMode = z.infer<typeof googleCredentialStorageModeSchema>;
 export type GoogleSyncStatus = z.infer<typeof googleSyncStatusSchema>;
@@ -202,6 +226,11 @@ export type GoogleOAuthFlowResult = z.infer<typeof googleOAuthFlowResultSchema>;
 export type CreateGoogleOAuthFlowInput = z.infer<typeof createGoogleOAuthFlowInputSchema>;
 export type GoogleCalendarListResponse = z.infer<typeof googleCalendarListResponseSchema>;
 export type GoogleEventListResponse = z.infer<typeof googleEventListResponseSchema>;
+export type GoogleCalendarListEventsInput = z.infer<typeof googleCalendarListEventsInputSchema>;
+export type GoogleCalendarEvent = z.infer<typeof googleCalendarEventSchema>;
+export type GoogleCalendarListEventsResponse = z.infer<
+    typeof googleCalendarListEventsResponseSchema
+>;
 
 export function isGoogleReminderChannel(value: unknown): value is GoogleReminderChannel {
     return googleReminderChannelSchema.safeParse(value).success;

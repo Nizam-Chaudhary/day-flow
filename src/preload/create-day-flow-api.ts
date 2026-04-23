@@ -1,6 +1,8 @@
 import { ipcRenderer } from 'electron';
 
 import type {
+    GoogleCalendarEvent,
+    GoogleCalendarListEventsInput,
     GoogleConnectionDetail,
     StartGoogleConnectionResult,
     UpdateGoogleCalendarInput,
@@ -14,6 +16,7 @@ import {
     GOOGLE_CALENDAR_DISCONNECT_CONNECTION_CHANNEL,
     GOOGLE_CALENDAR_GET_CONNECTION_CHANNEL,
     GOOGLE_CALENDAR_LIST_CONNECTIONS_CHANNEL,
+    GOOGLE_CALENDAR_LIST_EVENTS_CHANNEL,
     GOOGLE_CALENDAR_START_CONNECTION_CHANNEL,
     GOOGLE_CALENDAR_SYNC_CONNECTION_CHANNEL,
     GOOGLE_CALENDAR_UPDATE_CALENDAR_CHANNEL,
@@ -31,6 +34,7 @@ export interface DayFlowApi {
         disconnectConnection(connectionId: string): Promise<void>;
         getConnectionDetail(connectionId: string): Promise<GoogleConnectionDetail>;
         listConnections(): Promise<GoogleConnectionDetail[]>;
+        listEvents(input: GoogleCalendarListEventsInput): Promise<GoogleCalendarEvent[]>;
         startConnection(): Promise<StartGoogleConnectionResult>;
         syncConnection(connectionId: string): Promise<GoogleConnectionDetail>;
         updateCalendar(input: UpdateGoogleCalendarInput): Promise<GoogleConnectionDetail>;
@@ -61,6 +65,11 @@ export function createDayFlowApi(): DayFlowApi {
             listConnections: () =>
                 invokeDayFlow<void, GoogleConnectionDetail[]>(
                     GOOGLE_CALENDAR_LIST_CONNECTIONS_CHANNEL,
+                ),
+            listEvents: (input: GoogleCalendarListEventsInput) =>
+                invokeDayFlow<GoogleCalendarListEventsInput, GoogleCalendarEvent[]>(
+                    GOOGLE_CALENDAR_LIST_EVENTS_CHANNEL,
+                    input,
                 ),
             startConnection: () =>
                 invokeDayFlow<void, StartGoogleConnectionResult>(

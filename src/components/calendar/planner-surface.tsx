@@ -11,7 +11,7 @@ import {
     type PointerEvent as ReactPointerEvent,
 } from 'react';
 
-import type { MockEvent } from '@/components/app-shell/mock-data';
+import type { CalendarUiEvent } from '@/components/calendar/calendar-events';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -41,9 +41,9 @@ import {
 
 interface PlannerSurfaceProps {
     anchorDate: string;
-    events: MockEvent[];
+    events: CalendarUiEvent[];
     mode: PlannerMode;
-    onOpenEvent(this: void, event: MockEvent): void;
+    onOpenEvent(this: void, event: CalendarUiEvent): void;
     onSelectDate(this: void, date: string): void;
 }
 
@@ -121,7 +121,7 @@ export function PlannerSurface({
         [pageStartDates, visibleDayCount],
     );
     const eventsByDate = useMemo(() => {
-        const dateMap = new Map<string, MockEvent[]>();
+        const dateMap = new Map<string, CalendarUiEvent[]>();
 
         renderedDates.forEach((date) => {
             dateMap.set(getIsoDate(date), []);
@@ -583,8 +583,8 @@ function PlannerPageBody({
 }: {
     currentIsoDate: string;
     currentMinutes: number;
-    eventsByDate: Map<string, MockEvent[]>;
-    onOpenEvent(this: void, event: MockEvent): void;
+    eventsByDate: Map<string, CalendarUiEvent[]>;
+    onOpenEvent(this: void, event: CalendarUiEvent): void;
     pageDates: Date[];
     pageWidth: number;
     showCurrentTimeIndicator: boolean;
@@ -658,9 +658,11 @@ function PlannerPageBody({
                                         <button
                                             key={event.id}
                                             aria-label={`Open event ${event.title}`}
-                                            className='pointer-events-auto absolute inset-x-1.5 overflow-hidden rounded-sm border bg-primary/10 px-2 py-1.5 text-left shadow-sm transition-colors hover:bg-primary/14'
+                                            className='pointer-events-auto absolute inset-x-1.5 overflow-hidden rounded-sm border px-2 py-1.5 text-left shadow-sm transition-opacity hover:opacity-90'
                                             type='button'
                                             style={{
+                                                backgroundColor: `${event.calendarColor}1a`,
+                                                borderColor: `${event.calendarColor}66`,
                                                 height: `${Math.max(height - 4, 28)}px`,
                                                 top: `${topOffset + 2}px`,
                                             }}

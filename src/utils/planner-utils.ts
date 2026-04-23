@@ -10,7 +10,7 @@ import {
     startOfWeek,
 } from 'date-fns';
 
-import type { MockEvent } from '@/components/app-shell/mock-data';
+import type { CalendarUiEvent } from '@/components/calendar/calendar-events';
 
 export type PlannerMode = 'day' | 'week';
 export type PlannerSnapTarget = 'previous' | 'current' | 'next';
@@ -56,7 +56,9 @@ export function parseTimeToMinutes(time: string): number {
     return hours * 60 + minutes;
 }
 
-export function getEventDurationMinutes(event: Pick<MockEvent, 'endTime' | 'startTime'>): number {
+export function getEventDurationMinutes(
+    event: Pick<CalendarUiEvent, 'endTime' | 'startTime'>,
+): number {
     return Math.max(parseTimeToMinutes(event.endTime) - parseTimeToMinutes(event.startTime), 30);
 }
 

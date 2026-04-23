@@ -998,6 +998,7 @@ function createDayFlowApi(overrides: DayFlowApiOverrides = {}): DayFlowApi {
             listConnections: vi
                 .fn<DayFlowApi['googleCalendar']['listConnections']>()
                 .mockResolvedValue([defaultConnection]),
+            listEvents: vi.fn<DayFlowApi['googleCalendar']['listEvents']>().mockResolvedValue([]),
             startConnection: vi
                 .fn<DayFlowApi['googleCalendar']['startConnection']>()
                 .mockResolvedValue({

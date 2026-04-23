@@ -1,5 +1,7 @@
 import type { CalendarEventRow, IntegrationConnectionRow } from '@/db/schema';
 import type {
+    GoogleCalendarEvent,
+    GoogleCalendarListEventsInput,
     GoogleCalendarListResponse,
     GoogleCalendarSummary,
     GoogleConnectionDetail,
@@ -445,6 +447,10 @@ export class GoogleConnectionService {
 
     async updateConnection(connectionId: string): Promise<GoogleConnectionDetail> {
         return await this.getConnectionDetail(connectionId);
+    }
+
+    async listEvents(input: GoogleCalendarListEventsInput): Promise<GoogleCalendarEvent[]> {
+        return await this.repository.listEvents(input);
     }
 
     async updateCalendar(input: UpdateGoogleCalendarInput): Promise<GoogleCalendarSummary> {

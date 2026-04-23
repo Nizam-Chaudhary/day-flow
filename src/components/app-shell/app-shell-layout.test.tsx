@@ -12,6 +12,11 @@ import type { DayFlowApi } from '@/preload/create-day-flow-api';
 import type { AppHealth } from '@/schemas/contracts/health';
 import type { AppPreferences, UpdateAppPreferencesInput } from '@/schemas/contracts/settings';
 
+import { mockEvents } from '@/components/app-shell/mock-data';
+import {
+    mapMockEventToGoogleCalendarEvent,
+    rangeIncludesDate,
+} from '@/components/calendar/calendar-events';
 import { Toaster } from '@/components/ui/sonner';
 import { createQueryClient } from '@/lib/query/create-query-client';
 import { routeTree } from '@/routeTree.gen';
@@ -186,7 +191,7 @@ describe('App shell routes', () => {
 
         expect(await screen.findByText(getPlannerRangeLabel(0, 5))).toBeTruthy();
 
-        await user.click(screen.getByRole('button', { name: 'Next dates' }));
+        await user.click(await screen.findByRole('button', { name: 'Next dates' }));
 
         expect(await screen.findByText(getPlannerRangeLabel(5, 5))).toBeTruthy();
     });
@@ -197,7 +202,7 @@ describe('App shell routes', () => {
         renderApp('/calendar');
         await screen.findByRole('heading', { name: 'Calendar' });
 
-        await user.click(screen.getByRole('button', { name: 'Day' }));
+        await user.click(await screen.findByRole('button', { name: 'Day' }));
 
         expect(await screen.findByTestId('planner-surface')).toBeTruthy();
         expect(await screen.findByText(getPlannerRangeLabel(0, 2))).toBeTruthy();
@@ -210,7 +215,7 @@ describe('App shell routes', () => {
         renderApp('/calendar');
         await screen.findByRole('heading', { name: 'Calendar' });
 
-        const weekButton = screen.getByRole('button', { name: 'Week' });
+        const weekButton = await screen.findByRole('button', { name: 'Week' });
 
         expect(weekButton.getAttribute('aria-pressed')).toBe('true');
 
@@ -224,7 +229,7 @@ describe('App shell routes', () => {
         renderApp('/calendar');
         await screen.findByRole('heading', { name: 'Calendar' });
 
-        const agendaButton = screen.getByRole('button', { name: 'Agenda' });
+        const agendaButton = await screen.findByRole('button', { name: 'Agenda' });
 
         expect(agendaButton).toHaveProperty('disabled', true);
         expect(screen.getByRole('button', { name: 'Week' }).getAttribute('aria-pressed')).toBe(
@@ -261,8 +266,8 @@ describe('App shell routes', () => {
         renderApp('/calendar');
         await screen.findByRole('heading', { name: 'Calendar' });
 
-        await user.click(screen.getByRole('button', { name: 'Day' }));
-        await user.click(screen.getByRole('button', { name: 'Week' }));
+        await user.click(await screen.findByRole('button', { name: 'Day' }));
+        await user.click(await screen.findByRole('button', { name: 'Week' }));
 
         expect(await screen.findByText(getPlannerRangeLabel(0, 5))).toBeTruthy();
     });
@@ -273,10 +278,10 @@ describe('App shell routes', () => {
         renderApp('/calendar');
         await screen.findByRole('heading', { name: 'Calendar' });
 
-        await user.click(screen.getByRole('button', { name: 'Next dates' }));
+        await user.click(await screen.findByRole('button', { name: 'Next dates' }));
         expect(await screen.findByText(getPlannerRangeLabel(5, 5))).toBeTruthy();
 
-        await user.click(screen.getByRole('button', { name: getTodayButtonLabel() }));
+        await user.click(await screen.findByRole('button', { name: getTodayButtonLabel() }));
         expect(await screen.findByText(getPlannerRangeLabel(0, 5))).toBeTruthy();
     });
 
@@ -513,6 +518,13 @@ function createDayFlowApi(preferenceOverrides: Partial<AppPreferences> = {}): Da
                 .mockResolvedValue(undefined),
             getConnectionDetail: vi.fn<(connectionId: string) => Promise<never>>(),
             listConnections: vi.fn<() => Promise<[]>>().mockResolvedValue([]),
+            listEvents: vi
+                .fn<DayFlowApi['googleCalendar']['listEvents']>()
+                .mockImplementation(async (input) =>
+                    mockEvents
+                        .filter((event) => rangeIncludesDate(input, event.date))
+                        .map(mapMockEventToGoogleCalendarEvent),
+                ),
             startConnection: vi.fn<() => Promise<never>>(),
             syncConnection: vi.fn<(connectionId: string) => Promise<never>>(),
             updateCalendar: vi.fn<(input: never) => Promise<never>>(),

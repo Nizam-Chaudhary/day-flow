@@ -353,3 +353,161 @@ describe('GoogleRepository calendar color type', () => {
         client.client.close();
     });
 });
+
+describe('GoogleRepository.listEvents', () => {
+    it('returns selected calendar events that overlap the requested range with calendar metadata', async () => {
+        const tempDirectory = mkdtempSync(join(tmpdir(), 'day-flow-google-repo-'));
+        const databasePath = join(tempDirectory, 'google-repository.sqlite');
+        const client = await createDatabaseClient({ databasePath });
+
+        cleanupPaths.add(tempDirectory);
+
+        await runDatabaseMigrations(client, migrationsFolder);
+
+        const repository = new GoogleRepository(client);
+        const connection = await repository.persistConnection({
+            avatarUrl: null,
+            calendars: [
+                {
+                    accessRole: 'owner',
+                    calendarType: 'default',
+                    externalCalendarId: 'primary',
+                    googleBackgroundColor: '#1a73e8',
+                    googleForegroundColor: '#ffffff',
+                    isPrimary: true,
+                    name: 'Primary',
+                },
+                {
+                    accessRole: 'reader',
+                    calendarType: 'secondary',
+                    externalCalendarId: 'hidden',
+                    googleBackgroundColor: '#8e24aa',
+                    googleForegroundColor: '#ffffff',
+                    isPrimary: false,
+                    name: 'Hidden',
+                },
+            ],
+            credentialStorageMode: 'sqlite_plaintext',
+            displayName: 'Test User',
+            email: 'user@example.com',
+            externalAccountId: 'account-5',
+            scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar'],
+            secretRef: null,
+            tokens: {
+                accessToken: 'access-token',
+                expiresAt: null,
+                refreshToken: 'refresh-token',
+                scope: 'openid email https://www.googleapis.com/auth/calendar',
+            },
+        });
+
+        const [primaryCalendar, hiddenCalendar] = connection.calendars;
+        const timestamp = new Date().toISOString();
+
+        await repository.updateCalendar({
+            calendarColorType: 'custom',
+            calendarId: primaryCalendar!.id,
+            colorOverride: '#0f172a',
+        });
+        await repository.updateCalendar({
+            calendarId: hiddenCalendar!.id,
+            isSelected: false,
+        });
+
+        await repository.replaceCalendarEvents(primaryCalendar!.id, [
+            {
+                calendarId: primaryCalendar!.id,
+                connectionId: connection.id,
+                createdAt: timestamp,
+                description: 'Visible event',
+                endAt: '2026-04-24T10:00:00.000Z',
+                etag: null,
+                externalEventId: 'visible-event',
+                htmlLink: 'https://calendar.google.com/event?visible',
+                id: `${primaryCalendar!.id}:visible-event`,
+                isAllDay: false,
+                lastSyncedAt: timestamp,
+                location: 'Room A',
+                provider: 'google',
+                rawUpdatedAt: timestamp,
+                startAt: '2026-04-24T09:00:00.000Z',
+                status: 'confirmed',
+                timezone: 'UTC',
+                title: 'Visible event',
+                updatedAt: timestamp,
+            },
+            {
+                calendarId: primaryCalendar!.id,
+                connectionId: connection.id,
+                createdAt: timestamp,
+                description: null,
+                endAt: '2026-04-25',
+                etag: null,
+                externalEventId: 'all-day-event',
+                htmlLink: null,
+                id: `${primaryCalendar!.id}:all-day-event`,
+                isAllDay: true,
+                lastSyncedAt: timestamp,
+                location: null,
+                provider: 'google',
+                rawUpdatedAt: timestamp,
+                startAt: '2026-04-24',
+                status: 'confirmed',
+                timezone: null,
+                title: 'All day event',
+                updatedAt: timestamp,
+            },
+        ]);
+
+        await repository.replaceCalendarEvents(hiddenCalendar!.id, [
+            {
+                calendarId: hiddenCalendar!.id,
+                connectionId: connection.id,
+                createdAt: timestamp,
+                description: null,
+                endAt: '2026-04-24T15:00:00.000Z',
+                etag: null,
+                externalEventId: 'hidden-event',
+                htmlLink: null,
+                id: `${hiddenCalendar!.id}:hidden-event`,
+                isAllDay: false,
+                lastSyncedAt: timestamp,
+                location: null,
+                provider: 'google',
+                rawUpdatedAt: timestamp,
+                startAt: '2026-04-24T14:00:00.000Z',
+                status: 'confirmed',
+                timezone: 'UTC',
+                title: 'Hidden event',
+                updatedAt: timestamp,
+            },
+        ]);
+
+        await expect(
+            repository.listEvents({
+                rangeEnd: '2026-04-25',
+                rangeStart: '2026-04-24',
+            }),
+        ).resolves.toEqual([
+            expect.objectContaining({
+                calendarColor: '#0f172a',
+                calendarId: primaryCalendar!.id,
+                calendarName: 'Primary',
+                id: `${primaryCalendar!.id}:all-day-event`,
+                isAllDay: true,
+                title: 'All day event',
+            }),
+            expect.objectContaining({
+                calendarColor: '#0f172a',
+                calendarId: primaryCalendar!.id,
+                calendarName: 'Primary',
+                description: 'Visible event',
+                id: `${primaryCalendar!.id}:visible-event`,
+                isAllDay: false,
+                title: 'Visible event',
+            }),
+        ]);
+
+        client.client.close();
+    });
+});

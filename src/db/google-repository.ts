@@ -1,9 +1,11 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, lt } from 'drizzle-orm';
 
 import type {
+    GoogleCalendarEvent,
     GoogleCalendarSummary,
     GoogleConnectionDetail,
     GoogleConnectionSummary,
+    GoogleCalendarListEventsInput,
     GoogleOAuthTokenSet,
     UpdateGoogleCalendarInput,
 } from '@/schemas/contracts/google-calendar';
@@ -317,6 +319,62 @@ export class GoogleRepository {
         if (events.length > 0) {
             await this.client.db.insert(calendarEventsTable).values(events).run();
         }
+    }
+
+    async listEvents(input: GoogleCalendarListEventsInput): Promise<GoogleCalendarEvent[]> {
+        const rows = await this.client.db
+            .select({
+                calendarColorType: integrationCalendarsTable.calendarColorType,
+                calendarId: calendarEventsTable.calendarId,
+                calendarName: integrationCalendarsTable.name,
+                colorOverride: integrationCalendarsTable.colorOverride,
+                connectionId: calendarEventsTable.connectionId,
+                description: calendarEventsTable.description,
+                endAt: calendarEventsTable.endAt,
+                googleBackgroundColor: integrationCalendarsTable.googleBackgroundColor,
+                htmlLink: calendarEventsTable.htmlLink,
+                id: calendarEventsTable.id,
+                isAllDay: calendarEventsTable.isAllDay,
+                location: calendarEventsTable.location,
+                provider: calendarEventsTable.provider,
+                startAt: calendarEventsTable.startAt,
+                status: calendarEventsTable.status,
+                title: calendarEventsTable.title,
+            })
+            .from(calendarEventsTable)
+            .innerJoin(
+                integrationCalendarsTable,
+                eq(calendarEventsTable.calendarId, integrationCalendarsTable.id),
+            )
+            .where(
+                and(
+                    eq(integrationCalendarsTable.isSelected, true),
+                    lt(calendarEventsTable.startAt, input.rangeEnd),
+                    gt(calendarEventsTable.endAt, input.rangeStart),
+                ),
+            )
+            .orderBy(asc(calendarEventsTable.startAt), asc(calendarEventsTable.id))
+            .all();
+
+        return rows.map((row) => ({
+            calendarColor:
+                row.calendarColorType === 'custom'
+                    ? (row.colorOverride ?? row.googleBackgroundColor ?? '#9ca3af')
+                    : (row.googleBackgroundColor ?? '#9ca3af'),
+            calendarId: row.calendarId,
+            calendarName: row.calendarName,
+            connectionId: row.connectionId,
+            description: row.description,
+            endAt: row.endAt,
+            htmlLink: row.htmlLink,
+            id: row.id,
+            isAllDay: row.isAllDay,
+            location: row.location,
+            provider: 'google',
+            startAt: row.startAt,
+            status: row.status,
+            title: row.title,
+        }));
     }
 
     private async mapConnectionSummary(

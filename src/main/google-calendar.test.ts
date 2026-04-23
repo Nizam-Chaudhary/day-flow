@@ -2,6 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const repositoryConstructor = vi.fn<(client: unknown) => void>();
 const listConnections = vi.fn<() => Promise<Array<{ id: string }>>>(async () => []);
+const listEvents = vi
+    .fn<
+        (input: {
+            rangeEnd: string;
+            rangeStart: string;
+        }) => Promise<Array<{ id: string; title: string }>>
+    >()
+    .mockResolvedValue([]);
 const getConnectionDetail = vi.fn<(connectionId: string) => Promise<{ connectionId: string }>>();
 const completeConnection = vi.fn<
     (input: { code: string; codeVerifier: string; redirectUri: string }) => Promise<{
@@ -50,6 +58,7 @@ vi.mock('@/lib/google', () => ({
     },
     GoogleConnectionService: class {
         listConnections = listConnections;
+        listEvents = listEvents;
         getConnectionDetail = getConnectionDetail;
         completeConnection = completeConnection;
         updateCalendar = updateCalendar;
@@ -80,6 +89,7 @@ beforeEach(() => {
         connectionId: `connection-for:${calendarId}`,
     }));
     disconnectConnection.mockResolvedValue(undefined);
+    listEvents.mockResolvedValue([]);
     shouldSyncCalendar.mockReturnValue(false);
 });
 
@@ -223,6 +233,38 @@ describe('createGoogleCalendarService', () => {
         expect(updateCalendar).toHaveBeenCalledWith({
             calendarColorType: 'custom',
             calendarId: 'google:user-1:primary',
+        });
+    });
+
+    it('passes range input through listEvents', async () => {
+        listEvents.mockResolvedValue([{ id: 'event-1', title: 'Standup' }]);
+
+        const service = createGoogleCalendarService({
+            client: {
+                client: {} as never,
+                databasePath: '/tmp/day-flow-test.sqlite',
+                databaseUrl: 'file:/tmp/day-flow-test.sqlite',
+                db: {} as never,
+            },
+            fetchImpl: vi.fn<typeof fetch>(),
+            keychain: null,
+            oauthClientId: 'google-client-id',
+            oauthClientSecret: 'google-client-secret',
+            openExternal: vi
+                .fn<typeof import('electron').shell.openExternal>()
+                .mockResolvedValue(undefined),
+        });
+
+        await expect(
+            service.listEvents({
+                rangeEnd: '2026-04-25',
+                rangeStart: '2026-04-24',
+            }),
+        ).resolves.toEqual([{ id: 'event-1', title: 'Standup' }]);
+
+        expect(listEvents).toHaveBeenCalledWith({
+            rangeEnd: '2026-04-25',
+            rangeStart: '2026-04-24',
         });
     });
 });

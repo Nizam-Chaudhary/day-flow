@@ -2,6 +2,8 @@ import { shell } from 'electron';
 import { createRequire } from 'node:module';
 
 import type {
+    GoogleCalendarEvent,
+    GoogleCalendarListEventsInput,
     GoogleConnectionDetail,
     StartGoogleConnectionResult,
     UpdateGoogleCalendarInput,
@@ -39,6 +41,7 @@ interface CreateGoogleCalendarServiceOptions {
 export interface GoogleCalendarService {
     disconnectConnection(connectionId: string): Promise<void>;
     getConnectionDetail(connectionId: string): Promise<GoogleConnectionDetail>;
+    listEvents(input: GoogleCalendarListEventsInput): Promise<GoogleCalendarEvent[]>;
     listConnections(): Promise<GoogleConnectionDetail[]>;
     startConnection(): Promise<StartGoogleConnectionResult>;
     syncConnection(connectionId: string): Promise<GoogleConnectionDetail>;
@@ -141,6 +144,11 @@ export function createGoogleCalendarService({
             const { connectionService } = await getConnectionRuntime();
 
             return await connectionService.getConnectionDetail(connectionId);
+        },
+        async listEvents(input) {
+            const { connectionService } = await getConnectionRuntime();
+
+            return await connectionService.listEvents(input);
         },
         async listConnections() {
             const { connectionService } = await getConnectionRuntime();
@@ -261,6 +269,7 @@ function createUnavailableGoogleCalendarService(): GoogleCalendarService {
     return {
         disconnectConnection: async () => fail(),
         getConnectionDetail: async () => fail(),
+        listEvents: async () => fail(),
         listConnections: async () => [],
         startConnection: async () => fail(),
         syncConnection: async () => fail(),

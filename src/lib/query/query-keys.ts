@@ -9,5 +9,7 @@ export const queryKeys = {
         connection: (connectionId: string) =>
             ['google-calendar', 'connection', connectionId] as const,
         connections: () => ['google-calendar', 'connections'] as const,
+        events: (rangeStart: string, rangeEnd: string) =>
+            ['google-calendar', 'events', rangeStart, rangeEnd] as const,
     },
 };

@@ -6,6 +6,7 @@ import {
     APP_GET_HEALTH_CHANNEL,
     GOOGLE_CALENDAR_DISCONNECT_CONNECTION_CHANNEL,
     GOOGLE_CALENDAR_LIST_CONNECTIONS_CHANNEL,
+    GOOGLE_CALENDAR_LIST_EVENTS_CHANNEL,
     SETTINGS_GET_CHANNEL,
     SETTINGS_UPDATE_CHANNEL,
 } from '@/schemas/contracts/channels';
@@ -49,6 +50,7 @@ describe('createIpcHandlers', () => {
                     .mockResolvedValue(undefined),
                 getConnectionDetail: vi.fn<(connectionId: string) => Promise<never>>(),
                 listConnections: vi.fn<() => Promise<[]>>().mockResolvedValue([]),
+                listEvents: vi.fn<() => Promise<[]>>().mockResolvedValue([]),
                 startConnection: vi.fn<() => Promise<never>>(),
                 syncConnection: vi.fn<(connectionId: string) => Promise<never>>(),
                 updateCalendar: vi.fn<(input: never) => Promise<never>>(),
@@ -101,6 +103,16 @@ describe('createIpcHandlers', () => {
         });
 
         await expect(
+            handlers[GOOGLE_CALENDAR_LIST_EVENTS_CHANNEL]({} as never, {
+                rangeEnd: '2026-04-25',
+                rangeStart: '2026-04-24',
+            }),
+        ).resolves.toEqual({
+            data: [],
+            ok: true,
+        });
+
+        await expect(
             handlers[GOOGLE_CALENDAR_DISCONNECT_CONNECTION_CHANNEL]({} as never, 'google:user-1'),
         ).resolves.toEqual({
             data: undefined,
@@ -122,6 +134,7 @@ describe('createIpcHandlers', () => {
                 disconnectConnection: vi.fn<(connectionId: string) => Promise<void>>(),
                 getConnectionDetail: vi.fn<(connectionId: string) => Promise<never>>(),
                 listConnections: vi.fn<() => Promise<[]>>().mockResolvedValue([]),
+                listEvents: vi.fn<() => Promise<[]>>().mockResolvedValue([]),
                 startConnection: vi.fn<() => Promise<never>>(),
                 syncConnection: vi.fn<(connectionId: string) => Promise<never>>(),
                 updateCalendar: vi.fn<(input: never) => Promise<never>>(),

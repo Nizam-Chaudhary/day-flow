@@ -8,6 +8,7 @@ import {
     GOOGLE_CALENDAR_DISCONNECT_CONNECTION_CHANNEL,
     GOOGLE_CALENDAR_GET_CONNECTION_CHANNEL,
     GOOGLE_CALENDAR_LIST_CONNECTIONS_CHANNEL,
+    GOOGLE_CALENDAR_LIST_EVENTS_CHANNEL,
     GOOGLE_CALENDAR_START_CONNECTION_CHANNEL,
     GOOGLE_CALENDAR_SYNC_CONNECTION_CHANNEL,
     GOOGLE_CALENDAR_UPDATE_CALENDAR_CHANNEL,
@@ -50,6 +51,12 @@ export function createIpcHandlers({
             handleIpcOperation(() => googleCalendarService.getConnectionDetail(input as string)),
         [GOOGLE_CALENDAR_LIST_CONNECTIONS_CHANNEL]: async () =>
             handleIpcOperation(() => googleCalendarService.listConnections()),
+        [GOOGLE_CALENDAR_LIST_EVENTS_CHANNEL]: async (_event, input) =>
+            handleIpcOperation(() =>
+                googleCalendarService.listEvents(
+                    input as Parameters<GoogleCalendarService['listEvents']>[0],
+                ),
+            ),
         [GOOGLE_CALENDAR_START_CONNECTION_CHANNEL]: async () =>
             handleIpcOperation(() => googleCalendarService.startConnection()),
         [GOOGLE_CALENDAR_SYNC_CONNECTION_CHANNEL]: async (_event, input) =>
