@@ -143,4 +143,16 @@
     #app {
         @apply min-h-screen;
     }
+
+    button:not(:disabled),
+    [role='button']:not(:disabled),
+    a[href],
+    select:not(:disabled),
+    [tabindex]:not([tabindex='-1']):not(:disabled),
+    label[for],
+    input[type='checkbox']:not(:disabled),
+    input[type='radio']:not(:disabled),
+    summary {
+        cursor: pointer;
+    }
 }
